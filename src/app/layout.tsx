@@ -13,7 +13,7 @@ interface LayoutProps {
 
 export default function RootLayout({ children }: LayoutProps) {
   return (
-    <html lang="en">
+    <html lang="pt-br">
       <body className={inter.className}>
         <ToastProvider>
           {children}

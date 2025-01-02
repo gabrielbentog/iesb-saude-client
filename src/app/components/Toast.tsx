@@ -1,4 +1,3 @@
-import React from 'react';
 import { toast, ToastContainer, ToastContainerProps } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -15,7 +14,7 @@ const toastOptions = {
   closeOnClick: true,
   pauseOnHover: true,
   draggable: true,
-  theme: "light" as const, // Mantendo o valor do tema como uma constante "light"
+  theme: "light" as const,
 };
 
 // Função para exibir o Toast com base no tipo

@@ -10,9 +10,6 @@ interface SelectContextValue {
 
 const SelectContext = createContext<SelectContextValue | undefined>(undefined);
 
-/**
- * Componente principal do Select.
- */
 interface SelectProps {
   children: React.ReactNode;
   onValueChange?: (value: string) => void;
