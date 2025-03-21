@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import React, { useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   Box,
   Container,
@@ -16,64 +15,34 @@ import {
   IconButton,
   CssBaseline,
 } from "@mui/material"
-import { ThemeProvider, createTheme } from "@mui/material/styles"
+import { useTheme } from "@mui/material/styles"
 import { Visibility, VisibilityOff, School } from "@mui/icons-material"
 import Image from "next/image"
 
-// Cria um tema customizado com a cor principal
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#E50839", // Ajuste conforme a identidade visual do IESB Saúde, se necessário
-    },
-    background: {
-      default: "#f5f5f5",
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: "none",
-          padding: "10px 24px",
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          marginBottom: 16,
-        },
-      },
-    },
-  },
-})
-
 export default function LoginPage() {
+  const theme = useTheme()
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const router = useRouter()
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword)
-  }
+  const handleClickShowPassword = () => setShowPassword(!showPassword)
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    // Lógica de autenticação
-    console.log("Tentativa de login com:", { email, password })
+    if (email && password) {
+      const sessionData = {
+        email,
+        token: "dummy-token",
+        loggedIn: true,
+      }
+      localStorage.setItem("session", JSON.stringify(sessionData))
+      router.push("/home")
+    }
   }
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <CssBaseline />
       <Container
         component="main"
@@ -82,13 +51,13 @@ export default function LoginPage() {
       >
         <Paper elevation={3} sx={{ width: "100%", overflow: "hidden", borderRadius: 2 }}>
           <Grid container>
-            {/* Lado esquerdo - Formulário de login */}
+            {/* Lado esquerdo - Formulário */}
             <Grid item xs={12} md={6} sx={{ p: { xs: 3, md: 6 } }}>
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-                  <School sx={{ color: "primary.main", fontSize: 40, mr: 1 }} />
-                  <Typography component="h1" variant="h4" sx={{ color: "primary.main" }}>
-                    IESB Saúde
+                  <School sx={{ color: theme.palette.primary.main, fontSize: 40, mr: 1 }} />
+                  <Typography component="h1" variant="h4" sx={{ color: theme.palette.primary.main }}>
+                    IESB
                   </Typography>
                 </Box>
 
@@ -98,7 +67,6 @@ export default function LoginPage() {
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     id="email"
@@ -108,9 +76,9 @@ export default function LoginPage() {
                     autoFocus
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    sx={{ mb: 2 }}
                   />
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     name="password"
@@ -120,11 +88,11 @@ export default function LoginPage() {
                     autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    sx={{ mb: 2 }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
                           <IconButton
-                            aria-label="toggle password visibility"
                             onClick={handleClickShowPassword}
                             edge="end"
                           >
@@ -134,18 +102,23 @@ export default function LoginPage() {
                       ),
                     }}
                   />
-                  <Box sx={{ textAlign: "right", mt: 1, mb: 2 }}>
-                    <Link href="#" variant="body2" sx={{ color: "primary.main" }}>
+                  <Box sx={{ textAlign: "right", mb: 2 }}>
+                    <Link href="#" variant="body2" sx={{ color: theme.palette.primary.main }}>
                       Esqueceu sua senha?
                     </Link>
                   </Box>
-                  <Button type="submit" fullWidth variant="contained" sx={{ mt: 2, mb: 3, py: 1.5 }}>
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    sx={{ mt: 2, mb: 3, py: 1.5 }}
+                  >
                     Entrar
                   </Button>
                   <Box sx={{ textAlign: "center" }}>
                     <Typography variant="body2">
                       Não tem uma conta?{" "}
-                      <Link href="/auth/cadastro" variant="body2" sx={{ color: "primary.main", fontWeight: 600 }}>
+                      <Link href="/auth/cadastro" variant="body2" sx={{ color: theme.palette.primary.main, fontWeight: 600 }}>
                         Cadastre-se
                       </Link>
                     </Typography>
@@ -154,22 +127,22 @@ export default function LoginPage() {
               </Box>
             </Grid>
 
-            {/* Lado direito - Imagem */}
+            {/* Lado direito - Ilustração e gradiente */}
             <Grid
               item
               xs={false}
               md={6}
               sx={{
-                background: "linear-gradient(135deg, #E50839 0%, #C4072E 100%)",
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 display: { xs: "none", md: "flex" },
                 position: "relative",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Box sx={{ p: 4, color: "white", textAlign: "center", maxWidth: "80%", zIndex: 1 }}>
+              <Box sx={{ p: 4, color: theme.palette.primary.contrastText, textAlign: "center", maxWidth: "80%", zIndex: 1 }}>
                 <Typography variant="h4" component="h2" gutterBottom>
-                  Bem-vindo ao IESB Saúde
+                  Bem-vindo ao IESB
                 </Typography>
                 <Typography variant="body1">
                   Acesse sua conta para acompanhar sua jornada acadêmica e gerenciar suas informações.
@@ -185,7 +158,7 @@ export default function LoginPage() {
               >
                 <Image
                   src="/placeholder.svg?height=600&width=600"
-                  alt="IESB Saúde illustration"
+                  alt="IESB illustration"
                   layout="fill"
                   objectFit="cover"
                 />
@@ -194,6 +167,6 @@ export default function LoginPage() {
           </Grid>
         </Paper>
       </Container>
-    </ThemeProvider>
+    </>
   )
 }

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import {
   Box,
@@ -18,52 +17,18 @@ import {
   Checkbox,
   FormControlLabel,
 } from "@mui/material"
-import { ThemeProvider, createTheme } from "@mui/material/styles"
-import { Visibility, VisibilityOff, HealthAndSafety, ArrowBack } from "@mui/icons-material"
+import { useTheme } from "@mui/material/styles"
+import { Visibility, VisibilityOff, School, ArrowBack } from "@mui/icons-material"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
-// Create a custom theme with the E50839 color
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#E50839",
-    },
-    background: {
-      default: "#f5f5f5",
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h4: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-          textTransform: "none",
-          padding: "10px 24px",
-          fontWeight: 600,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          marginBottom: 16,
-        },
-      },
-    },
-  },
-})
-
 export default function RegisterPage() {
+  const theme = useTheme()
   const router = useRouter()
+
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -71,83 +36,66 @@ export default function RegisterPage() {
     confirmPassword: "",
     agreeTerms: false,
   })
+
   const [errors, setErrors] = useState({
     password: "",
     confirmPassword: "",
   })
 
-  const handleClickShowPassword = () => {
-    setShowPassword(!showPassword)
-  }
-
-  const handleClickShowConfirmPassword = () => {
-    setShowConfirmPassword(!showConfirmPassword)
-  }
+  const handleClickShowPassword = () => setShowPassword(!showPassword)
+  const handleClickShowConfirmPassword = () => setShowConfirmPassword(!showConfirmPassword)
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked } = event.target
-    setFormData({
-      ...formData,
-      [name]: name === "agreeTerms" ? checked : value,
-    })
+    const updatedValue = name === "agreeTerms" ? checked : value
 
-    // Password validation
+    setFormData((prev) => ({ ...prev, [name]: updatedValue }))
+
     if (name === "password") {
-      if (value.length < 8) {
-        setErrors({ ...errors, password: "A senha deve ter pelo menos 8 caracteres" })
-      } else {
-        setErrors({ ...errors, password: "" })
-      }
+      setErrors((prev) => ({
+        ...prev,
+        password: value.length < 8 ? "A senha deve ter pelo menos 8 caracteres" : "",
+      }))
     }
 
-    // Confirm password validation
     if (name === "confirmPassword") {
-      if (value !== formData.password) {
-        setErrors({ ...errors, confirmPassword: "As senhas não coincidem" })
-      } else {
-        setErrors({ ...errors, confirmPassword: "" })
-      }
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: value !== formData.password ? "As senhas não coincidem" : "",
+      }))
     }
   }
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    // Validate passwords match
+
     if (formData.password !== formData.confirmPassword) {
-      setErrors({ ...errors, confirmPassword: "As senhas não coincidem" })
+      setErrors((prev) => ({
+        ...prev,
+        confirmPassword: "As senhas não coincidem",
+      }))
       return
     }
 
-    // Handle registration logic here
-    console.log("Registration attempt with:", formData)
-
-    // Redirect to login page after successful registration
-    // router.push('/')
+    console.log("Cadastro realizado:", formData)
+    // router.push('/auth/login') // Redirecionamento pós-cadastro
   }
 
-  const goToLogin = () => {
-    router.push("/auth/login")
-  }
+  const goToLogin = () => router.push("/auth/login")
 
   return (
-    <ThemeProvider theme={theme}>
+    <>
       <CssBaseline />
       <Container component="main" maxWidth="lg" sx={{ height: "100vh", display: "flex", alignItems: "center" }}>
         <Paper elevation={3} sx={{ width: "100%", overflow: "hidden", borderRadius: 2 }}>
           <Grid container>
-            {/* Left side - Registration Form */}
+            {/* Lado esquerdo - Formulário */}
             <Grid item xs={12} md={6} sx={{ p: { xs: 3, md: 6 } }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                }}
-              >
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 4 }}>
-                  <HealthAndSafety sx={{ color: "primary.main", fontSize: 40, mr: 1 }} />
-                  <Typography component="h1" variant="h4" sx={{ color: "primary.main" }}>
-                    HealthCare
+                  <School sx={{ color: theme.palette.primary.main, fontSize: 40, mr: 1 }} />
+                  <Typography component="h1" variant="h4" sx={{ color: theme.palette.primary.main }}>
+                    IESB
                   </Typography>
                 </Box>
 
@@ -157,7 +105,6 @@ export default function RegisterPage() {
 
                 <Box component="form" onSubmit={handleSubmit} sx={{ width: "100%" }}>
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     id="name"
@@ -167,9 +114,9 @@ export default function RegisterPage() {
                     autoFocus
                     value={formData.name}
                     onChange={handleChange}
+                    sx={{ mb: 2 }}
                   />
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     id="email"
@@ -178,9 +125,9 @@ export default function RegisterPage() {
                     autoComplete="email"
                     value={formData.email}
                     onChange={handleChange}
+                    sx={{ mb: 2 }}
                   />
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     name="password"
@@ -192,14 +139,11 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     error={!!errors.password}
                     helperText={errors.password}
+                    sx={{ mb: 2 }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowPassword}
-                            edge="end"
-                          >
+                          <IconButton onClick={handleClickShowPassword} edge="end">
                             {showPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -207,7 +151,6 @@ export default function RegisterPage() {
                     }}
                   />
                   <TextField
-                    margin="normal"
                     required
                     fullWidth
                     name="confirmPassword"
@@ -219,14 +162,11 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     error={!!errors.confirmPassword}
                     helperText={errors.confirmPassword}
+                    sx={{ mb: 2 }}
                     InputProps={{
                       endAdornment: (
                         <InputAdornment position="end">
-                          <IconButton
-                            aria-label="toggle password visibility"
-                            onClick={handleClickShowConfirmPassword}
-                            edge="end"
-                          >
+                          <IconButton onClick={handleClickShowConfirmPassword} edge="end">
                             {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
                           </IconButton>
                         </InputAdornment>
@@ -246,11 +186,11 @@ export default function RegisterPage() {
                     label={
                       <Typography variant="body2" sx={{ display: "inline" }}>
                         Eu concordo com os{" "}
-                        <Link href="#" sx={{ color: "primary.main" }}>
+                        <Link href="#" sx={{ color: theme.palette.primary.main }}>
                           Termos de Uso
                         </Link>{" "}
                         e{" "}
-                        <Link href="#" sx={{ color: "primary.main" }}>
+                        <Link href="#" sx={{ color: theme.palette.primary.main }}>
                           Política de Privacidade
                         </Link>
                       </Typography>
@@ -279,26 +219,34 @@ export default function RegisterPage() {
               </Box>
             </Grid>
 
-            {/* Right side - Image */}
+            {/* Lado direito - Ilustração */}
             <Grid
               item
               xs={false}
               md={6}
               sx={{
-                background: "linear-gradient(135deg, #E50839 0%, #C4072E 100%)",
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
                 display: { xs: "none", md: "flex" },
                 position: "relative",
                 alignItems: "center",
                 justifyContent: "center",
               }}
             >
-              <Box sx={{ p: 4, color: "white", textAlign: "center", maxWidth: "80%", zIndex: 1 }}>
+              <Box
+                sx={{
+                  p: 4,
+                  color: theme.palette.primary.contrastText,
+                  textAlign: "center",
+                  maxWidth: "80%",
+                  zIndex: 1,
+                }}
+              >
                 <Typography variant="h4" component="h2" gutterBottom>
-                  Junte-se a nós
+                  Junte-se ao IESB
                 </Typography>
                 <Typography variant="body1">
-                  Crie sua conta para acessar todos os serviços de saúde, agendar consultas e acompanhar seu histórico
-                  médico em um só lugar.
+                  Crie sua conta para acessar todos os serviços acadêmicos, agendar atividades e acompanhar seu
+                  histórico educacional em um só lugar.
                 </Typography>
               </Box>
               <Box
@@ -311,7 +259,7 @@ export default function RegisterPage() {
               >
                 <Image
                   src="/placeholder.svg?height=600&width=600"
-                  alt="Healthcare illustration"
+                  alt="IESB illustration"
                   layout="fill"
                   objectFit="cover"
                 />
@@ -320,7 +268,6 @@ export default function RegisterPage() {
           </Grid>
         </Paper>
       </Container>
-    </ThemeProvider>
+    </>
   )
 }
-
