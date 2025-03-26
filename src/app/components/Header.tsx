@@ -23,16 +23,17 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ open, drawerWidth, onToggleSidebar }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
+  const collapsedWidth = 60;
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        width: { sm: open ? `calc(100% - ${drawerWidth}px)` : "100%" },
-        ml: { sm: open ? `${drawerWidth}px` : 0 },
+        width: `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
+        ml: `${open ? drawerWidth : collapsedWidth}px`,
         transition: theme.transitions.create(["margin", "width"], {
-          easing: theme.transitions.easing.easeOut,
-          duration: theme.transitions.duration.enteringScreen,
+          easing: theme.transitions.easing.sharp,
+          duration: theme.transitions.duration.leavingScreen,
         }),
         bgcolor: theme.palette.primary.main,
         boxShadow: isDark
@@ -41,19 +42,6 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth, onToggleSidebar }) =
       }}
     >
       <Toolbar>
-        <IconButton
-          color="inherit"
-          aria-label="open drawer"
-          edge="start"
-          onClick={onToggleSidebar}
-          sx={{
-            mr: 2,
-            transition: "transform 0.2s",
-            "&:hover": { transform: "scale(1.1)" },
-          }}
-        >
-          <MenuIcon />
-        </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
           Dashboard
         </Typography>

@@ -58,6 +58,8 @@ const Sidebar: React.FC<SidebarProps> = ({
     setOpenNested(!openNested);
   };
 
+  const collapsedWidth = 60;
+
   const drawerBg = theme.palette.background.paper;
   const textColor = theme.palette.text.primary;
   const iconColor = theme.palette.text.secondary;
@@ -68,231 +70,220 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <Drawer
+      variant="permanent"
       sx={{
-        width: drawerWidth,
+        width: open ? drawerWidth : collapsedWidth,
         flexShrink: 0,
+        whiteSpace: "nowrap",
         "& .MuiDrawer-paper": {
-          width: drawerWidth,
+          width: open ? drawerWidth : collapsedWidth,
+          transition: "width 0.3s",
           boxSizing: "border-box",
           bgcolor: drawerBg,
           color: textColor,
           borderRight: `1px solid ${dividerColor}`,
           boxShadow: isDark ? "inset -5px 0 10px rgba(0,0,0,0.2)" : "none",
-          transition: "all 0.3s ease",
+          overflowX: "hidden",
         },
       }}
-      variant="persistent"
-      anchor="left"
-      open={open}
-      onClose={onToggleSidebar}
     >
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          padding: 2.5,
-          justifyContent: "space-between",
+          justifyContent: open ? "space-between" : "center",
+          padding: 2,
           borderBottom: `1px solid ${dividerColor}`,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <Avatar
-            sx={{
-              bgcolor: primaryColor,
-              width: 40,
-              height: 40,
-            }}
-          >
-            <DashboardIcon />
-          </Avatar>
-          <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
-            AppName
-          </Typography>
-        </Box>
-        <IconButton
-          onClick={onToggleSidebar}
-          sx={{
-            color: iconColor,
-            "&:hover": { bgcolor: hoverColor },
-          }}
-        >
+        {open && (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Avatar sx={{ bgcolor: primaryColor, width: 40, height: 40 }}>
+              <DashboardIcon />
+            </Avatar>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              AppName
+            </Typography>
+          </Box>
+        )}
+        <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
           <ChevronLeftIcon />
         </IconButton>
       </Box>
 
-      <Box sx={{ p: 2 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            p: 1.5,
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            bgcolor: theme.palette.background.default,
-            borderRadius: 2,
-            border: `1px solid ${dividerColor}`,
-          }}
-        >
-          <Avatar sx={{ width: 42, height: 42 }} alt="User Profile" src="/placeholder.svg?height=42&width=42" />
-          <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              John Doe
-            </Typography>
-            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-              john.doe@example.com
-            </Typography>
-          </Box>
-        </Paper>
-      </Box>
-
-      <List sx={{ px: 1.5, py: 1 }}>
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
+      {open && (
+        <Box sx={{ p: 2 }}>
+          <Paper
+            elevation={0}
             sx={{
-              borderRadius: 1.5,
-              "&:hover": { bgcolor: hoverColor },
-              bgcolor: activeColor,
-              py: 1,
+              p: 1.5,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              bgcolor: theme.palette.background.default,
+              borderRadius: 2,
+              border: `1px solid ${dividerColor}`,
             }}
           >
-            <ListItemIcon sx={{ color: primaryColor, minWidth: 40 }}>
-              <HomeIcon />
-            </ListItemIcon>
-            <ListItemText primary="Dashboard" primaryTypographyProps={{ fontWeight: 600 }} />
-          </ListItemButton>
-        </ListItem>
+            <Avatar
+              sx={{ width: 42, height: 42 }}
+              alt="User Profile"
+              src="/placeholder.svg?height=42&width=42"
+            />
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                John Doe
+              </Typography>
+              <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+                john.doe@example.com
+              </Typography>
+            </Box>
+          </Paper>
+        </Box>
+      )}
 
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            sx={{
-              borderRadius: 1.5,
-              "&:hover": { bgcolor: hoverColor },
-              py: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
-              <InboxIcon />
-            </ListItemIcon>
-            <ListItemText primary="Inbox" primaryTypographyProps={{ fontWeight: 500 }} />
-            <Badge badgeContent={3} color="primary" sx={{ mr: 1 }} />
-          </ListItemButton>
-        </ListItem>
+      <List sx={{ px: 1 }}>
+        {[
+          {
+            icon: <HomeIcon />,
+            text: "Dashboard",
+            active: true,
+          },
+          {
+            icon: <InboxIcon />,
+            text: "Inbox",
+            badge: 3,
+          },
+          {
+            icon: <MailIcon />,
+            text: "Messages",
+            expandable: true,
+          },
+          {
+            icon: <PersonIcon />,
+            text: "Profile",
+          },
+        ].map((item, index) => (
+          <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
+            <Tooltip title={!open ? item.text : ""} placement="right">
+              <ListItemButton
+                onClick={item.expandable ? handleNestedClick : undefined}
+                sx={{
+                  borderRadius: 1.5,
+                  bgcolor: item.active ? activeColor : "transparent",
+                  "&:hover": { bgcolor: hoverColor },
+                  justifyContent: open ? "flex-start" : "center",
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  {item.icon}
+                </ListItemIcon>
+                {open && (
+                  <ListItemText
+                    primary={item.text}
+                    primaryTypographyProps={{ fontWeight: item.active ? 600 : 500 }}
+                  />
+                )}
+                {item.badge && open && (
+                  <Badge badgeContent={item.badge} color="primary" sx={{ ml: "auto", mr: 1 }} />
+                )}
+                {item.expandable && open && (openNested ? <ExpandLess /> : <ExpandMore />)}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+        ))}
 
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            onClick={handleNestedClick}
-            sx={{
-              borderRadius: 1.5,
-              "&:hover": { bgcolor: hoverColor },
-              py: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
-              <MailIcon />
-            </ListItemIcon>
-            <ListItemText primary="Messages" primaryTypographyProps={{ fontWeight: 500 }} />
-            {openNested ? <ExpandLess /> : <ExpandMore />}
-          </ListItemButton>
-        </ListItem>
+        {/* Expandable nested items */}
+        {open && (
+          <Collapse in={openNested} timeout="auto" unmountOnExit>
+            <List component="div" disablePadding sx={{ ml: 1, mt: 0.5 }}>
+              <ListItemButton sx={{ pl: 4, borderRadius: 1.5, py: 0.75 }}>
+                <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
+                  <StarBorder fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Starred" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
 
-        <Collapse in={openNested} timeout="auto" unmountOnExit>
-          <List component="div" disablePadding sx={{ ml: 1, mt: 0.5 }}>
-            <ListItemButton
-              sx={{
-                pl: 4,
-                borderRadius: 1.5,
-                "&:hover": { bgcolor: hoverColor },
-                mb: 0.5,
-                py: 0.75,
-              }}
-            >
-              <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
-                <StarBorder fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Starred" primaryTypographyProps={{ fontSize: "0.9rem" }} />
-            </ListItemButton>
-
-            <ListItemButton
-              sx={{
-                pl: 4,
-                borderRadius: 1.5,
-                "&:hover": { bgcolor: hoverColor },
-                py: 0.75,
-              }}
-            >
-              <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
-                <BookmarkIcon fontSize="small" />
-              </ListItemIcon>
-              <ListItemText primary="Important" primaryTypographyProps={{ fontSize: "0.9rem" }} />
-            </ListItemButton>
-          </List>
-        </Collapse>
-
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            sx={{
-              borderRadius: 1.5,
-              "&:hover": { bgcolor: hoverColor },
-              py: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
-              <PersonIcon />
-            </ListItemIcon>
-            <ListItemText primary="Profile" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
-        </ListItem>
+              <ListItemButton sx={{ pl: 4, borderRadius: 1.5, py: 0.75 }}>
+                <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
+                  <BookmarkIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText primary="Important" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+              </ListItemButton>
+            </List>
+          </Collapse>
+        )}
       </List>
 
       <Divider sx={{ my: 1.5, borderColor: dividerColor }} />
 
-      <List sx={{ px: 1.5, py: 0 }}>
+      <List sx={{ px: 1 }}>
         <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <ListItemButton
-            sx={{
-              borderRadius: 1.5,
-              "&:hover": { bgcolor: hoverColor },
-              py: 1,
-            }}
-          >
-            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
-          </ListItemButton>
+          <Tooltip title={!open ? "Settings" : ""} placement="right">
+            <ListItemButton
+              sx={{
+                borderRadius: 1.5,
+                "&:hover": { bgcolor: hoverColor },
+                justifyContent: open ? "flex-start" : "center",
+                px: 2,
+                py: 1,
+              }}
+            >
+              <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                <SettingsIcon />
+              </ListItemIcon>
+              {open && (
+                <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
+              )}
+            </ListItemButton>
+          </Tooltip>
         </ListItem>
 
         <ListItem
           sx={{
             borderRadius: 1.5,
             mt: 1,
+            px: 2,
+            justifyContent: open ? "flex-start" : "center",
             "&:hover": { bgcolor: hoverColor },
           }}
         >
-          <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
-            <DarkModeIcon />
-          </ListItemIcon>
-          <ListItemText primary="Dark Mode" primaryTypographyProps={{ fontWeight: 500 }} />
-          <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
+        <Tooltip title={!open ? "Dark Mode" : ""} placement="right">
+          <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+            <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+              <DarkModeIcon />
+            </ListItemIcon>
+            {open && (
+              <>
+                <ListItemText primary="Dark Mode" primaryTypographyProps={{ fontWeight: 500 }} />
+                <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
+              </>
+            )}
+          </Box>
+        </Tooltip>
         </ListItem>
       </List>
 
       <Box sx={{ flexGrow: 1 }} />
 
-      <Box
-        sx={{
-          p: 2,
-          borderTop: `1px solid ${dividerColor}`,
-          mt: 2,
-        }}
-      >
-        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center" }}>
-          © 2025 AppName Inc.
-        </Typography>
-        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center", mt: 0.5 }}>
-          v1.0.0
-        </Typography>
-      </Box>
+      {open && (
+        <Box sx={{ p: 2, borderTop: `1px solid ${dividerColor}`, mt: 2 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center" }}
+          >
+            © 2025 AppName Inc.
+          </Typography>
+          <Typography
+            variant="caption"
+            sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center", mt: 0.5 }}
+          >
+            v1.0.0
+          </Typography>
+        </Box>
+      )}
     </Drawer>
   );
 };

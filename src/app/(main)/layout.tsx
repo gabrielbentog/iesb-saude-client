@@ -12,6 +12,7 @@ interface MainLayoutProps {
 }
 
 const drawerWidth = 260;
+const collapsedWidth = 60;
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const defaultTheme = useTheme();
