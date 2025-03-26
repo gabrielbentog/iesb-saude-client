@@ -1,226 +1,300 @@
-"use client"
+"use client";
 
-import React from "react"
+import React, { useState } from "react";
 import {
   Box,
   Drawer,
-  Avatar,
-  Typography,
+  List,
   Divider,
   IconButton,
-  List,
   ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Button,
-} from "@mui/material"
-import { styled, useTheme } from "@mui/material/styles"
+  Collapse,
+  Avatar,
+  Paper,
+  Switch,
+  Typography,
+  Badge,
+  Tooltip,
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import {
-  AccessTime as AccessTimeIcon,
   ChevronLeft as ChevronLeftIcon,
-  ChevronRight as ChevronRightIcon,
-  Dashboard as DashboardIcon,
-  CalendarMonth as CalendarMonthIcon,
-  Person as PersonIcon,
+  Home as HomeIcon,
+  Mail as MailIcon,
+  Inbox as InboxIcon,
   Settings as SettingsIcon,
-  Logout as LogoutIcon,
-  Description as DescriptionIcon,
-} from "@mui/icons-material"
-
-import { motion, AnimatePresence } from "framer-motion"
-
-const drawerWidthExpanded = 240
-const drawerWidthCollapsed = 80
-
-const DrawerHeader = styled("div")(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  padding: theme.spacing(0, 1),
-  ...theme.mixins.toolbar,
-  justifyContent: "flex-end",
-}))
+  ExpandLess,
+  ExpandMore,
+  StarBorder,
+  Dashboard as DashboardIcon,
+  Person as PersonIcon,
+  Bookmark as BookmarkIcon,
+  DarkMode as DarkModeIcon,
+} from "@mui/icons-material";
 
 interface SidebarProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  drawerWidth: number;
+  onToggleSidebar: () => void;
+  darkMode: boolean;
+  onToggleDarkMode: () => void;
 }
 
-export default function Sidebar({ open, onClose }: SidebarProps) {
-  const theme = useTheme()
+const Sidebar: React.FC<SidebarProps> = ({
+  open,
+  drawerWidth,
+  onToggleSidebar,
+  darkMode,
+  onToggleDarkMode,
+}) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const [openNested, setOpenNested] = useState(false);
 
-  const drawerTransition = theme.transitions.create("width", {
-    easing: theme.transitions.easing.sharp,
-    duration: theme.transitions.duration.standard,
-  })
+  const handleNestedClick = () => {
+    setOpenNested(!openNested);
+  };
 
-  const motionVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -20 },
-  }
+  const drawerBg = theme.palette.background.paper;
+  const textColor = theme.palette.text.primary;
+  const iconColor = theme.palette.text.secondary;
+  const hoverColor = theme.palette.action.hover;
+  const activeColor = theme.palette.action.selected;
+  const primaryColor = theme.palette.primary.main;
+  const dividerColor = theme.palette.divider;
 
   return (
     <Drawer
-      variant="permanent"
-      anchor="left"
       sx={{
-        width: open ? drawerWidthExpanded : drawerWidthCollapsed,
+        width: drawerWidth,
         flexShrink: 0,
-        whiteSpace: "nowrap",
         "& .MuiDrawer-paper": {
-          width: open ? drawerWidthExpanded : drawerWidthCollapsed,
-          transition: drawerTransition,
-          overflowX: "hidden",
+          width: drawerWidth,
           boxSizing: "border-box",
+          bgcolor: drawerBg,
+          color: textColor,
+          borderRight: `1px solid ${dividerColor}`,
+          boxShadow: isDark ? "inset -5px 0 10px rgba(0,0,0,0.2)" : "none",
+          transition: "all 0.3s ease",
         },
-        transition: drawerTransition,
       }}
+      variant="persistent"
+      anchor="left"
+      open={open}
+      onClose={onToggleSidebar}
     >
       <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: open ? "flex-start" : "center",
-        px: open ? 2 : 0,
-        py: 2,
-        mt: 1, // garante espaço após o header
-      }}
-    >
-      <Avatar
-        alt="João Paulo"
-        src="/placeholder.svg?height=40&width=40"
-        sx={{ width: 40, height: 40, transition: "all 0.3s ease-in-out" }}
-      />
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -10 }}
-            transition={{ duration: 0.2 }}
-            style={{ marginLeft: 16 }}
-          >
-            <Box>
-              <Typography variant="subtitle1" fontWeight="medium">
-                João Paulo
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Paciente
-              </Typography>
-            </Box>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </Box>
-    <Divider />
-
-      <List>
-        {open && (
-          <Typography variant="caption" color="text.secondary" sx={{ px: 3, py: 1, display: "block" }}>
-            MENU PRINCIPAL
-          </Typography>
-        )}
-        {[
-          { label: "Dashboard", icon: <DashboardIcon color="primary" /> },
-          { label: "Consultas", icon: <CalendarMonthIcon /> },
-          { label: "Prontuário", icon: <DescriptionIcon /> },
-        ].map(({ label, icon }) => (
-          <ListItem key={label} disablePadding>
-            <ListItemButton sx={{ justifyContent: open ? "initial" : "center", px: 2 }}>
-              <ListItemIcon
-                sx={{
-                  minWidth: 0,
-                  mr: open ? 2 : 0,
-                  justifyContent: "center",
-                }}
-              >
-                {icon}
-              </ListItemIcon>
-              <AnimatePresence>
-                {open && (
-                  <motion.div
-                    initial="hidden"
-                    animate="visible"
-                    exit="exit"
-                    variants={motionVariants}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ListItemText primary={label} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </ListItemButton>
-          </ListItem>
-        ))}
-      </List>
-
-      <Box sx={{ mt: "auto" }}>
-        <Divider />
-        <List>
-          {open && (
-            <Typography variant="caption" color="text.secondary" sx={{ px: 3, py: 1, display: "block" }}>
-              CONFIGURAÇÕES
-            </Typography>
-          )}
-          {[
-            { label: "Meu Perfil", icon: <PersonIcon /> },
-            { label: "Preferências", icon: <SettingsIcon /> },
-          ].map(({ label, icon }) => (
-            <ListItem key={label} disablePadding>
-              <ListItemButton sx={{ justifyContent: open ? "initial" : "center", px: 2 }}>
-                <ListItemIcon
-                  sx={{
-                    minWidth: 0,
-                    mr: open ? 2 : 0,
-                    justifyContent: "center",
-                  }}
-                >
-                  {icon}
-                </ListItemIcon>
-                <AnimatePresence>
-                  {open && (
-                    <motion.div
-                      initial="hidden"
-                      animate="visible"
-                      exit="exit"
-                      variants={motionVariants}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ListItemText primary={label} />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </ListItemButton>
-            </ListItem>
-          ))}
-        </List>
-        <Box sx={{ p: 2 }}>
-          <Button
-            variant="text"
-            startIcon={<LogoutIcon />}
-            fullWidth
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          padding: 2.5,
+          justifyContent: "space-between",
+          borderBottom: `1px solid ${dividerColor}`,
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Avatar
             sx={{
-              justifyContent: open ? "flex-start" : "center",
-              color: "text.secondary",
-              px: open ? 2 : 0,
+              bgcolor: primaryColor,
+              width: 40,
+              height: 40,
             }}
           >
-            <AnimatePresence>
-              {open && (
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  Sair
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </Button>
+            <DashboardIcon />
+          </Avatar>
+          <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: 0.5 }}>
+            AppName
+          </Typography>
         </Box>
+        <IconButton
+          onClick={onToggleSidebar}
+          sx={{
+            color: iconColor,
+            "&:hover": { bgcolor: hoverColor },
+          }}
+        >
+          <ChevronLeftIcon />
+        </IconButton>
+      </Box>
+
+      <Box sx={{ p: 2 }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: 1.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            bgcolor: theme.palette.background.default,
+            borderRadius: 2,
+            border: `1px solid ${dividerColor}`,
+          }}
+        >
+          <Avatar sx={{ width: 42, height: 42 }} alt="User Profile" src="/placeholder.svg?height=42&width=42" />
+          <Box>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              John Doe
+            </Typography>
+            <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
+              john.doe@example.com
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+
+      <List sx={{ px: 1.5, py: 1 }}>
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            sx={{
+              borderRadius: 1.5,
+              "&:hover": { bgcolor: hoverColor },
+              bgcolor: activeColor,
+              py: 1,
+            }}
+          >
+            <ListItemIcon sx={{ color: primaryColor, minWidth: 40 }}>
+              <HomeIcon />
+            </ListItemIcon>
+            <ListItemText primary="Dashboard" primaryTypographyProps={{ fontWeight: 600 }} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            sx={{
+              borderRadius: 1.5,
+              "&:hover": { bgcolor: hoverColor },
+              py: 1,
+            }}
+          >
+            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
+              <InboxIcon />
+            </ListItemIcon>
+            <ListItemText primary="Inbox" primaryTypographyProps={{ fontWeight: 500 }} />
+            <Badge badgeContent={3} color="primary" sx={{ mr: 1 }} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            onClick={handleNestedClick}
+            sx={{
+              borderRadius: 1.5,
+              "&:hover": { bgcolor: hoverColor },
+              py: 1,
+            }}
+          >
+            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
+              <MailIcon />
+            </ListItemIcon>
+            <ListItemText primary="Messages" primaryTypographyProps={{ fontWeight: 500 }} />
+            {openNested ? <ExpandLess /> : <ExpandMore />}
+          </ListItemButton>
+        </ListItem>
+
+        <Collapse in={openNested} timeout="auto" unmountOnExit>
+          <List component="div" disablePadding sx={{ ml: 1, mt: 0.5 }}>
+            <ListItemButton
+              sx={{
+                pl: 4,
+                borderRadius: 1.5,
+                "&:hover": { bgcolor: hoverColor },
+                mb: 0.5,
+                py: 0.75,
+              }}
+            >
+              <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
+                <StarBorder fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Starred" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+            </ListItemButton>
+
+            <ListItemButton
+              sx={{
+                pl: 4,
+                borderRadius: 1.5,
+                "&:hover": { bgcolor: hoverColor },
+                py: 0.75,
+              }}
+            >
+              <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
+                <BookmarkIcon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText primary="Important" primaryTypographyProps={{ fontSize: "0.9rem" }} />
+            </ListItemButton>
+          </List>
+        </Collapse>
+
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            sx={{
+              borderRadius: 1.5,
+              "&:hover": { bgcolor: hoverColor },
+              py: 1,
+            }}
+          >
+            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
+              <PersonIcon />
+            </ListItemIcon>
+            <ListItemText primary="Profile" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+      </List>
+
+      <Divider sx={{ my: 1.5, borderColor: dividerColor }} />
+
+      <List sx={{ px: 1.5, py: 0 }}>
+        <ListItem disablePadding sx={{ mb: 0.5 }}>
+          <ListItemButton
+            sx={{
+              borderRadius: 1.5,
+              "&:hover": { bgcolor: hoverColor },
+              py: 1,
+            }}
+          >
+            <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
+          </ListItemButton>
+        </ListItem>
+
+        <ListItem
+          sx={{
+            borderRadius: 1.5,
+            mt: 1,
+            "&:hover": { bgcolor: hoverColor },
+          }}
+        >
+          <ListItemIcon sx={{ color: iconColor, minWidth: 40 }}>
+            <DarkModeIcon />
+          </ListItemIcon>
+          <ListItemText primary="Dark Mode" primaryTypographyProps={{ fontWeight: 500 }} />
+          <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
+        </ListItem>
+      </List>
+
+      <Box sx={{ flexGrow: 1 }} />
+
+      <Box
+        sx={{
+          p: 2,
+          borderTop: `1px solid ${dividerColor}`,
+          mt: 2,
+        }}
+      >
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center" }}>
+          © 2025 AppName Inc.
+        </Typography>
+        <Typography variant="caption" sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center", mt: 0.5 }}>
+          v1.0.0
+        </Typography>
       </Box>
     </Drawer>
-  )
-}
+  );
+};
+
+export default Sidebar;

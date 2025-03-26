@@ -1,169 +1,93 @@
-"use client"
+"use client";
 
-import React from "react"
+import React from "react";
 import {
   AppBar,
   Toolbar,
-  IconButton,
   Typography,
+  IconButton,
   Box,
-  Menu,
-  MenuItem,
+  Tooltip,
   Avatar,
   Badge,
-  Divider,
-} from "@mui/material"
-import { useTheme } from "@mui/material/styles"
-import MenuIcon from "@mui/icons-material/Menu"
-import NotificationsIcon from "@mui/icons-material/Notifications"
-import PersonIcon from "@mui/icons-material/Person"
-import SettingsIcon from "@mui/icons-material/Settings"
-import LogoutIcon from "@mui/icons-material/Logout"
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+import { Menu as MenuIcon, Search as SearchIcon, Notifications as NotificationsIcon } from "@mui/icons-material";
 
 interface HeaderProps {
-  onToggleSidebar: () => void
+  open: boolean;
+  drawerWidth: number;
+  onToggleSidebar: () => void;
 }
 
-export default function Header({ onToggleSidebar }: HeaderProps) {
-  const theme = useTheme()
-  const [anchorElUser, setAnchorElUser] = React.useState<null | HTMLElement>(null)
-  const [anchorElNotifications, setAnchorElNotifications] = React.useState<null | HTMLElement>(null)
+const Header: React.FC<HeaderProps> = ({ open, drawerWidth, onToggleSidebar }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
-  const handleOpenUserMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElUser(event.currentTarget)
-  }
+  return (
+    <AppBar
+      position="fixed"
+      sx={{
+        width: { sm: open ? `calc(100% - ${drawerWidth}px)` : "100%" },
+        ml: { sm: open ? `${drawerWidth}px` : 0 },
+        transition: theme.transitions.create(["margin", "width"], {
+          easing: theme.transitions.easing.easeOut,
+          duration: theme.transitions.duration.enteringScreen,
+        }),
+        bgcolor: theme.palette.primary.main,
+        boxShadow: isDark
+          ? "0 4px 20px rgba(0,0,0,0.5)"
+          : "0 2px 10px rgba(0,0,0,0.1)",
+      }}
+    >
+      <Toolbar>
+        <IconButton
+          color="inherit"
+          aria-label="open drawer"
+          edge="start"
+          onClick={onToggleSidebar}
+          sx={{
+            mr: 2,
+            transition: "transform 0.2s",
+            "&:hover": { transform: "scale(1.1)" },
+          }}
+        >
+          <MenuIcon />
+        </IconButton>
+        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
+          Dashboard
+        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Tooltip title="Search">
+            <IconButton color="inherit">
+              <SearchIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Notifications">
+            <IconButton color="inherit">
+              <Badge badgeContent={4} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Profile">
+            <Avatar
+              sx={{
+                width: 36,
+                height: 36,
+                cursor: "pointer",
+                border: "2px solid white",
+                transition: "transform 0.2s",
+                "&:hover": { transform: "scale(1.1)" },
+              }}
+              alt="User"
+              src="/placeholder.svg?height=36&width=36"
+            />
+          </Tooltip>
+        </Box>
+      </Toolbar>
+    </AppBar>
+  );
+};
 
-  const handleCloseUserMenu = () => {
-    setAnchorElUser(null)
-  }
-
-  const handleOpenNotificationsMenu = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorElNotifications(event.currentTarget)
-  }
-
-  const handleCloseNotificationsMenu = () => {
-    setAnchorElNotifications(null)
-  }
-
-  // return (
-  //   <AppBar
-  //     position="fixed"
-  //     sx={{
-  //       zIndex: theme.zIndex.drawer + 1,
-  //       boxShadow: 1,
-  //       bgcolor: "background.paper",
-  //       color: "text.primary",
-  //     }}
-  //   >
-  //     <Toolbar>
-  //       <IconButton
-  //         color="inherit"
-  //         aria-label="toggle sidebar"
-  //         onClick={onToggleSidebar}
-  //         edge="start"
-  //         sx={{ mr: 2 }}
-  //       >
-  //         <MenuIcon />
-  //       </IconButton>
-  //       <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-  //         Dashboard
-  //       </Typography>
-  //       <Box sx={{ display: "flex", alignItems: "center" }}>
-  //         <IconButton
-  //           size="large"
-  //           aria-label="show notifications"
-  //           color="inherit"
-  //           onClick={handleOpenNotificationsMenu}
-  //         >
-  //           <Badge badgeContent={3} color="primary">
-  //             <NotificationsIcon />
-  //           </Badge>
-  //         </IconButton>
-  //         <Menu
-  //           sx={{ mt: "45px" }}
-  //           id="menu-notifications"
-  //           anchorEl={anchorElNotifications}
-  //           anchorOrigin={{
-  //             vertical: "top",
-  //             horizontal: "right",
-  //           }}
-  //           keepMounted
-  //           transformOrigin={{
-  //             vertical: "top",
-  //             horizontal: "right",
-  //           }}
-  //           open={Boolean(anchorElNotifications)}
-  //           onClose={handleCloseNotificationsMenu}
-  //         >
-  //           <MenuItem>
-  //             <Box sx={{ width: 320 }}>
-  //               <Typography variant="subtitle1" fontWeight="bold">
-  //                 Notificação 1
-  //               </Typography>
-  //               <Typography variant="body2" color="text.secondary">
-  //                 Detalhes da notificação.
-  //               </Typography>
-  //               <Typography variant="caption" color="text.secondary">
-  //                 Há 1 hora
-  //               </Typography>
-  //             </Box>
-  //           </MenuItem>
-  //           <Divider />
-  //           <MenuItem>
-  //             <Box sx={{ width: 320 }}>
-  //               <Typography variant="subtitle1" fontWeight="bold">
-  //                 Notificação 2
-  //               </Typography>
-  //               <Typography variant="body2" color="text.secondary">
-  //                 Detalhes da notificação.
-  //               </Typography>
-  //               <Typography variant="caption" color="text.secondary">
-  //                 Há 2 dias
-  //               </Typography>
-  //             </Box>
-  //           </MenuItem>
-  //         </Menu>
-  //         <IconButton onClick={handleOpenUserMenu} sx={{ p: 0, ml: 2 }}>
-  //           <Avatar alt="Usuário" src="/placeholder.svg?height=40&width=40" />
-  //         </IconButton>
-  //         <Menu
-  //           sx={{ mt: "45px" }}
-  //           id="menu-appbar"
-  //           anchorEl={anchorElUser}
-  //           anchorOrigin={{
-  //             vertical: "top",
-  //             horizontal: "right",
-  //           }}
-  //           keepMounted
-  //           transformOrigin={{
-  //             vertical: "top",
-  //             horizontal: "right",
-  //           }}
-  //           open={Boolean(anchorElUser)}
-  //           onClose={handleCloseUserMenu}
-  //         >
-  //           <MenuItem onClick={handleCloseUserMenu}>
-  //             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-  //               <PersonIcon fontSize="small" />
-  //               <Typography textAlign="center">Perfil</Typography>
-  //             </Box>
-  //           </MenuItem>
-  //           <MenuItem onClick={handleCloseUserMenu}>
-  //             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-  //               <SettingsIcon fontSize="small" />
-  //               <Typography textAlign="center">Configurações</Typography>
-  //             </Box>
-  //           </MenuItem>
-  //           <Divider />
-  //           <MenuItem onClick={handleCloseUserMenu}>
-  //             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-  //               <LogoutIcon fontSize="small" />
-  //               <Typography textAlign="center">Sair</Typography>
-  //             </Box>
-  //           </MenuItem>
-  //         </Menu>
-  //       </Box>
-  //     </Toolbar>
-  //   </AppBar>
-  // )
-}
+export default Header;

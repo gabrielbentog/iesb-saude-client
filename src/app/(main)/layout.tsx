@@ -1,29 +1,66 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
-import Box from "@mui/material/Box"
-import Sidebar from "@/app/components/Sidebar"
-import Header from "@/app/components/Header"
+import React, { useState } from "react";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { ThemeProvider } from "@mui/material/styles";
+import Header from "../components/Header";
+import Sidebar from "../components/Sidebar";
+import { lightTheme, darkTheme } from "../theme/theme";
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
-  const [open, setOpen] = useState(true)
+interface MainLayoutProps {
+  children: React.ReactNode;
+}
 
-  const toggleSidebar = () => {
-    setOpen((prev) => !prev)
-  }
+const drawerWidth = 260;
+
+const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
+  const defaultTheme = useTheme();
+  const isMobile = useMediaQuery(defaultTheme.breakpoints.down("md"));
+  const [open, setOpen] = useState(!isMobile);
+  const [darkMode, setDarkMode] = useState(false);
+
+  const handleDrawerToggle = () => {
+    setOpen(!open);
+  };
+
+  const handleDarkModeToggle = () => {
+    setDarkMode(!darkMode);
+  };
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
-      <Box sx={{ width: open ? 240 : 64, transition: "width 0.3s", flexShrink: 0 }}>
-        <Sidebar open={open} onClose={toggleSidebar} />
-      </Box>
-
-      <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column" }}>
-        {/* <Header onToggleSidebar={toggleSidebar} /> */}
-        <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+    <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
+      <Box sx={{ display: "flex" }}>
+        <Header open={open} drawerWidth={drawerWidth} onToggleSidebar={handleDrawerToggle} />
+        <Sidebar
+          open={open}
+          drawerWidth={drawerWidth}
+          onToggleSidebar={handleDrawerToggle}
+          darkMode={darkMode}
+          onToggleDarkMode={handleDarkModeToggle}
+        />
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            // Removemos a margem e a largura fixa para que o conteúdo ocupe toda a área disponível
+            width: "100%",
+            transition: defaultTheme.transitions.create(["margin", "width"], {
+              easing: defaultTheme.transitions.easing.easeOut,
+              duration: defaultTheme.transitions.duration.enteringScreen,
+            }),
+            // Ajusta o padding-top para compensar o Header fixo
+            pt: "calc(64px + 16px)",
+            bgcolor: defaultTheme.palette.background.default,
+            color: defaultTheme.palette.text.primary,
+            minHeight: "100vh",
+          }}
+        >
           {children}
         </Box>
       </Box>
-    </Box>
-  )
-}
+    </ThemeProvider>
+  );
+};
+
+export default MainLayout;
