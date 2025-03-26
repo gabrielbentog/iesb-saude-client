@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, Toolbar, useMediaQuery, useTheme } from "@mui/material";
 import { ThemeProvider } from "@mui/material/styles";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -31,7 +31,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <ThemeProvider theme={darkMode ? darkTheme : lightTheme}>
       <Box sx={{ display: "flex" }}>
-        <Header open={open} drawerWidth={drawerWidth} onToggleSidebar={handleDrawerToggle} />
+        <Header
+          open={open}
+          drawerWidth={drawerWidth}
+          onToggleSidebar={handleDrawerToggle}
+        />
         <Sidebar
           open={open}
           drawerWidth={drawerWidth}
@@ -43,20 +47,28 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            // Removemos a margem e a largura fixa para que o conteúdo ocupe toda a área disponível
-            width: "100%",
+            ...(isMobile
+              ? {
+                  width: "100%",
+                  ml: 0,
+                }
+              : {
+                  width: `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
+                  ml: `30px`,
+                }),
             transition: defaultTheme.transitions.create(["margin", "width"], {
               easing: defaultTheme.transitions.easing.easeOut,
               duration: defaultTheme.transitions.duration.enteringScreen,
             }),
-            // Ajusta o padding-top para compensar o Header fixo
-            pt: "calc(64px + 16px)",
+            // Aumente o calc() abaixo para dar mais espaço
+            pt: "calc(64px + 60px)", 
             bgcolor: defaultTheme.palette.background.default,
             color: defaultTheme.palette.text.primary,
             minHeight: "100vh",
+            p: 3,
           }}
         >
+          <Toolbar /> 
           {children}
         </Box>
       </Box>

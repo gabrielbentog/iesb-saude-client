@@ -34,6 +34,7 @@ import {
   Bookmark as BookmarkIcon,
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
+import { useRouter } from "next/navigation";
 
 interface SidebarProps {
   open: boolean;
@@ -53,6 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [openNested, setOpenNested] = useState(false);
+  const router = useRouter();
 
   const handleNestedClick = () => {
     setOpenNested(!openNested);
@@ -102,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <DashboardIcon />
             </Avatar>
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              AppName
+              IESB Saúde
             </Typography>
           </Box>
         )}
@@ -148,11 +150,13 @@ const Sidebar: React.FC<SidebarProps> = ({
             icon: <HomeIcon />,
             text: "Dashboard",
             active: true,
+            path: "/home/paciente",
           },
           {
             icon: <InboxIcon />,
-            text: "Inbox",
+            text: "Calendário",
             badge: 3,
+            path: "/calendario"
           },
           {
             icon: <MailIcon />,
@@ -166,8 +170,14 @@ const Sidebar: React.FC<SidebarProps> = ({
         ].map((item, index) => (
           <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? item.text : ""} placement="right">
-              <ListItemButton
-                onClick={item.expandable ? handleNestedClick : undefined}
+            <ListItemButton
+              onClick={() => {
+                if (item.expandable) {
+                  handleNestedClick();
+                } else if (item.path) {
+                  router.push(item.path); // redireciona!
+                }
+              }}
                 sx={{
                   borderRadius: 1.5,
                   bgcolor: item.active ? activeColor : "transparent",
@@ -274,7 +284,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             variant="caption"
             sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center" }}
           >
-            © 2025 AppName Inc.
+            © 2025 IESB Saúde Inc.
           </Typography>
           <Typography
             variant="caption"
