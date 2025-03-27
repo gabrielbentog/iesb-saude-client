@@ -100,14 +100,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         }}
       >
         {open && (
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Avatar sx={{ bgcolor: primaryColor, width: 40, height: 40 }}>
-              <DashboardIcon />
-            </Avatar>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <img src="/logos/iesb.png" alt="IESB Saúde" width="32" height="32" />
             <Typography variant="h6" sx={{ fontWeight: 700 }}>
               IESB Saúde
             </Typography>
-          </Box>
+            </Box>
         )}
         <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
           <ChevronLeftIcon />

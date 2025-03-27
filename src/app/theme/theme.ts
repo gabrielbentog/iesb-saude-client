@@ -58,38 +58,47 @@ export const lightTheme = createTheme({
 })
 
 export const darkTheme = createTheme({
-  ...baseTheme,
   palette: {
-    mode: 'dark',
+    mode: "dark",
     primary: {
-      main: '#90caf9',
-      dark: '#5d99c6',
-      light: '#e3f2fd',
-      contrastText: '#000',
+      main: "#e53935",          // vermelho intenso
+      light: "#ff6f60",         // vermelho claro
+      dark: "#ab000d",          // vermelho escuro
+      contrastText: "#ffffff",  // texto branco
     },
     secondary: {
-      main: '#ce93d8',
+      main: "#424242",          // cinza para contrastar com o vermelho
     },
     background: {
-      default: '#121212',
-      paper: '#1e1e1e',
+      default: "#0d0d0d",       // quase preto
+      paper: "#1a1a1a",         // painel um pouco mais claro
     },
     text: {
-      primary: '#ffffff',
-      secondary: '#cccccc',
+      primary: "#ffffff",       // texto principal branco
+      secondary: "#b0b0b0",     // texto secundário cinza
     },
-    divider: '#333',
+    divider: "#2e2e2e",         // divisores discretos
     success: {
-      main: '#81c784',
+      main: "#66bb6a",
     },
     warning: {
-      main: '#ffb74d',
+      main: "#ffa726",
     },
     error: {
-      main: '#ef5350',
+      main: "#f44336",
     },
     info: {
-      main: '#4fc3f7',
+      main: "#29b6f6",
     },
   },
-})
+  components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: "none",
+        },
+      },
+    },
+  },
+});
+
