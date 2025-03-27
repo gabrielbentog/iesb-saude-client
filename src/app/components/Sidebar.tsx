@@ -23,11 +23,10 @@ import { useTheme } from "@mui/material/styles";
 import {
   ChevronLeft as ChevronLeftIcon,
   Home as HomeIcon,
-  Mail as MailIcon,
+  Logout as LogoutIcon,
   Inbox as InboxIcon,
+  CalendarToday as CalendarIcon,
   Settings as SettingsIcon,
-  ExpandLess,
-  ExpandMore,
   StarBorder,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
@@ -35,6 +34,7 @@ import {
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 
 interface SidebarProps {
   open: boolean;
@@ -69,6 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const activeColor = theme.palette.action.selected;
   const primaryColor = theme.palette.primary.main;
   const dividerColor = theme.palette.divider;
+  const pathname = usePathname();
 
   return (
     <Drawer
@@ -145,42 +146,32 @@ const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <List sx={{ px: 1 }}>
-        {[
-          {
-            icon: <HomeIcon />,
-            text: "Dashboard",
-            active: true,
-            path: "/home/paciente",
-          },
-          {
-            icon: <InboxIcon />,
-            text: "Calendário",
-            badge: 3,
-            path: "/calendario"
-          },
-          {
-            icon: <MailIcon />,
-            text: "Messages",
-            expandable: true,
-          },
-          {
-            icon: <PersonIcon />,
-            text: "Profile",
-          },
-        ].map((item, index) => (
+      {[
+        {
+          icon: <HomeIcon />,
+          text: "Dashboard",
+          path: "/home/paciente",
+        },
+        {
+          icon: <CalendarIcon />,
+          text: "Calendário",
+          path: "/calendario"
+        },
+      ].map((item, index) => {
+        const isActive = pathname === item.path;
+
+        return (
           <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? item.text : ""} placement="right">
-            <ListItemButton
-              onClick={() => {
-                if (item.expandable) {
-                  handleNestedClick();
-                } else if (item.path) {
-                  router.push(item.path); // redireciona!
-                }
-              }}
+              <ListItemButton
+                onClick={() => {
+                  if (item.path) {
+                    router.push(item.path);
+                  }
+                }}
                 sx={{
                   borderRadius: 1.5,
-                  bgcolor: item.active ? activeColor : "transparent",
+                  bgcolor: isActive ? activeColor : "transparent",
                   "&:hover": { bgcolor: hoverColor },
                   justifyContent: open ? "flex-start" : "center",
                   px: 2,
@@ -193,17 +184,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                 {open && (
                   <ListItemText
                     primary={item.text}
-                    primaryTypographyProps={{ fontWeight: item.active ? 600 : 500 }}
+                    primaryTypographyProps={{ fontWeight: isActive ? 600 : 500 }}
                   />
                 )}
-                {item.badge && open && (
-                  <Badge badgeContent={item.badge} color="primary" sx={{ ml: "auto", mr: 1 }} />
-                )}
-                {item.expandable && open && (openNested ? <ExpandLess /> : <ExpandMore />)}
               </ListItemButton>
             </Tooltip>
           </ListItem>
-        ))}
+        );
+      })}
 
         {/* Expandable nested items */}
         {open && (
@@ -226,74 +214,117 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Collapse>
         )}
       </List>
-
-      <Divider sx={{ my: 1.5, borderColor: dividerColor }} />
-
-      <List sx={{ px: 1 }}>
-        <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <Tooltip title={!open ? "Settings" : ""} placement="right">
-            <ListItemButton
-              sx={{
-                borderRadius: 1.5,
-                "&:hover": { bgcolor: hoverColor },
-                justifyContent: open ? "flex-start" : "center",
-                px: 2,
-                py: 1,
-              }}
-            >
-              <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                <SettingsIcon />
-              </ListItemIcon>
-              {open && (
-                <ListItemText primary="Settings" primaryTypographyProps={{ fontWeight: 500 }} />
-              )}
-            </ListItemButton>
-          </Tooltip>
-        </ListItem>
-
-        <ListItem
-          sx={{
-            borderRadius: 1.5,
-            mt: 1,
-            px: 2,
-            justifyContent: open ? "flex-start" : "center",
-            "&:hover": { bgcolor: hoverColor },
-          }}
-        >
-        <Tooltip title={!open ? "Dark Mode" : ""} placement="right">
-          <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-            <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-              <DarkModeIcon />
-            </ListItemIcon>
-            {open && (
-              <>
-                <ListItemText primary="Dark Mode" primaryTypographyProps={{ fontWeight: 500 }} />
-                <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
-              </>
-            )}
-          </Box>
-        </Tooltip>
-        </ListItem>
-      </List>
-
+      
       <Box sx={{ flexGrow: 1 }} />
 
-      {open && (
-        <Box sx={{ p: 2, borderTop: `1px solid ${dividerColor}`, mt: 2 }}>
-          <Typography
-            variant="caption"
-            sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center" }}
+      <Box sx={{ p: 2, borderTop: `1px solid ${dividerColor}` }}>
+        <List sx={{ p: 0 }}>
+          {/* Modo Escuro */}
+          <ListItem
+            sx={{
+              borderRadius: 1.5,
+              mb: 0.5,
+              px: 2,
+              justifyContent: open ? "flex-start" : "center",
+              "&:hover": { bgcolor: hoverColor },
+            }}
           >
-            © 2025 IESB Saúde Inc.
-          </Typography>
-          <Typography
-            variant="caption"
-            sx={{ color: theme.palette.text.secondary, display: "block", textAlign: "center", mt: 0.5 }}
-          >
-            v1.0.0
-          </Typography>
-        </Box>
-      )}
+            <Tooltip title={!open ? "Modo Escuro" : ""} placement="right">
+              <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  <DarkModeIcon />
+                </ListItemIcon>
+                {open && (
+                  <>
+                    <ListItemText primary="Modo Escuro" primaryTypographyProps={{ fontWeight: 500 }} />
+                    <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
+                  </>
+                )}
+              </Box>
+            </Tooltip>
+          </ListItem>
+
+          {/* Perfil */}
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <Tooltip title={!open ? "Perfil" : ""} placement="right">
+              <ListItemButton
+                onClick={() => router.push("/perfil")}
+                sx={{
+                  borderRadius: 1.5,
+                  bgcolor: pathname === "/perfil" ? activeColor : "transparent",
+                  "&:hover": { bgcolor: hoverColor },
+                  justifyContent: open ? "flex-start" : "center",
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  <PersonIcon />
+                </ListItemIcon>
+                {open && (
+                  <ListItemText
+                    primary="Perfil"
+                    primaryTypographyProps={{ fontWeight: pathname === "/perfil" ? 600 : 500 }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+
+          {/* Configurações */}
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <Tooltip title={!open ? "Configurações" : ""} placement="right">
+              <ListItemButton
+                onClick={() => router.push("/configuracoes")}
+                sx={{
+                  borderRadius: 1.5,
+                  bgcolor: pathname === "/configuracoes" ? activeColor : "transparent",
+                  "&:hover": { bgcolor: hoverColor },
+                  justifyContent: open ? "flex-start" : "center",
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  <SettingsIcon />
+                </ListItemIcon>
+                {open && (
+                  <ListItemText
+                    primary="Configurações"
+                    primaryTypographyProps={{ fontWeight: pathname === "/configuracoes" ? 600 : 500 }}
+                  />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+
+          {/* Sair */}
+          <ListItem disablePadding>
+            <Tooltip title={!open ? "Sair" : ""} placement="right">
+              <ListItemButton
+                onClick={() => {
+                  router.push("/auth/login");
+                }}
+                sx={{
+                  borderRadius: 1.5,
+                  "&:hover": { bgcolor: hoverColor },
+                  justifyContent: open ? "flex-start" : "center",
+                  px: 2,
+                  py: 1,
+                }}
+              >
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  <LogoutIcon />
+                </ListItemIcon>
+                {open && (
+                  <ListItemText primary="Sair" primaryTypographyProps={{ fontWeight: 500 }} />
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
+        </List>
+      </Box>
+
     </Drawer>
   );
 };

@@ -37,7 +37,7 @@ export default function LoginPage() {
         loggedIn: true,
       }
       localStorage.setItem("session", JSON.stringify(sessionData))
-      router.push("/home")
+      router.push("/home/paciente")
     }
   }
 

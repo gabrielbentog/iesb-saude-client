@@ -49,10 +49,10 @@ export default function PatientDashboard() {
       >
         <Box>
           <Typography variant="h5" fontWeight={600}>
-            👋 Olá, João Paulo
+            Olá, João Paulo
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Terça-feira, 19 de Março • Seu painel pessoal
+            Terça-feira, 19 de Março
           </Typography>
         </Box>
 
