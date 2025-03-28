@@ -1,12 +1,14 @@
-import type React from "react"
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// components/ThemeWrapper.tsx
+"use client"
+import { ThemeProvider } from "@mui/material/styles"
+import { CssBaseline } from "@mui/material"
+import { lightTheme } from "@/app/theme/theme"
+
+export default function ThemeWrapper({ children }: { children: React.ReactNode }) {
   return (
-    <div className="auth-container">
-      <>{children}</>
-    </div>
-  );
+    <ThemeProvider theme={lightTheme}>
+      <CssBaseline />
+      {children}
+    </ThemeProvider>
+  )
 }

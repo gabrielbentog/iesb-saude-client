@@ -21,6 +21,7 @@ import { useTheme } from "@mui/material/styles"
 import { Visibility, VisibilityOff, School, ArrowBack } from "@mui/icons-material"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { apiFetch } from "@/app/lib/api"
 
 export default function RegisterPage() {
   const theme = useTheme()
@@ -66,9 +67,9 @@ export default function RegisterPage() {
     }
   }
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-
+  
     if (formData.password !== formData.confirmPassword) {
       setErrors((prev) => ({
         ...prev,
@@ -76,9 +77,29 @@ export default function RegisterPage() {
       }))
       return
     }
+  
+    try {
+      const response = await apiFetch<{ user: object; token: string }>("/users", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user: {
+            name: formData.name,
+            email: formData.email,
+            password: formData.password,
+            passwordConfirmation: formData.confirmPassword,
+          }
+        }),
+      })
 
-    console.log("Cadastro realizado:", formData)
-    // router.push('/auth/login') // Redirecionamento pós-cadastro
+      localStorage.setItem("session", JSON.stringify({ user: response.user, loggedIn: true, token: response.token }))
+  
+      router.push("/home/paciente")
+    } catch (error: any) {
+      alert("Erro ao cadastrar: " + error.message)
+    }
   }
 
   const goToLogin = () => router.push("/auth/login")
@@ -257,12 +278,12 @@ export default function RegisterPage() {
                   opacity: 0.2,
                 }}
               >
-                <Image
-                  src="/placeholder.svg?height=600&width=600"
+                {/* <Image
+                  src=""
                   alt="IESB illustration"
                   layout="fill"
                   objectFit="cover"
-                />
+                /> */}
               </Box>
             </Grid>
           </Grid>

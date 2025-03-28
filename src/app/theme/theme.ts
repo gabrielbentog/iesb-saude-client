@@ -77,7 +77,7 @@ export const darkTheme = createTheme({
       primary: "#ffffff",       // texto principal branco
       secondary: "#b0b0b0",     // texto secundário cinza
     },
-    divider: "#2e2e2e",         // divisores discretos
+    divider: "#2e2e2e",       // divisor cinza
     success: {
       main: "#66bb6a",
     },

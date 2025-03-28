@@ -112,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </IconButton>
       </Box>
 
-      {open && (
+      {/* {open && (
         <Box sx={{ p: 2 }}>
           <Paper
             elevation={0}
@@ -141,7 +141,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             </Box>
           </Paper>
         </Box>
-      )}
+      )} */}
 
       <List sx={{ px: 1 }}>
       {[
@@ -302,6 +302,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <ListItemButton
                 onClick={() => {
                   router.push("/auth/login");
+                  localStorage.removeItem("session");
                 }}
                 sx={{
                   borderRadius: 1.5,

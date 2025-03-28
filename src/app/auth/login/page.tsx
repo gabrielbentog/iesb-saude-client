@@ -18,6 +18,7 @@ import {
 import { useTheme } from "@mui/material/styles"
 import { Visibility, VisibilityOff, School } from "@mui/icons-material"
 import Image from "next/image"
+import { apiFetch } from "@/app/lib/api"
 
 export default function LoginPage() {
   const theme = useTheme()
@@ -28,18 +29,31 @@ export default function LoginPage() {
 
   const handleClickShowPassword = () => setShowPassword(!showPassword)
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault()
-    if (email && password) {
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+  
+    try {
+      const response = await apiFetch<{ token: string; user: string }>('/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+  
       const sessionData = {
-        email,
-        token: "dummy-token",
+        user: response.user,
+        token: response.token,
         loggedIn: true,
-      }
-      localStorage.setItem("session", JSON.stringify(sessionData))
-      router.push("/home/paciente")
+      };
+  
+      localStorage.setItem("session", JSON.stringify(sessionData));
+      router.push("/home/paciente");
+  
+    } catch (error: any) {
+      alert("Erro no login: " + error.message); // Aqui você pode substituir por um snackbar/toast
     }
-  }
+  };
 
   return (
     <>
@@ -157,7 +171,7 @@ export default function LoginPage() {
                 }}
               >
                 <Image
-                  src="/placeholder.svg?height=600&width=600"
+                  src="/"
                   alt="IESB illustration"
                   layout="fill"
                   objectFit="cover"
