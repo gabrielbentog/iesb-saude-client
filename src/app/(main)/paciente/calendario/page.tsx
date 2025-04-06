@@ -18,18 +18,8 @@ import {
   useTheme,
   IconButton,
   Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Fade,
-  Popper,
-  Card,
-  CardContent,
-  CardActions,
   Badge,
   Divider,
-  Grid,
   Tabs,
   Tab,
   useMediaQuery,
@@ -562,7 +552,7 @@ export default function EnhancedCalendar() {
             {(Object.keys(categoryConfig) as EventCategory[]).map((category) => (
               <Chip
                 key={category}
-                icon={categoryConfig[category].icon}
+                icon={React.isValidElement(categoryConfig[category].icon) ? categoryConfig[category].icon : undefined}
                 label={category.charAt(0).toUpperCase() + category.slice(1)}
                 sx={{
                   bgcolor: categoryConfig[category].color,

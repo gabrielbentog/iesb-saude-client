@@ -20,7 +20,6 @@ import {
 interface HeaderProps {
   open: boolean;
   drawerWidth: number;
-  onToggleSidebar: () => void; // Added the missing property
 }
 
 interface UserData {
@@ -43,6 +42,7 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
       const data = JSON.parse(session);
       const userData = data.user || null;
       setUser(userData);
+      console.log("User data:", userData);
     }
   }, []);
 

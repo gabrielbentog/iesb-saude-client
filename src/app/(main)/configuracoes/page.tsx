@@ -4,13 +4,15 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Switch,
-  TextField,
   FormControlLabel,
   Button,
   Divider,
   useTheme,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import { useState } from "react";
 
@@ -23,11 +25,11 @@ export default function ConfiguracoesPage() {
   const [twoFactor, setTwoFactor] = useState(false);
 
   const handleSave = () => {
-    // Exemplo de ação
     console.log({
       language,
       darkMode,
       emailNotif,
+      twoFactor
     });
   };
 
@@ -41,6 +43,7 @@ export default function ConfiguracoesPage() {
       </Typography>
 
       <Paper elevation={1} sx={{ p: 4, borderRadius: 3 }}>
+        {/* Preferências do Sistema */}
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Preferências do Sistema
@@ -48,36 +51,32 @@ export default function ConfiguracoesPage() {
           <Divider sx={{ mt: 1 }} />
         </Box>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
-            <TextField
-              fullWidth
-              label="Idioma"
-              select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              SelectProps={{ native: true }}
-            >
-              <option value="pt-BR">Português (Brasil)</option>
-              <option value="en-US">English (US)</option>
-              <option value="es-ES">Español</option>
-            </TextField>
-          </Grid>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 4,
+          }}
+        >
+          <Box>
+            <FormControl fullWidth>
+              <InputLabel id="language-label">Idioma</InputLabel>
+              <Select
+                labelId="language-label"
+                id="language-select"
+                value={language}
+                label="Idioma"
+                onChange={(e) => setLanguage(e.target.value)}
+              >
+                <MenuItem value="pt-BR">Português (Brasil)</MenuItem>
+                <MenuItem value="en-US">English (US)</MenuItem>
+                <MenuItem value="es-ES">Español</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
 
-          <Grid item xs={12} md={6}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={darkMode}
-                  onChange={() => setDarkMode((prev) => !prev)}
-                />
-              }
-              label="Ativar modo escuro"
-              sx={{ mt: 1 }}
-            />
-          </Grid>
-        </Grid>
-
+        {/* Notificações */}
         <Box sx={{ mt: 5, mb: 3 }}>
           <Typography variant="h6" fontWeight={600}>
             Notificações
@@ -85,8 +84,14 @@ export default function ConfiguracoesPage() {
           <Divider sx={{ mt: 1 }} />
         </Box>
 
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gap: 4,
+          }}
+        >
+          <Box>
             <FormControlLabel
               control={
                 <Switch
@@ -97,41 +102,48 @@ export default function ConfiguracoesPage() {
               label="Receber notificações por e-mail"
               sx={{ mt: 1 }}
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
 
-      <Box sx={{ mt: 5, mb: 3 }}>
-        <Typography variant="h6" fontWeight={600}>
-          Segurança
-        </Typography>
-        <Divider sx={{ mt: 1 }} />
-      </Box>
-
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={8}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={twoFactor}
-                onChange={() => setTwoFactor((prev) => !prev)}
-              />
-            }
-            label="Ativar autenticação de dois fatores (2FA)"
-            sx={{ mt: 1 }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            A autenticação de dois fatores adiciona uma camada extra de segurança à sua conta.
+        {/* Segurança */}
+        <Box sx={{ mt: 5, mb: 3 }}>
+          <Typography variant="h6" fontWeight={600}>
+            Segurança
           </Typography>
+          <Divider sx={{ mt: 1 }} />
+        </Box>
 
-          {twoFactor && (
-            <Box sx={{ mt: 2 }}>
-              <Button variant="outlined" size="small" onClick={() => console.log("Configurar 2FA")}>
-                Configurar agora
-              </Button>
-            </Box>
-          )}
-        </Grid>
-      </Grid>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "1fr", md: "1fr 2fr" },
+            gap: 4,
+          }}
+        >
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={twoFactor}
+                  onChange={() => setTwoFactor((prev) => !prev)}
+                />
+              }
+              label="Ativar autenticação de dois fatores (2FA)"
+              sx={{ mt: 1 }}
+            />
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              A autenticação de dois fatores adiciona uma camada extra de segurança à sua conta.
+            </Typography>
+
+            {twoFactor && (
+              <Box sx={{ mt: 2 }}>
+                <Button variant="outlined" size="small" onClick={() => console.log("Configurar 2FA")}>
+                  Configurar agora
+                </Button>
+              </Box>
+            )}
+          </Box>
+        </Box>
 
         <Box sx={{ mt: 6 }}>
           <Button variant="contained" size="large" onClick={handleSave}>

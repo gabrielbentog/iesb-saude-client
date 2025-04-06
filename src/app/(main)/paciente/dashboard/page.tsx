@@ -1,30 +1,30 @@
-"use client"
+"use client";
 
-import React, { useState } from "react"
+import React, { useState } from "react";
 import {
   Box,
   Typography,
   Button,
   Card,
-  Grid,
   Tabs,
   Tab,
   useMediaQuery,
   Chip,
-} from "@mui/material"
-import { useTheme } from "@mui/material/styles"
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"
-import AccessTimeIcon from "@mui/icons-material/AccessTime"
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital"
+} from "@mui/material";
+import { useTheme } from "@mui/material/styles";
+
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+import AccessTimeIcon from "@mui/icons-material/AccessTime";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 
 export default function PatientDashboard() {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const [tabValue, setTabValue] = useState(0)
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [tabValue, setTabValue] = useState(0);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue)
-  }
+    setTabValue(newValue);
+  };
 
   return (
     <Box
@@ -48,7 +48,7 @@ export default function PatientDashboard() {
         }}
       >
         <Box>
-          <Typography variant="h5" fontWeight={600}>
+          <Typography variant="h4" fontWeight={700} gutterBottom>
             Olá, João Paulo
           </Typography>
           <Typography variant="body2" color="text.secondary">
@@ -56,18 +56,21 @@ export default function PatientDashboard() {
           </Typography>
         </Box>
 
+        {/* Botão principal */}
         <Button
-          variant="outlined"
+          variant="contained"
+          color="primary"
           sx={{
-            borderRadius: "999px",
             textTransform: "none",
-            px: 3,
-            py: 1,
-            fontWeight: 500,
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
+            borderRadius: "999px",
+            px: 4,
+            py: 1.2,
+            fontWeight: 600,
+            boxShadow: theme.shadows[3],
+            transition: "transform 0.2s",
             "&:hover": {
-              backgroundColor: theme.palette.action.hover,
+              transform: "translateY(-2px)",
+              boxShadow: theme.shadows[5],
             },
           }}
         >
@@ -75,103 +78,124 @@ export default function PatientDashboard() {
         </Button>
       </Box>
 
-      {/* Cards */}
-      <Grid container spacing={4}>
+      {/* Seção de cartões (usando Box + CSS Grid) */}
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+          gap: 4,
+        }}
+      >
         {/* Card 1 - Próxima Consulta */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <LocalHospitalIcon fontSize="small" color="primary" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1" fontWeight={600}>
-                Próxima Consulta
-              </Typography>
-              <Chip
-                label="Confirmada"
-                color="success"
-                size="small"
-                sx={{ ml: "auto", fontWeight: 500 }}
-              />
-            </Box>
-
-            <Typography variant="body1" fontWeight={500}>
-              Clínica Mais Saúde
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: 3,
+            background: `linear-gradient(135deg, ${
+              theme.palette.background.paper
+            } 0%, ${
+              theme.palette.mode === "dark" ? "#2B2B2B" : "#f3f3f3"
+            } 100%)`,
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[1],
+            transition: "transform 0.2s, box-shadow 0.2s",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: theme.shadows[4],
+            },
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <LocalHospitalIcon fontSize="small" color="primary" sx={{ mr: 1 }} />
+            <Typography variant="subtitle1" fontWeight={600}>
+              Próxima Consulta
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Avenida Paulista, 1234 • São Paulo
-            </Typography>
+            <Chip
+              label="Confirmada"
+              color="success"
+              size="small"
+              sx={{ ml: "auto", fontWeight: 500 }}
+            />
+          </Box>
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AccessTimeIcon fontSize="small" color="action" />
-              <Typography variant="body2">Hoje às 14:00</Typography>
-              <Chip
-                label="4h restantes"
-                size="small"
-                sx={{
-                  ml: "auto",
-                  bgcolor: theme.palette.primary.light,
-                  color: theme.palette.primary.contrastText,
-                  fontWeight: 500,
-                }}
-              />
-            </Box>
-          </Card>
-        </Grid>
+          <Typography variant="body1" fontWeight={500}>
+            Clínica Mais Saúde
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            Avenida Paulista, 1234 • São Paulo
+          </Typography>
+
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <AccessTimeIcon fontSize="small" color="action" />
+            <Typography variant="body2">Hoje às 14:00</Typography>
+            <Chip
+              label="4h restantes"
+              size="small"
+              sx={{
+                ml: "auto",
+                bgcolor: theme.palette.primary.light,
+                color: theme.palette.primary.contrastText,
+                fontWeight: 500,
+              }}
+            />
+          </Box>
+        </Card>
 
         {/* Card 2 - Acesso Rápido */}
-        <Grid item xs={12} md={6}>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <CalendarMonthIcon fontSize="small" color="secondary" sx={{ mr: 1 }} />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Acesso Rápido
-                </Typography>
-              </Box>
-              <Typography variant="body2" color="text.secondary">
-                Visualize e gerencie suas consultas através do calendário interativo.
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: 3,
+            background: `linear-gradient(135deg, ${
+              theme.palette.background.paper
+            } 0%, ${
+              theme.palette.mode === "dark" ? "#2B2B2B" : "#f3f3f3"
+            } 100%)`,
+            border: `1px solid ${theme.palette.divider}`,
+            boxShadow: theme.shadows[1],
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            transition: "transform 0.2s, box-shadow 0.2s",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: theme.shadows[4],
+            },
+          }}
+        >
+          <Box>
+            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+              <CalendarMonthIcon fontSize="small" color="secondary" sx={{ mr: 1 }} />
+              <Typography variant="subtitle1" fontWeight={600}>
+                Acesso Rápido
               </Typography>
             </Box>
+            <Typography variant="body2" color="text.secondary">
+              Visualize e gerencie suas consultas através do calendário interativo.
+            </Typography>
+          </Box>
 
-            <Button
-              startIcon={<CalendarMonthIcon fontSize="small" />}
-              variant="text"
-              sx={{
-                mt: 3,
-                textTransform: "none",
-                fontWeight: 500,
-                alignSelf: "flex-start",
-                px: 0,
-                color: theme.palette.secondary.main,
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Ver Calendário
-            </Button>
-          </Card>
-        </Grid>
-      </Grid>
+          <Button
+            startIcon={<CalendarMonthIcon fontSize="small" />}
+            variant="text"
+            sx={{
+              mt: 3,
+              textTransform: "none",
+              fontWeight: 500,
+              alignSelf: "flex-start",
+              px: 0,
+              color: theme.palette.secondary.main,
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            }}
+          >
+            Ver Calendário
+          </Button>
+        </Card>
+      </Box>
 
-      {/* Tabs */}
+      {/* Seção de Tabs */}
       <Box sx={{ mt: 6 }}>
         <Typography variant="h6" fontWeight={600} gutterBottom>
           Consultas
@@ -210,10 +234,11 @@ export default function PatientDashboard() {
         </Box>
       </Box>
 
-      {/* Floating Button - Mobile */}
+      {/* Floating Button (Mobile) */}
       {isMobile && (
         <Button
           variant="contained"
+          color="primary"
           sx={{
             position: "fixed",
             bottom: 16,
@@ -224,11 +249,16 @@ export default function PatientDashboard() {
             textTransform: "none",
             fontWeight: 500,
             boxShadow: theme.shadows[4],
+            transition: "transform 0.2s",
+            "&:hover": {
+              transform: "translateY(-2px)",
+              boxShadow: theme.shadows[6],
+            },
           }}
         >
           Agendar
         </Button>
       )}
     </Box>
-  )
+  );
 }

@@ -34,7 +34,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         <Header
           open={open}
           drawerWidth={drawerWidth}
-          onToggleSidebar={handleDrawerToggle}
         />
         <Sidebar
           open={open}

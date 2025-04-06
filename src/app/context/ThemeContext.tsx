@@ -1,7 +1,6 @@
-// src/context/ThemeContext.tsx
 'use client'
 
-import { createContext, useContext, useState, useMemo, ReactNode } from 'react'
+import { createContext, useContext, useState, useMemo, ReactNode, useEffect, useState as useStateReact } from 'react'
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material'
 import { lightTheme, darkTheme } from '@/app/theme/theme'
 
@@ -20,10 +19,20 @@ export const useThemeContext = () => {
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [isDark, setIsDark] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const toggleTheme = () => setIsDark(prev => !prev)
 
   const theme = useMemo(() => (isDark ? darkTheme : lightTheme), [isDark])
+
+  useEffect(() => {
+    // Garantir que o CssBaseline só seja aplicado no lado do cliente
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <>{children}</> // Renderiza o conteúdo sem CssBaseline no primeiro render
+  }
 
   return (
     <ThemeContext.Provider value={{ toggleTheme, isDark }}>

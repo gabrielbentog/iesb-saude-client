@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Drawer,
@@ -22,6 +22,7 @@ import {
 import { useTheme } from "@mui/material/styles";
 import {
   ChevronLeft as ChevronLeftIcon,
+  ChevronRight as ChevronRightIcon,
   Home as HomeIcon,
   Logout as LogoutIcon,
   Inbox as InboxIcon,
@@ -55,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [openNested, setOpenNested] = useState(false);
+  const [mounted, setMounted] = useState(false);  // Controle de montagem
   const router = useRouter();
   const session = Cookies.get("session");
   const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
@@ -89,6 +91,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
   
   const menuItems = profile ? menuItemsByProfile[profile] : [];
+
+  useEffect(() => {
+    setMounted(true);  // Garantir que o componente seja montado no cliente
+  }, []);
+
+  if (!mounted) {
+    return null;  // Não renderiza nada até que o componente esteja montado no cliente
+  }
 
   return (
     <Drawer
@@ -127,40 +137,9 @@ const Sidebar: React.FC<SidebarProps> = ({
             </Box>
         )}
         <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
-          <ChevronLeftIcon />
+          {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
         </IconButton>
       </Box>
-
-      {/* {open && (
-        <Box sx={{ p: 2 }}>
-          <Paper
-            elevation={0}
-            sx={{
-              p: 1.5,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-              bgcolor: theme.palette.background.default,
-              borderRadius: 2,
-              border: `1px solid ${dividerColor}`,
-            }}
-          >
-            <Avatar
-              sx={{ width: 42, height: 42 }}
-              alt="User Profile"
-              src="/placeholder.svg?height=42&width=42"
-            />
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                John Doe
-              </Typography>
-              <Typography variant="caption" sx={{ color: theme.palette.text.secondary }}>
-                john.doe@example.com
-              </Typography>
-            </Box>
-          </Paper>
-        </Box>
-      )} */}
 
       <List sx={{ px: 1 }}>
       {menuItems.map((item, index) => {
@@ -188,37 +167,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {item.icon}
                 </ListItemIcon>
                 {open && (
-                  <ListItemText
-                    primary={item.text}
-                    primaryTypographyProps={{ fontWeight: isActive ? 600 : 500 }}
-                  />
+                  <ListItemText primary={<Typography sx={{ fontWeight: 600 }}>{item.text}</Typography>} />
                 )}
               </ListItemButton>
             </Tooltip>
           </ListItem>
         );
       })}
-
-        {/* Expandable nested items */}
-        {open && (
-          <Collapse in={openNested} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding sx={{ ml: 1, mt: 0.5 }}>
-              <ListItemButton sx={{ pl: 4, borderRadius: 1.5, py: 0.75 }}>
-                <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
-                  <StarBorder fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Starred" primaryTypographyProps={{ fontSize: "0.9rem" }} />
-              </ListItemButton>
-
-              <ListItemButton sx={{ pl: 4, borderRadius: 1.5, py: 0.75 }}>
-                <ListItemIcon sx={{ color: iconColor, minWidth: 36 }}>
-                  <BookmarkIcon fontSize="small" />
-                </ListItemIcon>
-                <ListItemText primary="Important" primaryTypographyProps={{ fontSize: "0.9rem" }} />
-              </ListItemButton>
-            </List>
-          </Collapse>
-        )}
       </List>
       
       <Box sx={{ flexGrow: 1 }} />
@@ -242,7 +197,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </ListItemIcon>
                 {open && (
                   <>
-                    <ListItemText primary="Modo Escuro" primaryTypographyProps={{ fontWeight: 500 }} />
+                    <Typography sx={{ fontWeight: 500 }}>Modo Escuro</Typography>
                     <Switch checked={darkMode} onChange={onToggleDarkMode} color="primary" />
                   </>
                 )}
@@ -269,8 +224,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </ListItemIcon>
                 {open && (
                   <ListItemText
-                    primary="Perfil"
-                    primaryTypographyProps={{ fontWeight: pathname === "/perfil" ? 600 : 500 }}
+                    primary={
+                      <Typography sx={{ fontWeight: pathname === "/perfil" ? 600 : 500 }}>
+                        Perfil
+                      </Typography>
+                    }
                   />
                 )}
               </ListItemButton>
@@ -294,10 +252,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
                   <SettingsIcon />
                 </ListItemIcon>
-                {open && (
+                { open && (
                   <ListItemText
-                    primary="Configurações"
-                    primaryTypographyProps={{ fontWeight: pathname === "/configuracoes" ? 600 : 500 }}
+                    primary={
+                      <Typography sx={{ fontWeight: pathname === "/configuracoes" ? 600 : 500 }}>
+                        Configurações
+                      </Typography>
+                    }
                   />
                 )}
               </ListItemButton>
@@ -325,7 +286,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <LogoutIcon />
                 </ListItemIcon>
                 {open && (
-                  <ListItemText primary="Sair" primaryTypographyProps={{ fontWeight: 500 }} />
+                  <ListItemText
+                    primary={<Typography sx={{ fontWeight: 500 }}>Sair</Typography>}
+                  />
                 )}
               </ListItemButton>
             </Tooltip>
