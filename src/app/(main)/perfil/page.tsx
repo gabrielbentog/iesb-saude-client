@@ -118,15 +118,33 @@ export default function PerfilPage() {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar
-            src={user.image || "/placeholder.svg"}
-            alt="Foto de Perfil"
-            sx={{
-              width: 80,
-              height: 80,
-              border: `2px solid ${theme.palette.divider}`,
-            }}
-          />
+        <Avatar
+          src={user.image || undefined}
+          alt={user.name || "Usuário"}
+          onError={(e) => {
+            const target = e.currentTarget as HTMLImageElement;
+            target.onerror = null;
+            target.src = ""; // evita loop de erro
+          }}
+          sx={{
+            width: 80,
+            height: 80,
+            border: `2px solid ${theme.palette.divider}`,
+            bgcolor: !user.image ? theme.palette.secondary.main : undefined,
+            color: !user.image ? "white" : undefined,
+            fontWeight: 600,
+            fontSize: 28,
+          }}
+        >
+          {!user.image && user.name
+            ? user.name
+                .trim()
+                .split(" ")
+                .map((word) => word[0]?.toUpperCase())
+                .slice(0, 1)
+                .join("")
+            : null}
+        </Avatar>
           <Box>
             <Typography variant="h5" fontWeight={600}>
               {user.name || user.uid}

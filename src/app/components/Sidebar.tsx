@@ -93,18 +93,17 @@ const Sidebar: React.FC<SidebarProps> = ({
   const menuItems = profile ? menuItemsByProfile[profile] : [];
 
   useEffect(() => {
-    setMounted(true);  // Garantir que o componente seja montado no cliente
+    setMounted(true);
   }, []);
 
   if (!mounted) {
-    return null;  // Não renderiza nada até que o componente esteja montado no cliente
+    return null;
   }
 
   return (
     <Drawer
       variant="permanent"
       sx={{
-        width: open ? drawerWidth : collapsedWidth,
         flexShrink: 0,
         whiteSpace: "nowrap",
         "& .MuiDrawer-paper": {
@@ -122,23 +121,46 @@ const Sidebar: React.FC<SidebarProps> = ({
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: open ? "space-between" : "center",
+          justifyContent: "center",
           padding: 2,
           borderBottom: `1px solid ${dividerColor}`,
         }}
       >
+        {/* Quando a sidebar está aberta */}
         {open && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <img src="/logos/iesb.png" alt="IESB Saúde" width="32" height="32" />
-            <Typography variant="h6" sx={{ fontWeight: 700 }}>
-              IESB Saúde
-            </Typography>
+              <img src="/logos/iesb.png" alt="IESB Saúde" width="32" height="32" />
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                IESB Saúde
+              </Typography>
             </Box>
+            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </Box>
         )}
-        <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
-          {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-        </IconButton>
+
+        {/* Quando a sidebar está fechada */}
+        {!open && (
+          <>
+            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
+              <ChevronRightIcon />
+            </IconButton>
+            <Box mt={1}>
+              <img src="/logos/iesb.png" alt="IESB Saúde" width="32" height="32" />
+            </Box>
+          </>
+        )}
       </Box>
 
       <List sx={{ px: 1 }}>

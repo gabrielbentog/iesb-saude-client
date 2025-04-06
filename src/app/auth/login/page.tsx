@@ -14,6 +14,7 @@ import {
   IconButton,
   CssBaseline,
   useTheme,
+  CircularProgress
 } from "@mui/material";
 import { Visibility, VisibilityOff, School } from "@mui/icons-material";
 import Image from "next/image";
@@ -25,12 +26,14 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    setIsLoading(true);
     try {
       const response = await apiFetch<{ token: string; user: { profile: { name: string } } }>(
         "/login",
@@ -62,6 +65,8 @@ export default function LoginPage() {
       router.push(`/${response.user.profile.name.toLowerCase()}/dashboard`);
     } catch (error: any) {
       alert("Erro no login: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -180,6 +185,7 @@ export default function LoginPage() {
                 type="submit"
                 fullWidth
                 variant="contained"
+                disabled={isLoading}
                 sx={{
                   mt: 2,
                   mb: 3,
@@ -193,7 +199,11 @@ export default function LoginPage() {
                   },
                 }}
               >
-                Entrar
+                {isLoading ? (
+                  <CircularProgress size={24} color="inherit" />
+                ) : (
+                  "Entrar"
+                )}
               </Button>
               <Box sx={{ textAlign: "center" }}>
                 <Typography variant="body2">
@@ -240,7 +250,7 @@ export default function LoginPage() {
               </Typography>
             </Box>
 
-            <Box
+            {/* <Box
               sx={{
                 position: "absolute",
                 width: "100%",
@@ -254,7 +264,7 @@ export default function LoginPage() {
                 fill
                 style={{ objectFit: "cover" }}
               />
-            </Box>
+            </Box> */}
           </Box>
         </Paper>
       </Container>

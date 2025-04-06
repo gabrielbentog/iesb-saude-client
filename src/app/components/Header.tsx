@@ -42,7 +42,6 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
       const data = JSON.parse(session);
       const userData = data.user || null;
       setUser(userData);
-      console.log("User data:", userData);
     }
   }, []);
 
