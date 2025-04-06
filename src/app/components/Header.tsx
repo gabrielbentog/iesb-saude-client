@@ -20,6 +20,7 @@ import {
 interface HeaderProps {
   open: boolean;
   drawerWidth: number;
+  onToggleSidebar: () => void; // Added the missing property
 }
 
 interface UserData {

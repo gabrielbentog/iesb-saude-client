@@ -35,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
+import Cookies from "js-cookie";
 
 interface SidebarProps {
   open: boolean;
@@ -55,6 +56,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   const isDark = theme.palette.mode === "dark";
   const [openNested, setOpenNested] = useState(false);
   const router = useRouter();
+  const session = Cookies.get("session");
+  const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
 
   const handleNestedClick = () => {
     setOpenNested(!openNested);
@@ -70,6 +73,22 @@ const Sidebar: React.FC<SidebarProps> = ({
   const primaryColor = theme.palette.primary.main;
   const dividerColor = theme.palette.divider;
   const pathname = usePathname();
+
+  const menuItemsByProfile = {
+    paciente: [
+      { icon: <HomeIcon />, text: "Dashboard", path: "/paciente/dashboard" },
+      { icon: <CalendarIcon />, text: "Calendário", path: "/paciente/calendario" },
+    ],
+    gestor: [
+      { icon: <DashboardIcon />, text: "Painel", path: "/gestor/dashboard" },
+      { icon: <SettingsIcon />, text: "Configurações", path: "/gestor/configuracoes" },
+    ],
+    estagiario: [
+      { icon: <InboxIcon />, text: "Atendimentos", path: "/estagiario/atendimentos" },
+    ],
+  };
+  
+  const menuItems = profile ? menuItemsByProfile[profile] : [];
 
   return (
     <Drawer
@@ -144,18 +163,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       )} */}
 
       <List sx={{ px: 1 }}>
-      {[
-        {
-          icon: <HomeIcon />,
-          text: "Dashboard",
-          path: "/home/paciente",
-        },
-        {
-          icon: <CalendarIcon />,
-          text: "Calendário",
-          path: "/calendario"
-        },
-      ].map((item, index) => {
+      {menuItems.map((item, index) => {
         const isActive = pathname === item.path;
 
         return (
@@ -302,6 +310,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <ListItemButton
                 onClick={() => {
                   router.push("/auth/login");
+                  Cookies.remove("session");
                   localStorage.removeItem("session");
                 }}
                 sx={{

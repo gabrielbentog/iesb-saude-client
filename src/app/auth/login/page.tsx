@@ -19,6 +19,7 @@ import { useTheme } from "@mui/material/styles"
 import { Visibility, VisibilityOff, School } from "@mui/icons-material"
 import Image from "next/image"
 import { apiFetch } from "@/app/lib/api"
+import Cookies from 'js-cookie';
 
 export default function LoginPage() {
   const theme = useTheme()
@@ -33,7 +34,7 @@ export default function LoginPage() {
     event.preventDefault();
   
     try {
-      const response = await apiFetch<{ token: string; user: string }>('/login', {
+      const response = await apiFetch<{ token: string; user: { profile: { name: string} } }>('/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +49,12 @@ export default function LoginPage() {
       };
   
       localStorage.setItem("session", JSON.stringify(sessionData));
-      router.push("/home/paciente");
+      Cookies.set("session", JSON.stringify({
+        token: sessionData?.token,
+        profile: sessionData?.user?.profile?.name,
+      }), { expires: 7, secure: true });
+
+      router.push(response.user.profile.name + "/dashboard");
   
     } catch (error: any) {
       alert("Erro no login: " + error.message); // Aqui você pode substituir por um snackbar/toast
