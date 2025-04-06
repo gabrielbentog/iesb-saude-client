@@ -1,4 +1,4 @@
-"use client";
+"use client"
 
 import {
   Avatar,
@@ -16,29 +16,99 @@ import {
   TextField,
   Typography,
   useTheme,
-} from "@mui/material";
+} from "@mui/material"
 import {
-  CameraAlt as CameraIcon,
   Edit as EditIcon,
   Lock as LockIcon,
   Settings as SettingsIcon,
   Info as InfoIcon,
-} from "@mui/icons-material";
-import Image from "next/image";
-import { useState } from "react";
+} from "@mui/icons-material"
+import { useEffect, useRef, useState } from "react"
+import { apiFetch } from "@/app/lib/api"
+
+interface User {
+  id: number
+  name: string | null
+  email: string
+  uid: string
+  profile_id: number
+  image: string | null
+  created_at: string
+}
+
 
 export default function PerfilPage() {
-  const theme = useTheme();
-  const [tab, setTab] = useState(0);
-  const [openEdit, setOpenEdit] = useState(false);
+  const theme = useTheme()
+  const [tab, setTab] = useState(0)
+  const [openEdit, setOpenEdit] = useState(false)
+
+  const nameRef = useRef<HTMLInputElement>(null)
+  const emailRef = useRef<HTMLInputElement>(null)
+
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    const session = localStorage.getItem("session")
+    if (session) {
+      const parsed = JSON.parse(session)
+      if (parsed?.user) {
+        setUser(parsed.user)
+      }
+    }
+  }, [])
 
   const handleChangeTab = (_: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
-  };
+    setTab(newValue)
+  }
+
+  const handleSaveProfile = async () => {
+    const newName = nameRef.current?.value?.trim()
+    const newEmail = emailRef.current?.value?.trim()
+
+    if (!newName || !newEmail || !user) return
+
+    try {
+      const res = await apiFetch(`/api/users/${user.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user: {
+            name: newName,
+            email: newEmail,
+          }
+        }),
+      })
+
+      const updated = await res
+
+      const session = localStorage.getItem("session")
+      if (session) {
+        const parsed = JSON.parse(session)
+        parsed.user.name = updated?.name
+        parsed.user.email = updated?.email
+        localStorage.setItem("session", JSON.stringify(parsed))
+        setUser({ ...user, name: updated?.namee, email: updated?.email })
+      }
+
+      setOpenEdit(false)
+    } catch (err) {
+      console.error(err)
+      alert("Erro ao atualizar perfil")
+    }
+  }
+
+  if (!user) {
+    return (
+      <Box sx={{ p: 4, textAlign: "center" }}>
+        <Typography variant="h6">Carregando perfil...</Typography>
+      </Box>
+    )
+  }
 
   return (
     <Box sx={{ maxWidth: 1000, mx: "auto", p: 3 }}>
-      {/* Cabeçalho com Avatar, nome, e-mail e botão de edição */}
       <Box
         sx={{
           display: "flex",
@@ -50,7 +120,7 @@ export default function PerfilPage() {
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Avatar
-            src="/placeholder.svg"
+            src={user.image || "/placeholder.svg"}
             alt="Foto de Perfil"
             sx={{
               width: 80,
@@ -60,10 +130,10 @@ export default function PerfilPage() {
           />
           <Box>
             <Typography variant="h5" fontWeight={600}>
-              John Doe
+              {user.name || user.uid}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              john.doe@example.com
+              {user.email}
             </Typography>
           </Box>
         </Box>
@@ -73,26 +143,23 @@ export default function PerfilPage() {
         </Button>
       </Box>
 
-      {/* Tabs */}
       <Tabs value={tab} onChange={handleChangeTab} sx={{ mb: 3 }}>
         <Tab label="Informações" icon={<InfoIcon />} iconPosition="start" />
         <Tab label="Preferências" icon={<SettingsIcon />} iconPosition="start" />
         <Tab label="Segurança" icon={<LockIcon />} iconPosition="start" />
       </Tabs>
 
-      {/* Conteúdo das Abas */}
       {tab === 0 && (
         <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
           <Typography variant="h6" gutterBottom>
             Informações Pessoais
           </Typography>
           <Grid container spacing={3}>
-            <Info label="Nome completo" value="Johnathan Douglas Doe" />
-            <Info label="E-mail" value="john.doe@example.com" />
-            <Info label="CPF" value="123.456.789-00" />
-            <Info label="Instituição" value="IESB Norte" />
-            <Info label="Data de Nascimento" value="15/01/1990" />
-            <Info label="Telefone" value="(61) 98765-4321" />
+            <Info label="Nome" value={user.name || "Não informado"} />
+            <Info label="E-mail" value={user.email} />
+            <Info label="UID" value={user.uid} />
+            <Info label="ID do Perfil" value={String(user.profile_id)} />
+            <Info label="Criado em" value={new Date(user.created_at).toLocaleString("pt-BR")} />
           </Grid>
         </Paper>
       )}
@@ -104,9 +171,8 @@ export default function PerfilPage() {
           </Typography>
           <Grid container spacing={3}>
             <Info label="Idioma" value="Português (Brasil)" />
-            <Info label="Tema" value="Escuro" />
+            <Info label="Tema" value="Claro" />
             <Info label="Fuso Horário" value="GMT-3 - Brasília" />
-            <Info label="Notificações por e-mail" value="Ativadas" />
           </Grid>
         </Paper>
       )}
@@ -117,7 +183,6 @@ export default function PerfilPage() {
             Segurança
           </Typography>
           <Grid container spacing={3}>
-            <Info label="Última troca de senha" value="20/03/2025" />
             <Info label="Autenticação de 2 fatores" value="Desativada" />
           </Grid>
           <Box sx={{ mt: 3 }}>
@@ -137,28 +202,36 @@ export default function PerfilPage() {
         </Paper>
       )}
 
-      {/* Diálogo de edição */}
+      {/* Modal de edição */}
       <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth maxWidth="sm">
         <DialogTitle>Editar Perfil</DialogTitle>
         <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 3, mt: 1 }}>
-          <TextField label="Nome" fullWidth defaultValue="Johnathan Douglas Doe" />
-          <TextField label="E-mail" fullWidth defaultValue="john.doe@example.com" />
-          <TextField label="Instituição" fullWidth defaultValue="IESB Norte" />
+          <TextField
+            label="Nome"
+            fullWidth
+            inputRef={nameRef}
+            defaultValue={user.name || ""}
+          />
+          <TextField
+            label="E-mail"
+            fullWidth
+            inputRef={emailRef}
+            defaultValue={user.email}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenEdit(false)} variant="outlined">
             Cancelar
           </Button>
-          <Button onClick={() => setOpenEdit(false)} variant="contained">
+          <Button onClick={handleSaveProfile} variant="contained">
             Salvar Alterações
           </Button>
         </DialogActions>
       </Dialog>
     </Box>
-  );
+  )
 }
 
-// Componente para exibir rótulo e valor
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <Grid item xs={12} md={6}>
@@ -167,5 +240,5 @@ function Info({ label, value }: { label: string; value: string }) {
       </Typography>
       <Typography variant="body1">{value}</Typography>
     </Grid>
-  );
+  )
 }
