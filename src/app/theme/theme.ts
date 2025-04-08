@@ -20,85 +20,87 @@ const baseTheme: ThemeOptions = {
   },
 }
 
+// ========== TEMA CLARO ==========
 export const lightTheme = createTheme({
   ...baseTheme,
   palette: {
     mode: 'light',
     primary: {
-      main: '#E50839',
-      dark: '#115293',
-      light: '#63a4ff',
-      contrastText: '#fff',
+      main: '#E50839',   // vermelho principal
+      dark: '#AB062D',   // vermelho mais escuro
+      light: '#FF6371',  // vermelho mais claro
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#424242',
+      main: '#424242',   // cinza para contrastar com o vermelho
     },
     background: {
-      default: '#f9f9f9',
-      paper: '#ffffff',
+      default: '#F9F9F9', // fundo claro
+      paper: '#FFFFFF',   // cartões/painéis
     },
     text: {
-      primary: '#1a1a1a',
-      secondary: '#555555',
+      primary: '#1A1A1A', // texto principal (preto suave)
+      secondary: '#555555', // texto secundário (cinza)
     },
-    divider: '#e0e0e0',
+    divider: '#E0E0E0',
     success: {
-      main: '#4caf50',
+      main: '#4CAF50',
     },
     warning: {
-      main: '#ff9800',
+      main: '#FF9800',
     },
     error: {
-      main: '#f44336',
+      main: '#F44336',
     },
     info: {
-      main: '#0288d1',
+      main: '#0288D1',
     },
   },
 })
 
+// ========== TEMA ESCURO ==========
 export const darkTheme = createTheme({
+  ...baseTheme,
   palette: {
-    mode: "dark",
+    mode: 'dark',
     primary: {
-      main: "#e53935",          // vermelho intenso
-      light: "#ff6f60",         // vermelho claro
-      dark: "#ab000d",          // vermelho escuro
-      contrastText: "#ffffff",  // texto branco
+      main: '#E53935',      // vermelho principal (intenso)
+      light: '#FF6F60',     // vermelho claro
+      dark: '#AB000D',      // vermelho escuro
+      contrastText: '#FFFFFF',
     },
     secondary: {
-      main: "#424242",          // cinza para contrastar com o vermelho
+      main: '#424242',      // cinza para contraste
     },
     background: {
-      default: "#0d0d0d",       // quase preto
-      paper: "#1a1a1a",         // painel um pouco mais claro
+      default: '#0D0D0D',   // fundo quase preto
+      paper: '#1A1A1A',     // fundo de cartões/painéis um pouco mais claro
     },
     text: {
-      primary: "#ffffff",       // texto principal branco
-      secondary: "#b0b0b0",     // texto secundário cinza
+      primary: '#FFFFFF',   // texto principal branco
+      secondary: '#B0B0B0', // texto secundário cinza claro
     },
-    divider: "#2e2e2e",       // divisor cinza
+    divider: '#2E2E2E',     // divisor cinza
     success: {
-      main: "#66bb6a",
+      main: '#66BB6A',
     },
     warning: {
-      main: "#ffa726",
+      main: '#FFA726',
     },
     error: {
-      main: "#f44336",
+      main: '#F44336',
     },
     info: {
-      main: "#29b6f6",
+      main: '#29B6F6',
     },
   },
   components: {
     MuiPaper: {
       styleOverrides: {
         root: {
-          backgroundImage: "none",
+          backgroundImage: 'none',
         },
       },
     },
   },
-});
-
+})

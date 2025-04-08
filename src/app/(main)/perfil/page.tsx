@@ -14,7 +14,6 @@ import {
   TextField,
   Typography,
   useTheme,
-  IconButton,
 } from "@mui/material";
 import {
   Edit as EditIcon,
@@ -24,12 +23,12 @@ import {
 } from "@mui/icons-material";
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/api";
+import { useToast } from '@/app/contexts/ToastContext';
 
 interface User {
   id: number;
   name: string | null;
   email: string;
-  uid: string;
   profile_id: number;
   image: string | null;
   created_at: string;
@@ -44,6 +43,8 @@ export default function PerfilPage() {
   const emailRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<User | null>(null);
+
+  const { showToast } = useToast();
 
   useEffect(() => {
     const session = localStorage.getItem("session");
@@ -88,12 +89,12 @@ export default function PerfilPage() {
         parsed.user.email = updated?.email;
         localStorage.setItem("session", JSON.stringify(parsed));
         setUser({ ...user, name: updated?.name, email: updated?.email });
+        showToast({ message: "Perfil atualizado com sucesso!", severity: "success"})
       }
 
       setOpenEdit(false);
     } catch (err) {
-      console.error(err);
-      alert("Erro ao atualizar perfil");
+      showToast({ message: `Erro ao atualizar perfil: ${err}`, severity: "error" });
     }
   };
 
@@ -147,7 +148,7 @@ export default function PerfilPage() {
         </Avatar>
           <Box>
             <Typography variant="h5" fontWeight={600}>
-              {user.name || user.uid}
+              {user.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {user.email}
@@ -221,8 +222,7 @@ export default function PerfilPage() {
           >
             <Info label="Nome" value={user.name || "Não informado"} />
             <Info label="E-mail" value={user.email} />
-            <Info label="UID" value={user.uid} />
-            <Info label="ID do Perfil" value={String(user.profile_id)} />
+            <Info label="ID do Usuário" value={String(user.id)} />
             <Info
               label="Criado em"
               value={new Date(user.created_at).toLocaleString("pt-BR")}
@@ -333,7 +333,11 @@ export default function PerfilPage() {
           <Button onClick={() => setOpenEdit(false)} variant="outlined">
             Cancelar
           </Button>
-          <Button onClick={handleSaveProfile} variant="contained">
+          <Button 
+            onClick={() => {
+              handleSaveProfile();
+              
+            }} variant="contained">
             Salvar Alterações
           </Button>
         </DialogActions>

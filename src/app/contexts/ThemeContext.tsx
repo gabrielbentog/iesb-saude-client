@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useMemo, ReactNode, useEffect, useState as useStateReact } from 'react'
+import { createContext, useContext, useState, useMemo, ReactNode, useEffect } from 'react'
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material'
 import { lightTheme, darkTheme } from '@/app/theme/theme'
 
