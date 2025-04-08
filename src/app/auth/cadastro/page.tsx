@@ -186,7 +186,7 @@ export default function RegisterPage() {
                 variant="h4"
                 sx={{ color: theme.palette.primary.main }}
               >
-                IESB
+                IESB SAÚDE
               </Typography>
             </Box>
 
@@ -374,11 +374,11 @@ export default function RegisterPage() {
               }}
             >
               <Typography variant="h4" component="h2" gutterBottom>
-                Junte-se ao IESB
+                Junte-se a nós!
               </Typography>
               <Typography variant="body1">
-                Crie sua conta para acessar todos os serviços acadêmicos,
-                agendar atividades e acompanhar seu histórico educacional
+                Crie sua conta para acessar todos os serviços de saúde,
+                marcar suas consultas e acompanhar seu histórico de atendimentos 
                 em um só lugar.
               </Typography>
             </Box>

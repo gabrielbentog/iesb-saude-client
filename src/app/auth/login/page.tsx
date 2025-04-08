@@ -17,7 +17,6 @@ import {
   CircularProgress
 } from "@mui/material";
 import { Visibility, VisibilityOff, School } from "@mui/icons-material";
-import Image from "next/image";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
 
@@ -63,8 +62,12 @@ export default function LoginPage() {
       );
 
       pushWithProgress(`/${response.user.profile.name.toLowerCase()}/dashboard`);
-    } catch (error: any) {
-      alert("Erro no login: " + error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert("Erro no login: " + error.message);
+      } else {
+        alert("Erro no login: Erro desconhecido");
+      }
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +125,7 @@ export default function LoginPage() {
                 variant="h4"
                 sx={{ color: theme.palette.primary.main }}
               >
-                IESB
+                IESB SAÚDE
               </Typography>
             </Box>
 
@@ -243,10 +246,11 @@ export default function LoginPage() {
               }}
             >
               <Typography variant="h4" component="h2" gutterBottom>
-                Bem-vindo ao IESB
+                Bem-vindo!
               </Typography>
               <Typography variant="body1">
-                Acesse sua conta para acompanhar sua jornada acadêmica e gerenciar suas informações.
+                Acesse sua conta para marcar consultas, acompanhar seu histórico 
+                de atendimentos e gerenciar seus compromissos de forma prática e segura.
               </Typography>
             </Box>
 
