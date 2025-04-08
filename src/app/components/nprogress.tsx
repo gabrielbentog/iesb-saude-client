@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
@@ -16,7 +16,6 @@ export default function NProgressHandler() {
     NProgress.start();
   
     const timeout = setTimeout(() => {
-      console.log("NProgress done triggered");
       NProgress.done();
     }, 300);
   

@@ -3,6 +3,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import NProgressHandler from '@/app/components/nprogress';
+import { Suspense } from 'react';
 
 const inter = Inter({
   variable: '--font-inter',
@@ -22,8 +23,10 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className={`${inter.variable} antialiased`}>
-      <NProgressHandler />
-      <main>{children}</main>
+        <Suspense fallback={<div>Loading...</div>}>
+          <NProgressHandler />
+          <main>{children}</main>
+        </Suspense>
       </body>
     </html>
   );
