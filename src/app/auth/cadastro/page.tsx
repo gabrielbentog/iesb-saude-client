@@ -121,9 +121,13 @@ export default function RegisterPage() {
         { expires: 7, secure: true }
       );
 
-      pushWithProgress("paciente/dashboard");
-    } catch (error: any) {
-      alert("Erro ao cadastrar: " + error.message);
+      pushWithProgress("/paciente/dashboard");
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        alert("Erro ao cadastrar: " + error.message);
+      } else {
+        alert("Erro ao cadastrar: Erro desconhecido");
+      }
     }
   };
 
