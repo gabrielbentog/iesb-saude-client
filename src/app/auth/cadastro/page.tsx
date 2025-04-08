@@ -23,13 +23,13 @@ import {
   School,
   ArrowBack,
 } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
 
 export default function RegisterPage() {
   const theme = useTheme();
-  const router = useRouter();
+  const pushWithProgress = usePushWithProgress();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -121,13 +121,13 @@ export default function RegisterPage() {
         { expires: 7, secure: true }
       );
 
-      router.push("paciente/dashboard");
+      pushWithProgress("paciente/dashboard");
     } catch (error: any) {
       alert("Erro ao cadastrar: " + error.message);
     }
   };
 
-  const goToLogin = () => router.push("/auth/login");
+  const goToLogin = () => pushWithProgress("/auth/login");
 
   return (
     <>

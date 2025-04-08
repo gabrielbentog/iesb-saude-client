@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import {
   Box,
   Container,
@@ -25,9 +25,9 @@ export default function LoginPage() {
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const pushWithProgress = usePushWithProgress();
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
   const handleClickShowPassword = () => setShowPassword(!showPassword);
 
@@ -62,7 +62,7 @@ export default function LoginPage() {
         { expires: 7, secure: true }
       );
 
-      router.push(`/${response.user.profile.name.toLowerCase()}/dashboard`);
+      pushWithProgress(`/${response.user.profile.name.toLowerCase()}/dashboard`);
     } catch (error: any) {
       alert("Erro no login: " + error.message);
     } finally {

@@ -31,3 +31,28 @@ body {
   padding: 0;
   height: 100%;
 }
+
+#nprogress {
+  pointer-events: none;
+}
+
+#nprogress .bar {
+  background: #ff0000 !important; /* Barra vermelha */
+  position: fixed;
+  z-index: 3000 !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px !important; /* Mais grossa */
+}
+
+#nprogress .peg {
+  box-shadow: 0 0 10px #ff0000, 0 0 5px #ff0000 !important; /* Pega o mesmo tom da barra */
+}
+
+#nprogress .spinner {
+  position: fixed;
+  z-index: 3000 !important;
+  top: 15px;
+  right: 15px;
+}

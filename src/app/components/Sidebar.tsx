@@ -34,7 +34,7 @@ import {
   Bookmark as BookmarkIcon,
   DarkMode as DarkModeIcon,
 } from "@mui/icons-material";
-import { useRouter } from "next/navigation";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 
@@ -57,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const isDark = theme.palette.mode === "dark";
   const [openNested, setOpenNested] = useState(false);
   const [mounted, setMounted] = useState(false);  // Controle de montagem
-  const router = useRouter();
+  const pushWithProgress = usePushWithProgress();
   const session = Cookies.get("session");
   const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
 
@@ -173,7 +173,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <ListItemButton
                 onClick={() => {
                   if (item.path) {
-                    router.push(item.path);
+                    pushWithProgress(item.path);
                   }
                 }}
                 sx={{
@@ -231,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? "Perfil" : ""} placement="right">
               <ListItemButton
-                onClick={() => router.push("/perfil")}
+                onClick={() => pushWithProgress("/perfil")}
                 sx={{
                   borderRadius: 1.5,
                   bgcolor: pathname === "/perfil" ? activeColor : "transparent",
@@ -261,7 +261,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? "Configurações" : ""} placement="right">
               <ListItemButton
-                onClick={() => router.push("/configuracoes")}
+                onClick={() => pushWithProgress("/configuracoes")}
                 sx={{
                   borderRadius: 1.5,
                   bgcolor: pathname === "/configuracoes" ? activeColor : "transparent",
@@ -292,7 +292,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <Tooltip title={!open ? "Sair" : ""} placement="right">
               <ListItemButton
                 onClick={() => {
-                  router.push("/auth/login");
+                  pushWithProgress("/auth/login");
                   Cookies.remove("session");
                   localStorage.removeItem("session");
                 }}

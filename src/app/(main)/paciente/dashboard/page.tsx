@@ -11,7 +11,7 @@ import {
   useMediaQuery,
   Chip,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { useTheme } from "@mui/material/styles";
 
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -21,7 +21,7 @@ import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 export default function PatientDashboard() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const router = useRouter();
+  const pushWithProgress = usePushWithProgress();
   const [tabValue, setTabValue] = useState(0);
 
   const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
@@ -62,7 +62,7 @@ export default function PatientDashboard() {
         <Button
           variant="contained"
           color="primary"
-          onClick={() => router.push("/paciente/agendamento")}
+          onClick={() => pushWithProgress("/paciente/agendamento")}
           sx={{
             textTransform: "none",
             borderRadius: "999px",

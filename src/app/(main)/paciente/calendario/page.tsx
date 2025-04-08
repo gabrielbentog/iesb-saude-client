@@ -176,8 +176,8 @@ const DayNumber = styled("div", {
   textAlign: "center",
   borderRadius: "50%",
   ...(isToday && {
-    backgroundColor: theme.palette.primary.main,
-    color: theme.palette.primary.contrastText,
+    backgroundColor: "transparent",
+    color: theme.palette.primary.main,
   }),
   ...(!isCurrentMonth && {
     color: theme.palette.text.disabled,
@@ -307,7 +307,7 @@ export default function EnhancedCalendar() {
   const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"]
 
   const renderMonthView = () => (
-    <TableContainer>
+    <TableContainer sx={{ minWidth: 700, overflowX: "auto" }}>
       <Table>
         <TableHead>
           <TableRow>
@@ -344,9 +344,8 @@ export default function EnhancedCalendar() {
                         key={i}
                         color={categoryConfig[evt.category].color}
                         isCurrentMonth={isCurrent}
+                        sx={{ mb: 0.25 }}
                         onClick={(e) => handleEventClick(evt, e)}
-                        onMouseEnter={(e) => handleEventMouseEnter(evt, e.currentTarget)}
-                        onMouseLeave={handleEventMouseLeave}
                       >
                         {evt.allDay ? evt.title : `${format(evt.date, "HH:mm")} ${evt.title}`}
                       </EventChip>
