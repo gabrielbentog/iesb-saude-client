@@ -9,7 +9,7 @@ import { CalendarHeader } from "./CalendarHeader";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
-import { EventCategory, CalendarEvent } from "@/app/types/calendar";
+import { EventCategory, CalendarEvent } from "@/app/components/Calendar/types";
 
 const categoryConfig: Record<EventCategory, { color: string; icon: React.ReactNode }> = {
   medical: { color: "#E50839", icon: <span>Médico</span> },

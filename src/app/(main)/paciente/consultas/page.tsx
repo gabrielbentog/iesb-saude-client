@@ -28,7 +28,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert"
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined"
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined"
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined"
-import DataTable from "@/app/components/DataTable"
+import DataTable from "@/app/components/DataTable/DataTable"
 
 interface Appointment {
   id: string

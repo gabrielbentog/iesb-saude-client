@@ -26,7 +26,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek';
 import CalendarViewDayIcon from '@mui/icons-material/CalendarViewDay';
-import { EventCategory } from '@/app/types/calendar';
+import { EventCategory } from '@/app/components/Calendar/types';
 
 interface CalendarHeaderProps {
   title: string;
