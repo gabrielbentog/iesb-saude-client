@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
-  Typography,
+  // Typography,
   IconButton,
   Box,
   Tooltip,
@@ -99,14 +99,14 @@ const Header: React.FC<HeaderProps> = ({
             </IconButton>
           )}
 
-          <Typography
+          {/* <Typography
             variant="h6"
             noWrap
             component="div"
             sx={{ fontWeight: 600, color: theme.palette.text.primary }}
           >
             Dashboard
-          </Typography>
+          </Typography> */}
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

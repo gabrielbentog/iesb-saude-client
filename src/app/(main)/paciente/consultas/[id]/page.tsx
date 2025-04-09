@@ -29,7 +29,7 @@ const DetalheConsultaScreen: React.FC = () => {
 
   const goBack = () => {
     // Simular navegação de volta
-    console.log("Voltar para consultas");
+    window.history.back();
   };
 
   return (

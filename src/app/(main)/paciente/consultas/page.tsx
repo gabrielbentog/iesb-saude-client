@@ -143,7 +143,6 @@ const ConsultasScreen: React.FC = () => {
       label: "Profissional",
       render: (a: Appointment) => (
         <Box display="flex" gap={1} alignItems="center">
-          <Avatar>{getInitials(a.professional)}</Avatar>
           {a.professional}
         </Box>
       ),
