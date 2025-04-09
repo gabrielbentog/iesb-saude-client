@@ -13,13 +13,16 @@ import {
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import {
+  Menu as MenuIcon,
   Search as SearchIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 
 interface HeaderProps {
-  open: boolean;
+  open: boolean;                   // se a sidebar está aberta
   drawerWidth: number;
+  onToggleSidebar: () => void;     // callback para abrir/fechar a sidebar
+  isMobile: boolean;               // se está em modo responsivo
 }
 
 interface UserData {
@@ -28,7 +31,12 @@ interface UserData {
   email?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
+const Header: React.FC<HeaderProps> = ({
+  open,
+  drawerWidth,
+  onToggleSidebar,
+  isMobile,
+}) => {
   const theme = useTheme();
   const collapsedWidth = 60;
 
@@ -51,7 +59,7 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
   const getInitials = (name?: string): string => {
     if (!name) return "U";
     const words = name.trim().split(" ");
-    const initials = words.map(word => word[0]?.toUpperCase() || "");
+    const initials = words.map((word) => word[0]?.toUpperCase() || "");
     return initials.slice(0, 1).join("");
   };
 
@@ -62,26 +70,52 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
     <AppBar
       position="fixed"
       sx={{
-        width: `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
-        ml: `${open ? drawerWidth : collapsedWidth}px`,
+        // Em telas mobile, ocupa 100% e não adiciona margin-left.
+        // Em telas maiores, empurra de acordo com a sidebar.
+        width: isMobile
+          ? "100%"
+          : `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
+        ml: isMobile ? 0 : `${open ? drawerWidth : collapsedWidth}px`,
         transition: theme.transitions.create(["margin", "width"], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.leavingScreen,
         }),
         bgcolor: theme.palette.background.default,
-        boxShadow: "none", // ⬅️ Remove a sombra
+        boxShadow: "none", // Remove a sombra
       }}
     >
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600, color: theme.palette.text.primary }}>
-          Dashboard
-        </Typography>
+      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          {/* Ícone de menu aparece em mobile ou quando a sidebar está fechada */}
+          {isMobile && (
+            <IconButton
+              aria-label="open drawer"
+              edge="start"
+              onClick={onToggleSidebar}
+              color="primary"
+              sx={{ mr: 2 }}
+            >
+              <MenuIcon />
+            </IconButton>
+          )}
+
+          <Typography
+            variant="h6"
+            noWrap
+            component="div"
+            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
+          >
+            Dashboard
+          </Typography>
+        </Box>
+
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Tooltip title="Search">
             <IconButton sx={{ color: theme.palette.primary.main }}>
               <SearchIcon />
             </IconButton>
           </Tooltip>
+
           <Tooltip title="Notifications">
             <IconButton sx={{ color: theme.palette.primary.main }}>
               <Badge badgeContent={4} color="error">
@@ -89,6 +123,7 @@ const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
               </Badge>
             </IconButton>
           </Tooltip>
+
           <Tooltip title="Profile">
             <Avatar
               alt={user?.name || "Usuário"}

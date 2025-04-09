@@ -1,45 +1,45 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState, useMemo } from "react"
 import {
   Box,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   Typography,
   Chip,
   Button,
   Avatar,
   Tooltip,
   useMediaQuery,
-  Card,
-  CardContent,
-  Grid,
-  Divider,
+  Menu,
+  MenuItem,
+  IconButton,
+  Select,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  TablePagination,
 } from "@mui/material"
 import { useTheme } from "@mui/material/styles"
+import { motion } from "framer-motion"
+import MoreVertIcon from "@mui/icons-material/MoreVert"
 import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined"
 import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined"
 import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined"
+import DataTable from "@/app/components/DataTable"
 
-// Tipagem de uma consulta
 interface Appointment {
   id: string
   specialty: string
   professional: string
-  date: string // ex: "10/04/2025"
-  time: string // ex: "14:00"
+  date: string
+  time: string
   location: string
   status: "Confirmada" | "Pendente" | "Realizada"
 }
 
-// Exemplo de lista única (contém consultas futuras e passadas)
 const appointments: Appointment[] = [
   {
     id: "1",
@@ -68,28 +68,8 @@ const appointments: Appointment[] = [
     location: "Hospital Vida - Sala 5",
     status: "Realizada",
   },
-  {
-    id: "4",
-    specialty: "Oftalmologia",
-    professional: "Dr. Lucas Andrade",
-    date: "20/04/2025",
-    time: "13:00",
-    location: "Clínica Oeste - Sala 8",
-    status: "Confirmada",
-  },
-  {
-    id: "5",
-    specialty: "Ortopedia",
-    professional: "Dra. Fernanda Lima",
-    date: "18/02/2025",
-    time: "15:30",
-    location: "OrtoClínica - Sala 1",
-    status: "Realizada",
-  },
-  // Adicione quantas quiser para testar a paginação
 ]
 
-// Definir cor do Chip baseado no status
 const getStatusColor = (status: Appointment["status"]) => {
   switch (status) {
     case "Confirmada":
@@ -103,383 +83,229 @@ const getStatusColor = (status: Appointment["status"]) => {
   }
 }
 
-// Definir cor de fundo baseado no status (para cards mobile)
-const getStatusBgColor = (status: Appointment["status"], theme: import("@mui/material/styles").Theme) => {
-  switch (status) {
-    case "Confirmada":
-      return theme.palette.success.light
-    case "Pendente":
-      return theme.palette.warning.light
-    case "Realizada":
-      return theme.palette.info.light
-    default:
-      return theme.palette.grey[100]
-  }
-}
-
-// Criar iniciais do profissional para o Avatar
-const getInitials = (name: string) => {
-  return name
+const getInitials = (name: string) =>
+  name
     .split(" ")
     .map((n) => n[0])
     .join("")
     .toUpperCase()
     .substring(0, 2)
-}
-
-// Função para simular navegação
-const pushWithProgress = (url: string) => {
-  console.log("Navegando para:", url)
-}
 
 const ConsultasScreen: React.FC = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-
-  // Estados para paginação
-  const [page, setPage] = useState(0) // MUI TablePagination trabalha com base 0
+  const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5)
+  const [statusFilter, setStatusFilter] = useState("Todos")
 
-  // Lida com mudança de página
-  const handleChangePage = (_event: unknown, newPage: number) => {
-    setPage(newPage)
+  // Menu & Modal
+  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [openDialog, setOpenDialog] = useState(false)
+
+  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, id: string) => {
+    setSelectedId(id)
+    setMenuAnchorEl(event.currentTarget)
   }
 
-  // Lida com mudança de número de itens por página
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setRowsPerPage(Number.parseInt(event.target.value, 10))
+  const handleCloseMenu = () => setMenuAnchorEl(null)
+
+  const handleCancel = () => {
+    setOpenDialog(true)
+    handleCloseMenu()
+  }
+
+  const confirmCancel = () => {
+    console.log("Consulta cancelada:", selectedId)
+    setOpenDialog(false)
+  }
+
+  const filteredAppointments = useMemo(() => {
+    return statusFilter === "Todos"
+      ? appointments
+      : appointments.filter((a) => a.status === statusFilter)
+  }, [statusFilter])
+
+  const paginatedData = useMemo(() => {
+    const start = page * rowsPerPage
+    return filteredAppointments.slice(start, start + rowsPerPage)
+  }, [page, rowsPerPage, filteredAppointments])
+
+  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage)
+  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(event.target.value, 10))
     setPage(0)
   }
 
-  // Calcular dados para paginação
-  const startIndex = page * rowsPerPage
-  const endIndex = startIndex + rowsPerPage
-  const paginatedData = appointments.slice(startIndex, endIndex)
+  const columns = [
+    { label: "Especialidade", accessor: "specialty" as keyof Appointment },
+    {
+      label: "Profissional",
+      render: (a: Appointment) => (
+        <Box display="flex" gap={1} alignItems="center">
+          <Avatar>{getInitials(a.professional)}</Avatar>
+          {a.professional}
+        </Box>
+      ),
+    },
+    { label: "Data", accessor: "date" as keyof Appointment },
+    { label: "Horário", accessor: "time" as keyof Appointment },
+    {
+      label: "Local",
+      render: (a: Appointment) => (
+        <Tooltip title={a.location}>
+          <Typography noWrap sx={{ maxWidth: 150 }}>{a.location}</Typography>
+        </Tooltip>
+      ),
+    },
+    {
+      label: "Status",
+      render: (a: Appointment) => (
+        <Chip label={a.status} color={getStatusColor(a.status)} size="small" />
+      ),
+    },
+  ]
 
-  // Renderiza a versão desktop (tabela)
   const renderDesktopTable = () => (
-    <Paper
-      elevation={0}
-      sx={{
-        overflow: "hidden",
-        borderRadius: 3,
-        boxShadow: "0 4px 20px rgba(0,0,0,0.05)",
-        border: "1px solid rgba(0,0,0,0.05)",
-      }}
-    >
-      <TableContainer>
-        <Table>
-          <TableHead sx={{ backgroundColor: theme.palette.primary.main }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Especialidade</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Profissional</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Data</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Horário</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Local</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Status</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Ações</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {paginatedData.map((appointment, index) => (
-              <TableRow
-                key={appointment.id}
-                hover
-                sx={{
-                  "&:last-child td": { border: 0 },
-                  backgroundColor: index % 2 === 0 ? "rgba(0, 0, 0, 0.02)" : "white",
-                }}
-              >
-                <TableCell>
-                  <Typography variant="body2" fontWeight={500}>
-                    {appointment.specialty}
-                  </Typography>
-                </TableCell>
-
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Avatar
-                      sx={{
-                        width: 36,
-                        height: 36,
-                        bgcolor: theme.palette.primary.main,
-                        color: theme.palette.primary.contrastText,
-                        fontSize: 14,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      {getInitials(appointment.professional)}
-                    </Avatar>
-                    <Typography variant="body2">{appointment.professional}</Typography>
-                  </Box>
-                </TableCell>
-
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    <CalendarTodayOutlinedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{appointment.date}</Typography>
-                  </Box>
-                </TableCell>
-
-                <TableCell>
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    <AccessTimeOutlinedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">{appointment.time}</Typography>
-                  </Box>
-                </TableCell>
-
-                <TableCell>
-                  <Tooltip title={appointment.location} arrow>
-                    <Box display="flex" alignItems="center" gap={0.5} sx={{ maxWidth: 180 }}>
-                      <LocationOnOutlinedIcon fontSize="small" color="action" />
-                      <Typography variant="body2" noWrap>
-                        {appointment.location}
-                      </Typography>
-                    </Box>
-                  </Tooltip>
-                </TableCell>
-
-                <TableCell>
-                  <Chip
-                    label={appointment.status}
-                    color={getStatusColor(appointment.status)}
-                    size="small"
-                    sx={{
-                      fontWeight: 500,
-                      borderRadius: "6px",
-                      px: 0.5,
-                    }}
-                  />
-                </TableCell>
-
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    onClick={() => pushWithProgress(`/detalhes/${appointment.id}`)}
-                    sx={{
-                      borderRadius: "8px",
-                      textTransform: "none",
-                      boxShadow: "none",
-                      "&:hover": {
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                      },
-                    }}
-                  >
-                    Detalhes
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {/* Caso não existam dados */}
-            {appointments.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
-                    Nenhuma consulta encontrada.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
-
-      {/* Paginação no canto inferior direito */}
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 15]}
-        component="div"
-        count={appointments.length}
-        rowsPerPage={rowsPerPage}
+    <>
+      <DataTable
+        data={paginatedData}
+        columns={columns}
+        actions={(row: Appointment) => (
+          <IconButton onClick={(e) => handleOpenMenu(e, row.id)}>
+            <MoreVertIcon />
+          </IconButton>
+        )}
         page={page}
-        labelRowsPerPage="Itens por página:"
+        rowsPerPage={rowsPerPage}
+        totalCount={filteredAppointments.length}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
-        sx={{ display: "flex", justifyContent: "flex-end" }}
       />
-    </Paper>
+
+      <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleCloseMenu}>
+        <MenuItem onClick={() => console.log("Ver detalhes:", selectedId)}>Ver Detalhes</MenuItem>
+        <MenuItem onClick={() => console.log("Reagendar:", selectedId)}>Reagendar</MenuItem>
+        <MenuItem onClick={handleCancel}>Cancelar</MenuItem>
+      </Menu>
+
+      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
+        <DialogTitle>Cancelar Consulta</DialogTitle>
+        <DialogContent>
+          <Typography>Deseja realmente cancelar esta consulta?</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDialog(false)}>Não</Button>
+          <Button onClick={confirmCancel} color="error" variant="contained">Sim, Cancelar</Button>
+        </DialogActions>
+      </Dialog>
+    </>
   )
 
-  // Renderiza a versão mobile (cards)
   const renderMobileCards = () => (
     <Box>
-      {paginatedData.map((appointment) => (
-        <Card
-          key={appointment.id}
-          elevation={0}
-          sx={{
-            mb: 2,
-            borderRadius: 3,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-            border: "1px solid rgba(0,0,0,0.05)",
-            position: "relative",
-            overflow: "visible",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "6px",
-              height: "100%",
-              backgroundColor: getStatusBgColor(appointment.status, theme),
-              borderTopLeftRadius: "12px",
-              borderBottomLeftRadius: "12px",
-            },
-          }}
+      {paginatedData.map((a, i) => (
+        <motion.div
+          key={a.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: i * 0.05 }}
         >
-          <CardContent sx={{ p: 2 }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Avatar
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    bgcolor: theme.palette.primary.main,
-                    color: theme.palette.primary.contrastText,
-                    fontSize: 16,
-                    fontWeight: "bold",
-                  }}
-                >
-                  {getInitials(appointment.professional)}
-                </Avatar>
+          <Paper elevation={0} sx={{ mb: 2, p: 2, borderRadius: 3, border: "1px solid rgba(0,0,0,0.05)" }}>
+            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+              <Box display="flex" gap={1} alignItems="center">
+                <Avatar>{getInitials(a.professional)}</Avatar>
                 <Box>
-                  <Typography variant="subtitle1" fontWeight={600}>
-                    {appointment.specialty}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {appointment.professional}
-                  </Typography>
+                  <Typography fontWeight={600}>{a.specialty}</Typography>
+                  <Typography variant="body2" color="text.secondary">{a.professional}</Typography>
                 </Box>
               </Box>
-              <Chip
-                label={appointment.status}
-                color={getStatusColor(appointment.status)}
-                size="small"
-                sx={{
-                  fontWeight: 500,
-                  borderRadius: "6px",
-                  px: 0.5,
-                }}
-              />
+              <Chip label={a.status} color={getStatusColor(a.status)} size="small" />
             </Box>
 
-            <Divider sx={{ my: 1.5 }} />
+            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+              <CalendarTodayOutlinedIcon fontSize="small" />
+              <Typography variant="body2">{a.date}</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+              <AccessTimeOutlinedIcon fontSize="small" />
+              <Typography variant="body2">{a.time}</Typography>
+            </Box>
+            <Box display="flex" alignItems="center" gap={1}>
+              <LocationOnOutlinedIcon fontSize="small" />
+              <Typography variant="body2" noWrap sx={{ maxWidth: "80%" }}>
+                {a.location}
+              </Typography>
+            </Box>
 
-            <Grid container spacing={1} sx={{ mb: 2 }}>
-              <Grid item xs={6}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <CalendarTodayOutlinedIcon fontSize="small" color="action" />
-                  <Typography variant="body2">{appointment.date}</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={6}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <AccessTimeOutlinedIcon fontSize="small" color="action" />
-                  <Typography variant="body2">{appointment.time}</Typography>
-                </Box>
-              </Grid>
-              <Grid item xs={12}>
-                <Box display="flex" alignItems="center" gap={1}>
-                  <LocationOnOutlinedIcon fontSize="small" color="action" />
-                  <Typography variant="body2" noWrap>
-                    {appointment.location}
-                  </Typography>
-                </Box>
-              </Grid>
-            </Grid>
-
-            <Button
-              variant="contained"
-              fullWidth
-              onClick={() => pushWithProgress(`/detalhes/${appointment.id}`)}
-              sx={{
-                borderRadius: "8px",
-                textTransform: "none",
-                boxShadow: "none",
-                "&:hover": {
-                  boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                },
-              }}
-            >
-              Ver Detalhes
-            </Button>
-          </CardContent>
-        </Card>
+            <Box display="flex" justifyContent="flex-end" mt={2}>
+              <IconButton onClick={(e) => handleOpenMenu(e, a.id)}>
+                <MoreVertIcon />
+              </IconButton>
+            </Box>
+          </Paper>
+        </motion.div>
       ))}
 
-      {/* Caso não existam dados */}
-      {appointments.length === 0 && (
-        <Box
-          sx={{
-            textAlign: "center",
-            py: 4,
-            backgroundColor: "white",
-            borderRadius: 3,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-          }}
-        >
-          <Typography variant="body1" color="text.secondary">
-            Nenhuma consulta encontrada.
-          </Typography>
-        </Box>
-      )}
-
-      {/* Paginação centralizada para mobile */}
       <TablePagination
         rowsPerPageOptions={[5, 10, 15]}
         component="div"
-        count={appointments.length}
+        count={filteredAppointments.length}
         rowsPerPage={rowsPerPage}
         page={page}
-        labelRowsPerPage="Itens:"
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-        sx={{ display: "flex", justifyContent: "center" }}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10))
+          setPage(0)
+        }}
+        sx={{ justifyContent: "center", display: "flex" }}
       />
     </Box>
   )
 
   return (
-    <Box
-      sx={{
-        backgroundColor: "#f8f9fa",
-        minHeight: "100vh",
-        py: 6,
-        px: { xs: 2, md: 8 },
-      }}
-    >
+    <Box sx={{ backgroundColor: "#f8f9fa", minHeight: "100vh", py: 6, px: { xs: 2, md: 8 } }}>
       <Box sx={{ maxWidth: 1200, mx: "auto" }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            sx={{
-              position: "relative",
-              "&::after": {
-                content: '""',
-                position: "absolute",
-                bottom: -8,
-                left: 0,
-                width: 40,
-                height: 4,
-                backgroundColor: theme.palette.primary.main,
-                borderRadius: 2,
-              },
-            }}
-          >
+          <Typography variant="h5" fontWeight={700} sx={{
+            position: "relative",
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -8,
+              left: 0,
+              width: 40,
+              height: 4,
+              backgroundColor: theme.palette.primary.main,
+              borderRadius: 2,
+            },
+          }}>
             Minhas Consultas
           </Typography>
 
-          <Button
-            variant="outlined"
-            sx={{
-              borderRadius: "8px",
-              textTransform: "none",
-            }}
-          >
+          <Button variant="outlined" sx={{ borderRadius: "8px" }}>
             Nova Consulta
           </Button>
+        </Box>
+
+        <Box mb={4} maxWidth={200}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Status</InputLabel>
+            <Select
+              native
+              label="Status"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value)
+                setPage(0)
+              }}
+            >
+              <option value="Todos">Todos</option>
+              <option value="Confirmada">Confirmada</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Realizada">Realizada</option>
+            </Select>
+          </FormControl>
         </Box>
 
         {isMobile ? renderMobileCards() : renderDesktopTable()}

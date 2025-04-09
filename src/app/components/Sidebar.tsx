@@ -39,6 +39,7 @@ interface SidebarProps {
   onToggleSidebar: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
+  isMobile: boolean; // <--- Adicionado para diferenciar mobile/desktops
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -47,6 +48,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   onToggleSidebar,
   darkMode,
   onToggleDarkMode,
+  isMobile,
 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -94,12 +96,17 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <Drawer
-      variant="permanent"
+      // Se for desktop, usamos 'permanent'; se for mobile, 'temporary' (sobrepõe)
+      variant={isMobile ? "temporary" : "permanent"}
+      // Em variant="temporary" precisamos de open / onClose
+      open={open}
+      onClose={onToggleSidebar}
       sx={{
         flexShrink: 0,
         whiteSpace: "nowrap",
         "& .MuiDrawer-paper": {
-          width: open ? drawerWidth : collapsedWidth,
+          // Em telas grandes respeita a largura "aberta" ou "colapsada"
+          width: isMobile ? drawerWidth : open ? drawerWidth : collapsedWidth,
           transition: "width 0.3s",
           boxSizing: "border-box",
           bgcolor: drawerBg,
@@ -120,8 +127,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           borderBottom: `1px solid ${dividerColor}`,
         }}
       >
-        {/* Quando a sidebar está aberta */}
-        {open && (
+        {/* Quando a sidebar está aberta (em telas grandes) */}
+        {open && !isMobile && (
           <Box
             sx={{
               display: "flex",
@@ -132,7 +139,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
               <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
-
               <Typography variant="h6" sx={{ fontWeight: 700 }}>
                 IESB Saúde
               </Typography>
@@ -143,8 +149,8 @@ const Sidebar: React.FC<SidebarProps> = ({
           </Box>
         )}
 
-        {/* Quando a sidebar está fechada */}
-        {!open && (
+        {/* Quando a sidebar está fechada (telas grandes) */}
+        {!open && !isMobile && (
           <>
             <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
               <ChevronRightIcon />
@@ -154,41 +160,64 @@ const Sidebar: React.FC<SidebarProps> = ({
             </Box>
           </>
         )}
+
+        {/* Se estiver em mobile, exibe apenas um cabeçalho simples quando open */}
+        {isMobile && open && (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              width: "100%",
+              justifyContent: "space-between",
+            }}
+          >
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+              <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                IESB Saúde
+              </Typography>
+            </Box>
+            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
+              <ChevronLeftIcon />
+            </IconButton>
+          </Box>
+        )}
       </Box>
 
       <List sx={{ px: 1 }}>
-      {menuItems.map((item, index) => {
-        const isActive = pathname === item.path;
-
-        return (
-          <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
-            <Tooltip title={!open ? item.text : ""} placement="right">
-              <ListItemButton
-                onClick={() => {
-                  if (item.path) {
-                    pushWithProgress(item.path);
-                  }
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: isActive ? activeColor : "transparent",
-                  "&:hover": { bgcolor: hoverColor },
-                  justifyContent: open ? "flex-start" : "center",
-                  px: 2,
-                  py: 1,
-                }}
-              >
-                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                  {item.icon}
-                </ListItemIcon>
-                {open && (
-                  <ListItemText primary={<Typography sx={{ fontWeight: 600 }}>{item.text}</Typography>} />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        );
-      })}
+        {menuItems.map((item, index) => {
+          const isActive = pathname === item.path;
+          return (
+            <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
+              <Tooltip title={!open ? item.text : ""} placement="right">
+                <ListItemButton
+                  onClick={() => {
+                    if (item.path) {
+                      pushWithProgress(item.path);
+                      // Se for mobile, fechar depois de navegar
+                      if (isMobile) onToggleSidebar();
+                    }
+                  }}
+                  sx={{
+                    borderRadius: 1.5,
+                    bgcolor: isActive ? activeColor : "transparent",
+                    "&:hover": { bgcolor: hoverColor },
+                    justifyContent: open ? "flex-start" : "center",
+                    px: 2,
+                    py: 1,
+                  }}
+                >
+                  <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                    {item.icon}
+                  </ListItemIcon>
+                  {open && (
+                    <ListItemText primary={<Typography sx={{ fontWeight: 600 }}>{item.text}</Typography>} />
+                  )}
+                </ListItemButton>
+              </Tooltip>
+            </ListItem>
+          );
+        })}
       </List>
       
       <Box sx={{ flexGrow: 1 }} />
@@ -197,45 +226,49 @@ const Sidebar: React.FC<SidebarProps> = ({
         <List sx={{ p: 0 }}>
           {/* Modo Escuro */}
           <ListItem disablePadding sx={{ mb: 0.5 }}>
-          <Tooltip title={!open ? "Modo Escuro" : ""} placement="right">
-            <ListItemButton
-              onClick={() => {
-                showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
-                onToggleDarkMode();
-              }}
-              sx={{
-                borderRadius: 1.5,
-                justifyContent: open ? "flex-start" : "center",
-                px: 2,
-                py: 1,
-                "&:hover": { bgcolor: hoverColor },
-              }}
-            >
-              <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                <DarkModeIcon />
-              </ListItemIcon>
-              {open && (
-                <>
-                  <Typography sx={{ fontWeight: 500 }}>Modo Escuro</Typography>
-                  <Switch
-                    checked={darkMode}
-                    onChange={() => {
-                      showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
-                      onToggleDarkMode();
-                    }}
-                    color="primary"
-                  />
-                </>
-              )}
-            </ListItemButton>
-          </Tooltip>
-        </ListItem>
+            <Tooltip title={!open ? "Modo Escuro" : ""} placement="right">
+              <ListItemButton
+                onClick={() => {
+                  showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
+                  onToggleDarkMode();
+                  if (isMobile) onToggleSidebar(); // fecha em mobile, se quiser
+                }}
+                sx={{
+                  borderRadius: 1.5,
+                  justifyContent: open ? "flex-start" : "center",
+                  px: 2,
+                  py: 1,
+                  "&:hover": { bgcolor: hoverColor },
+                }}
+              >
+                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
+                  <DarkModeIcon />
+                </ListItemIcon>
+                {open && (
+                  <>
+                    <Typography sx={{ fontWeight: 500 }}>Modo Escuro</Typography>
+                    <Switch
+                      checked={darkMode}
+                      onChange={() => {
+                        showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
+                        onToggleDarkMode();
+                      }}
+                      color="primary"
+                    />
+                  </>
+                )}
+              </ListItemButton>
+            </Tooltip>
+          </ListItem>
 
           {/* Perfil */}
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? "Perfil" : ""} placement="right">
               <ListItemButton
-                onClick={() => pushWithProgress("/perfil")}
+                onClick={() => {
+                  pushWithProgress("/perfil");
+                  if (isMobile) onToggleSidebar();
+                }}
                 sx={{
                   borderRadius: 1.5,
                   bgcolor: pathname === "/perfil" ? activeColor : "transparent",
@@ -265,7 +298,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <Tooltip title={!open ? "Configurações" : ""} placement="right">
               <ListItemButton
-                onClick={() => pushWithProgress("/configuracoes")}
+                onClick={() => {
+                  pushWithProgress("/configuracoes");
+                  if (isMobile) onToggleSidebar();
+                }}
                 sx={{
                   borderRadius: 1.5,
                   bgcolor: pathname === "/configuracoes" ? activeColor : "transparent",
@@ -299,6 +335,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                   pushWithProgress("/auth/login");
                   Cookies.remove("session");
                   localStorage.removeItem("session");
+                  if (isMobile) onToggleSidebar();
                 }}
                 sx={{
                   borderRadius: 1.5,
@@ -321,7 +358,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </ListItem>
         </List>
       </Box>
-
     </Drawer>
   );
 };

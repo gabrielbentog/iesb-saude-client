@@ -55,7 +55,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children, anchorOr
       <Snackbar
         anchorOrigin={anchorOrigin || { vertical: 'top', horizontal: 'right' }} // Usa a posição passada ou o valor padrão
         open={toast.open}
-        autoHideDuration={5000}
+        autoHideDuration={4000}
         onClose={handleClose}
       >
         <Alert onClose={handleClose} severity={toast.severity} sx={{ width: '100%' }}>

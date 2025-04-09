@@ -17,7 +17,7 @@
     "axios": "^1.8.4",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.13",
-    "framer-motion": "^12.5.0",
+    "framer-motion": "^12.6.3",
     "js-cookie": "^3.0.5",
     "next": "^15.2.3",
     "nprogress": "^0.2.0",
