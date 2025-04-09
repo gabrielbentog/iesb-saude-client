@@ -30,7 +30,6 @@ interface UserData {
 
 const Header: React.FC<HeaderProps> = ({ open, drawerWidth }) => {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
   const collapsedWidth = 60;
 
   const [user, setUser] = useState<UserData | null>(null);

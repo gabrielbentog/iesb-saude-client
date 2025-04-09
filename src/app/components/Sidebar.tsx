@@ -20,12 +20,12 @@ import {
   ChevronRight as ChevronRightIcon,
   Home as HomeIcon,
   Logout as LogoutIcon,
-  Inbox as InboxIcon,
   CalendarToday as CalendarIcon,
   Settings as SettingsIcon,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
   DarkMode as DarkModeIcon,
+  Medication as MedicationIcon,
 } from "@mui/icons-material";
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { usePathname } from "next/navigation";
@@ -70,13 +70,15 @@ const Sidebar: React.FC<SidebarProps> = ({
     paciente: [
       { icon: <HomeIcon />, text: "Dashboard", path: "/paciente/dashboard" },
       { icon: <CalendarIcon />, text: "Calendário", path: "/paciente/calendario" },
+      { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
     ],
     gestor: [
       { icon: <DashboardIcon />, text: "Painel", path: "/gestor/dashboard" },
       { icon: <SettingsIcon />, text: "Configurações", path: "/gestor/configuracoes" },
+      { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
     ],
     estagiario: [
-      { icon: <InboxIcon />, text: "Atendimentos", path: "/estagiario/atendimentos" },
+      { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
     ],
   };
   
