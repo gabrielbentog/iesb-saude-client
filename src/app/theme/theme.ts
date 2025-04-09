@@ -58,29 +58,29 @@ export const lightTheme = createTheme({
   },
 })
 
-// ========== TEMA ESCURO ==========
+// ========== TEMA ESCURO (Adaptado) ==========
 export const darkTheme = createTheme({
   ...baseTheme,
   palette: {
     mode: 'dark',
     primary: {
-      main: '#E53935',      // vermelho principal (intenso)
-      light: '#FF6F60',     // vermelho claro
-      dark: '#AB000D',      // vermelho escuro
+      main: '#E50839',
+      light: '#FF6371',
+      dark: '#AB062D',
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#424242',      // cinza para contraste
+      main: '#90A4AE',
     },
     background: {
-      default: '#0D0D0D',   // fundo quase preto
-      paper: '#1A1A1A',     // fundo de cartões/painéis um pouco mais claro
+      default: '#121212',
+      paper: '#1E1E1E',
     },
     text: {
-      primary: '#FFFFFF',   // texto principal branco
-      secondary: '#B0B0B0', // texto secundário cinza claro
+      primary: '#FFFFFF',
+      secondary: '#B0B0B0',
     },
-    divider: '#2E2E2E',     // divisor cinza
+    divider: '#333333',
     success: {
       main: '#66BB6A',
     },

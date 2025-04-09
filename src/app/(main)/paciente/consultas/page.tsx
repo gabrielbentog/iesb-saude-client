@@ -210,7 +210,7 @@ const ConsultasScreen: React.FC = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05 }}
         >
-          <Paper elevation={0} sx={{ mb: 2, p: 2, borderRadius: 3, border: "1px solid rgba(0,0,0,0.05)" }}>
+          <Paper elevation={0} sx={{ mb: 2, p: 2, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Box display="flex" gap={1} alignItems="center">
                 <Avatar>{getInitials(a.professional)}</Avatar>
@@ -252,7 +252,7 @@ const ConsultasScreen: React.FC = () => {
         count={filteredAppointments.length}
         rowsPerPage={rowsPerPage}
         page={page}
-        onPageChange={(_, newPage) => setPage(newPage)}
+        onPageChange={handleChangePage}
         onRowsPerPageChange={(e) => {
           setRowsPerPage(parseInt(e.target.value, 10))
           setPage(0)
@@ -263,7 +263,7 @@ const ConsultasScreen: React.FC = () => {
   )
 
   return (
-    <Box sx={{ backgroundColor: "#f8f9fa", minHeight: "100vh", py: 6, px: { xs: 2, md: 8 } }}>
+    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: "100vh", py: 6, px: { xs: 2, md: 8 } }}>
       <Box sx={{ maxWidth: 1200, mx: "auto" }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
           <Typography variant="h5" fontWeight={700} sx={{

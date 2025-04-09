@@ -61,7 +61,11 @@ export default function LoginPage() {
         { expires: 7, secure: true }
       );
 
-      pushWithProgress(`/${response.user.profile.name.toLowerCase()}/dashboard`);
+      const sanitizedProfileName = response.user.profile.name
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
+      pushWithProgress(`/${sanitizedProfileName}/dashboard`);
     } catch (error: unknown) {
       if (error instanceof Error) {
         alert("Erro no login: " + error.message);

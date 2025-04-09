@@ -8,10 +8,10 @@ import {
   TableContainer,
   TablePagination,
   Paper,
-  Box,
   Typography,
 } from "@mui/material"
 import { motion } from "framer-motion"
+import { useTheme } from "@mui/material/styles"
 
 type Column<T> = {
   label: string
@@ -44,6 +44,10 @@ function DataTable<T>({
   totalCount,
   emptyMessage = "Nenhum dado encontrado.",
 }: DataTableProps<T>) {
+  const theme = useTheme()
+
+  const headerBg = theme.palette.mode === "light" ? theme.palette.grey[200] : theme.palette.grey[800]
+
   return (
     <Paper elevation={0} sx={{ borderRadius: 3, overflow: "hidden" }}>
       <TableContainer>
@@ -54,13 +58,25 @@ function DataTable<T>({
                 <TableCell
                   key={idx}
                   align={col.align || "left"}
-                  sx={{ fontWeight: "bold", backgroundColor: "#f1f3f5" }}
+                  sx={{
+                    fontWeight: "bold",
+                    backgroundColor: headerBg,
+                  }}
                   width={col.width}
                 >
                   {col.label}
                 </TableCell>
               ))}
-              {actions && <TableCell sx={{ fontWeight: "bold", backgroundColor: "#f1f3f5" }}>Ações</TableCell>}
+              {actions && (
+                <TableCell
+                  sx={{
+                    fontWeight: "bold",
+                    backgroundColor: headerBg,
+                  }}
+                >
+                  Ações
+                </TableCell>
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -74,7 +90,9 @@ function DataTable<T>({
               >
                 {columns.map((col, idx) => (
                   <TableCell key={idx} align={col.align || "left"}>
-                    {col.render ? col.render(row) : (row[col.accessor!] as unknown as string | number | boolean | null)}
+                    {col.render
+                      ? col.render(row)
+                      : (row[col.accessor!] as unknown as string | number | boolean | null)}
                   </TableCell>
                 ))}
                 {actions && <TableCell>{actions(row)}</TableCell>}
@@ -83,7 +101,11 @@ function DataTable<T>({
 
             {data.length === 0 && (
               <TableRow>
-                <TableCell colSpan={columns.length + (actions ? 1 : 0)} align="center" sx={{ py: 4 }}>
+                <TableCell
+                  colSpan={columns.length + (actions ? 1 : 0)}
+                  align="center"
+                  sx={{ py: 4 }}
+                >
                   <Typography color="text.secondary">{emptyMessage}</Typography>
                 </TableCell>
               </TableRow>
