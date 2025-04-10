@@ -152,7 +152,7 @@ export default function RegisterInternPage() {
 
   const handleTabChange = async (_: React.SyntheticEvent, newValue: number) => {
     if (newValue > tabIndex) {
-      const ok = await trigger(["nome", "email", "telefone"] as any);
+      const ok = await trigger(["nome", "email", "telefone"] as (keyof FormValues)[]);
       if (!ok) return;
     }
     setTabIndex(newValue);
