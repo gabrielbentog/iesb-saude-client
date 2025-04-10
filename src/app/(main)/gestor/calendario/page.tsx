@@ -6,8 +6,8 @@ import EnhancedCalendar from "@/app/components/Calendar/EnhancedCalendar";
 
 export default function Calendar() {
   return (
-    <main>
+    <>
       <EnhancedCalendar />
-    </main>
+    </>
   );
 }

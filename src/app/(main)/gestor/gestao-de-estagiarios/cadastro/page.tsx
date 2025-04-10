@@ -126,7 +126,7 @@ export default function RegisterInternPage() {
         message: "Estagiário cadastrado com sucesso!",
         severity: "success",
       });
-      router.push("/gestor/estagiarios");
+      router.push("/gestor/gestao-de-estagiarios");
     } catch {
       setSnackbar({
         open: true,
@@ -301,7 +301,7 @@ export default function RegisterInternPage() {
           <Divider sx={{ my: 4 }} />
 
           <Box display="flex" justifyContent="flex-end" gap={2}>
-            <Button variant="outlined" onClick={() => router.push("/gestor/estagiarios")} disabled={isSubmitting}>
+            <Button variant="outlined" onClick={() => router.push("/gestor/gestao-de-estagiarios")} disabled={isSubmitting}>
               Cancelar
             </Button>
             <Button

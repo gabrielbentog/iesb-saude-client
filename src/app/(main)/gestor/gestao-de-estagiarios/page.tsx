@@ -182,7 +182,7 @@ export default function InternManagementScreen() {
   const paginatedData = mockInterns.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   const internActions = (row: Intern) => (
-    <IconButton size="small" onClick={() => pushWithProgress(`/gestor/estagiarios/${row.id}`)}>
+    <IconButton size="small" onClick={() => pushWithProgress(`/gestor/gestao-de-estagiarios/${row.id}`)}>
       <EditIcon fontSize="small" />
     </IconButton>
   )

@@ -220,7 +220,7 @@ function internActions(row: Intern, pushWithProgress: (path: string) => void) {
     <IconButton
       size="small"
       color="primary"
-      onClick={() => pushWithProgress(`/gestor/estagiarios/${row.id}`)}
+      onClick={() => pushWithProgress(`/gestor/gestao-de-estagiarios/${row.id}`)}
     >
       <EditIcon fontSize="small" />
     </IconButton>
@@ -511,7 +511,7 @@ export default function ManagerDashboard() {
                   boxShadow: theme.shadows[4],
                 },
               }}
-              onClick={() => pushWithProgress("/gestor/estagiarios")}
+              onClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}
             >
               <Avatar
                 sx={{
@@ -706,7 +706,7 @@ export default function ManagerDashboard() {
                     variant="text"
                     color="primary"
                     endIcon={<ArrowForwardIcon />}
-                    onClick={() => pushWithProgress("/gestor/estagiarios")}
+                    onClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}
                     sx={{ textTransform: "none" }}
                   >
                     Ver todos os estagiários
