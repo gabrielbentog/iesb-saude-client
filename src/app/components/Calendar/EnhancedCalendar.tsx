@@ -10,6 +10,7 @@ import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
 import { EventCategory, CalendarEvent } from "@/app/components/Calendar/types";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 const categoryConfig: Record<EventCategory, { color: string; icon: React.ReactNode }> = {
   medical: { color: "#E50839", icon: <span>Médico</span> },
@@ -39,12 +40,13 @@ const sampleEvents: CalendarEvent[] = [
   // outros eventos...
 ];
 
-export default function EnhancedCalendar() {
+export default function EnhancedCalendar({ showScheduleButton }: { showScheduleButton: boolean }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<"month" | "week" | "day">("month");
   const [filterAnchorEl, setFilterAnchorEl] = useState<null | HTMLElement>(null);
   const [activeFilters, setActiveFilters] = useState<EventCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const pushWithProgress = usePushWithProgress();
 
   // Funções de navegação
   const handlePrev = () => {
@@ -151,6 +153,8 @@ export default function EnhancedCalendar() {
             onFilterToggle={handleFilterToggle}
             onClearFilters={handleClearFilters}
             categoryConfig={categoryConfig}
+            showScheduleButton={showScheduleButton}
+            onScheduleClick={() => pushWithProgress("calendario/agendamento")}
           />
           <Box sx={{ flex: 1, overflow: "auto" }}>{calendarContent}</Box>
         </Paper>

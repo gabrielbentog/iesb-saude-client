@@ -7,7 +7,7 @@ import EnhancedCalendar from "@/app/components/Calendar/EnhancedCalendar";
 export default function Calendar() {
   return (
     <>
-      <EnhancedCalendar />
+      <EnhancedCalendar showScheduleButton={true} />
     </>
   );
 }

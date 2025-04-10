@@ -8,9 +8,7 @@ import {
   Tabs, 
   Tab, 
   IconButton, 
-  Button, 
-  TextField, 
-  InputAdornment, 
+  Button,
   Menu, 
   MenuItem, 
   Divider, 
@@ -21,11 +19,11 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import TodayIcon from '@mui/icons-material/Today';
 import FilterListIcon from '@mui/icons-material/FilterList';
-import SearchIcon from '@mui/icons-material/Search';
 import CloseIcon from '@mui/icons-material/Close';
 import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import CalendarViewWeekIcon from '@mui/icons-material/CalendarViewWeek';
 import CalendarViewDayIcon from '@mui/icons-material/CalendarViewDay';
+import ScheduleIcon from '@mui/icons-material/Schedule';
 import { EventCategory } from '@/app/components/Calendar/types';
 
 interface CalendarHeaderProps {
@@ -46,6 +44,9 @@ interface CalendarHeaderProps {
   onFilterToggle: (category: EventCategory) => void;
   onClearFilters: () => void;
   categoryConfig: Record<string, { color: string; icon: React.ReactNode }>;
+  // Novas props para o botão de agendar horário:
+  showScheduleButton?: boolean;
+  onScheduleClick?: () => void;
 }
 
 export function CalendarHeader({
@@ -56,9 +57,6 @@ export function CalendarHeader({
   onNext,
   onToday,
   onViewModeChange,
-  searchTerm,
-  onSearchChange,
-  onClearSearch,
   filterAnchorEl,
   onFilterClick,
   onFilterClose,
@@ -66,6 +64,8 @@ export function CalendarHeader({
   onFilterToggle,
   onClearFilters,
   categoryConfig,
+  showScheduleButton = false,
+  onScheduleClick,
 }: CalendarHeaderProps) {
   return (
     <Box
@@ -139,7 +139,7 @@ export function CalendarHeader({
         </Menu>
       </Box>
 
-      {/* Parte direita: navegação, data, botão "Hoje" e busca */}
+      {/* Parte direita: navegação, data, botão "Hoje" e campo de busca ou botão de agendar horário */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: { xs: "wrap", md: "nowrap" } }}>
         <IconButton onClick={onPrev} color="inherit">
           <ChevronLeftIcon />
@@ -159,43 +159,39 @@ export function CalendarHeader({
           <ChevronRightIcon />
         </IconButton>
         <Button
-          variant="outlined"
+          variant="contained"
           size="small"
           onClick={onToday}
-          startIcon={<TodayIcon sx={{ color: "white" }} />}
+          startIcon={<TodayIcon />}
           sx={{
             ml: 1,
-            borderColor: "#fff",
-            color: "#fff",
+            backgroundColor: "rgba(255,255,255,0.3)",
+            color: "white",
             "&:hover": {
-              borderColor: "#fff",
-              backgroundColor: "rgba(255,255,255,0.1)",
+              backgroundColor: "rgba(255,255,255,0.5)",
             },
           }}
         >
           Hoje
         </Button>
-        <TextField
-          placeholder="Buscar eventos..."
-          value={searchTerm}
-          onChange={onSearchChange}
-          size="small"
-          sx={{ width: { xs: "100%", sm: 250 } }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon fontSize="small" />
-              </InputAdornment>
-            ),
-            endAdornment: searchTerm && (
-              <InputAdornment position="end">
-                <IconButton size="small" onClick={onClearSearch}>
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
-        />
+        {showScheduleButton && (
+          <Button
+            variant="contained"
+            size="small"
+            onClick={onScheduleClick}
+            startIcon={<ScheduleIcon />}
+            sx={{
+              ml: 1,
+              backgroundColor: "secondary.main",
+              color: "white",
+              "&:hover": {
+                backgroundColor: "secondary.dark",
+              },
+            }}
+          >
+            Agendar horário
+          </Button>
+        )}
       </Box>
     </Box>
   );
