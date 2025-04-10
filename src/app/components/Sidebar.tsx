@@ -76,8 +76,9 @@ const Sidebar: React.FC<SidebarProps> = ({
     ],
     gestor: [
       { icon: <DashboardIcon />, text: "Painel", path: "/gestor/dashboard" },
-      { icon: <SettingsIcon />, text: "Configurações", path: "/gestor/configuracoes" },
+      { icon: <CalendarIcon />, text: "Calendário", path: "/gestor/calendario" },
       { icon: <MedicationIcon />, text: "Consultas", path: "/gestor/consultas" },
+      { icon: <PersonIcon />, text: "Estagiários", path: "/gestor/gestao-de-estagiarios" },
     ],
     estagiario: [
       { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
