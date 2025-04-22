@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Box,
   Button,
@@ -13,6 +13,7 @@ import {
   FormControlLabel,
   Checkbox,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import {
   TimePicker,
@@ -28,6 +29,8 @@ import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import dayjs from "dayjs";
+import { CollegeLocation, Specialty } from "./types"
+import { useApi } from "@/app/hooks/useApi";
 
 /* ──────────────────────────────────────────────────────────
  * Mock de dados
@@ -53,9 +56,6 @@ const frequencyTypes = [
   { value: 1, label: "Semanal" },
   { value: 2, label: "Mensal" },
 ];
-
-const locations = [{ id: 1, name: "Unidade Central" }];
-const specialties = [{ id: 1, name: "Nutrição" }];
 
 /* ──────────────────────────────────────────────────────────
  * Zod Schemas (com coerção)
@@ -104,12 +104,13 @@ export default function ScheduleForm() {
     control,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      specialty_id: specialties[0].id,
-      college_location_id: locations[0].id,
+      specialty_id: undefined,
+      college_location_id: undefined,
       schedules: [
         {
           week_day: 1,
@@ -121,6 +122,29 @@ export default function ScheduleForm() {
       ],
     },
   });
+
+  // 1) Buscar todos os campuses
+  const {
+    data: locData,
+    loading: loadingLocs,
+  } = useApi<CollegeLocation[]>("/api/college_locations");
+  // garante um array
+  const locations = locData ?? [];
+  
+  // 2) Saber qual campus foi escolhido
+  const selectedCampusId = watch("college_location_id");
+  
+  // 3) Buscar só as especialidades daquele campus
+  const {
+    data: specData,
+    loading: loadingSpecs,
+  } = useApi<Specialty[]>(
+    selectedCampusId
+      ? `/api/college_locations/${selectedCampusId}/specialties`
+      : ""
+  );
+  // garante um array
+  const specialties = specData ?? [];
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -144,6 +168,10 @@ export default function ScheduleForm() {
 
     console.log("Payload:", { ...data, schedules: output });
   };
+
+  useEffect(() => {
+    setValue("specialty_id", undefined);
+  }, [selectedCampusId, setValue]);
 
   /* Helper para obter erros aninhados dos schedules */
   const getScheduleError = (
@@ -182,6 +210,33 @@ export default function ScheduleForm() {
             mb={3}
           >
             <Controller
+              name="college_location_id"
+              control={control}
+              render={({ field, fieldState }) => (
+                <TextField
+                  select
+                  label="Campus"
+                  fullWidth
+                  value={field.value ?? ""}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  error={!!fieldState.error}
+                  helperText={fieldState.error?.message}
+                  disabled={loadingLocs}
+                >
+                  {loadingLocs ? (
+                    <MenuItem><CircularProgress size={20} /></MenuItem>
+                  ) : (
+                    locations?.map((l) => (
+                      <MenuItem key={l.id} value={l.id}>
+                        {l.name}
+                      </MenuItem>
+                    ))
+                  )}
+                </TextField>
+              )}
+            />
+
+            <Controller
               name="specialty_id"
               control={control}
               render={({ field, fieldState }) => (
@@ -189,38 +244,25 @@ export default function ScheduleForm() {
                   select
                   label="Especialidade"
                   fullWidth
-                  value={field.value}
+                  value={field.value ?? ""}
                   onChange={(e) => field.onChange(Number(e.target.value))}
                   error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
+                  helperText={
+                    !selectedCampusId
+                      ? "Selecione o campus primeiro"
+                      : fieldState.error?.message
+                  }
+                  disabled={!selectedCampusId || loadingSpecs}
                 >
-                  {specialties.map((s) => (
-                    <MenuItem key={s.id} value={s.id}>
-                      {s.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-
-            <Controller
-              name="college_location_id"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField
-                  select
-                  label="Local"
-                  fullWidth
-                  value={field.value}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                >
-                  {locations.map((l) => (
-                    <MenuItem key={l.id} value={l.id}>
-                      {l.name}
-                    </MenuItem>
-                  ))}
+                  {loadingSpecs ? (
+                    <MenuItem><CircularProgress size={20} /></MenuItem>
+                  ) : (
+                    specialties?.map((s) => (
+                      <MenuItem key={s.id} value={s.id}>
+                        {s.name}
+                      </MenuItem>
+                    ))
+                  )}
                 </TextField>
               )}
             />
