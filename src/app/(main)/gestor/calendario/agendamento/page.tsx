@@ -87,10 +87,20 @@ const scheduleSchema = z.object({
 });
 
 const formSchema = z.object({
-  specialty_id: z.coerce.number({ required_error: "Selecione a especialidade" }),
-  college_location_id: z.coerce.number({ required_error: "Selecione o local" }),
-  schedules: z.array(scheduleSchema).min(1),
-});
+    specialty_id:   z.coerce.number().optional(),
+    college_location_id: z.coerce.number().optional(),
+    schedules:      z.array(scheduleSchema).min(1),
+  })
+  // só dá erro se faltar campus
+  .refine((data) => data.college_location_id != null, {
+    path: ["college_location_id"],
+    message: "Selecione o local",
+  })
+  // só dá erro se faltar especialidade
+  .refine((data) => data.specialty_id != null, {
+    path: ["specialty_id"],
+    message: "Selecione a especialidade",
+  });
 
 type FormValues = z.infer<typeof formSchema>;
 
@@ -105,6 +115,7 @@ export default function ScheduleForm() {
     handleSubmit,
     watch,
     setValue,
+    unregister,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -381,18 +392,30 @@ export default function ScheduleForm() {
 
                   {/* Recorrência */}
                   <Box mt={2}>
-                    <Controller
-                      name={`schedules.${index}.hasRecurrence` as const}
-                      control={control}
-                      render={({ field }) => (
-                        <FormControlLabel
-                          control={
-                            <Checkbox {...field} checked={field.value || false} />
-                          }
-                          label="Repetir esse horário"
-                        />
-                      )}
-                    />
+                  <Controller
+                    name={`schedules.${index}.hasRecurrence` as const}
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            {...field}
+                            checked={field.value || false}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              field.onChange(checked);
+
+                              if (!checked) {
+                                // remove recurrence (value + erros) do form
+                                unregister(`schedules.${index}.recurrence`);
+                              }
+                            }}
+                          />
+                        }
+                        label="Repetir esse horário"
+                      />
+                    )}
+                  />
                   </Box>
 
                   {schedule?.hasRecurrence && (
