@@ -10,17 +10,16 @@ import {
   Paper,
   TextField,
   Typography,
-  FormControlLabel,
-  Checkbox,
   Stack,
-  CircularProgress,
+  Skeleton,
 } from "@mui/material";
 import {
-  TimePicker,
   DatePicker,
+  TimePicker,
   LocalizationProvider,
 } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -28,13 +27,10 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import dayjs from "dayjs";
-import { CollegeLocation, Specialty } from "./types"
 import { useApi } from "@/app/hooks/useApi";
+import { CollegeLocation, Specialty } from "./types";
 
-/* ──────────────────────────────────────────────────────────
- * Mock de dados
- * ────────────────────────────────────────────────────────── */
+/* ───────────────────────────── */
 const weekDays = [
   { value: 0, label: "Domingo" },
   { value: 1, label: "Segunda" },
@@ -45,68 +41,53 @@ const weekDays = [
   { value: 6, label: "Sábado" },
 ];
 
-const turnOptions = [
-  { value: 0, label: "Manhã" },
-  { value: 1, label: "Tarde" },
-  { value: 2, label: "Noite" },
-];
-
-const frequencyTypes = [
-  { value: 0, label: "Diária" },
-  { value: 1, label: "Semanal" },
-  { value: 2, label: "Mensal" },
-];
-
-/* ──────────────────────────────────────────────────────────
- * Zod Schemas (com coerção)
- * ────────────────────────────────────────────────────────── */
-const recurrenceSchema = z.object({
-  start_date: z.date({ required_error: "Informe a data inicial" }),
-  end_date: z.date({ required_error: "Informe a data final" }),
-  frequency_type: z.coerce.number({ required_error: "Informe a frequência" }),
-  frequency_interval: z.coerce
-    .number({ invalid_type_error: "Somente números" })
-    .int()
-    .min(1, { message: "Mínimo 1" }),
-  max_occurrences: z.coerce.number().optional(),
-});
-
-const scheduleSchema = z.object({
-  week_day: z.coerce.number({ required_error: "Escolha o dia" }),
-  turn: z.coerce.number({ required_error: "Escolha o turno" }),
-  start_time: z.any(),
-  end_time: z.any(),
-  hasRecurrence: z.boolean().optional(),
-  recurrence: z
-    .union([recurrenceSchema, z.undefined()])
-    .optional()
-    .refine(
-      (val) => !val || dayjs(val.end_date).isAfter(dayjs(val.start_date)),
-      { message: "Data final deve ser após a inicial" }
-    ),
-});
-
-const formSchema = z.object({
-    specialty_id:   z.coerce.number().optional(),
-    college_location_id: z.coerce.number().optional(),
-    schedules:      z.array(scheduleSchema).min(1),
+/* ─────────────────────────────
+ * Zod Schemas
+ * ───────────────────────────── */
+const scheduleSchema = z
+  .object({
+    date: z.date().optional(),              // repeat_type = 0
+    week_day: z.coerce.number().optional(), // repeat_type = 1
+    start_time: z.any(),
+    end_time: z.any(),
   })
-  // só dá erro se faltar campus
-  .refine((data) => data.college_location_id != null, {
+  .refine((s) => dayjs(s.end_time).isAfter(dayjs(s.start_time)), {
+    message: "Hora fim deve ser maior que início",
+    path: ["end_time"],
+  });
+
+const formSchema = z
+  .object({
+    college_location_id: z.coerce.number().optional(),
+    specialty_id: z.coerce.number().optional(),
+    repeat_type: z.coerce.number(), // 0 = não repete | 1 = semanal
+    schedules: z.array(scheduleSchema).min(1),
+  })
+  .refine((d) => d.college_location_id != null, {
     path: ["college_location_id"],
     message: "Selecione o local",
   })
-  // só dá erro se faltar especialidade
-  .refine((data) => data.specialty_id != null, {
+  .refine((d) => d.specialty_id != null, {
     path: ["specialty_id"],
     message: "Selecione a especialidade",
-  });
+  })
+  .refine(
+    (d) =>
+      d.repeat_type === 0
+        ? d.schedules.every((s) => s.date)
+        : d.schedules.every((s) => s.week_day != null),
+    {
+      path: ["schedules"],
+      message:
+        "Preencha Data (sem repetição) ou Dia da Semana (repetição semanal)",
+    }
+  );
 
 type FormValues = z.infer<typeof formSchema>;
 
-/* ──────────────────────────────────────────────────────────
+/* ─────────────────────────────
  * Componente
- * ────────────────────────────────────────────────────────── */
+ * ───────────────────────────── */
 export default function ScheduleForm() {
   const router = useRouter();
 
@@ -115,202 +96,233 @@ export default function ScheduleForm() {
     handleSubmit,
     watch,
     setValue,
-    unregister,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      specialty_id: undefined,
-      college_location_id: undefined,
+      repeat_type: 0,
       schedules: [
         {
-          week_day: 1,
-          turn: 0,
+          date: dayjs().toDate(),
           start_time: dayjs().hour(8).minute(0),
           end_time: dayjs().hour(12).minute(0),
-          hasRecurrence: false,
         },
       ],
     },
   });
 
-  // 1) Buscar todos os campuses
-  const {
-    data: locData,
-    loading: loadingLocs,
-  } = useApi<CollegeLocation[]>("/api/college_locations");
-  // garante um array
+  /* Campus & especialidades */
+  const { data: locData, loading: loadingLocs } =
+    useApi<CollegeLocation[]>("/api/college_locations");
   const locations = locData ?? [];
-  
-  // 2) Saber qual campus foi escolhido
+
   const selectedCampusId = watch("college_location_id");
-  
-  // 3) Buscar só as especialidades daquele campus
-  const {
-    data: specData,
-    loading: loadingSpecs,
-  } = useApi<Specialty[]>(
+
+  const { data: specData, loading: loadingSpecs } = useApi<Specialty[]>(
     selectedCampusId
       ? `/api/college_locations/${selectedCampusId}/specialties`
       : ""
   );
-  // garante um array
   const specialties = specData ?? [];
 
+  /* FieldArray */
   const { fields, append, remove } = useFieldArray({
     control,
     name: "schedules",
   });
 
-  const onSubmit = (data: FormValues) => {
-    const output = data.schedules.map((s) => ({
-      ...s,
-      start_time: s.start_time ? s.start_time.format("HH:mm") : null,
-      end_time: s.end_time ? s.end_time.format("HH:mm") : null,
-      recurrence:
-        s.hasRecurrence && s.recurrence
-          ? {
-              ...s.recurrence,
-              start_date: dayjs(s.recurrence.start_date).format("YYYY-MM-DD"),
-              end_date: dayjs(s.recurrence.end_date).format("YYYY-MM-DD"),
-            }
-          : undefined,
-    }));
-
-    console.log("Payload:", { ...data, schedules: output });
-  };
-
+  /* -------- Atualiza date/week_day quando muda repeat_type -------- */
+  const repeatType = watch("repeat_type");
   useEffect(() => {
-    setValue("specialty_id", undefined);
-  }, [selectedCampusId, setValue]);
+    fields.forEach((_, idx) => {
+      if (repeatType === 1) {
+        const dateVal = getValues(`schedules.${idx}.date`);
+        const derived = dateVal ? dayjs(dateVal).day() : dayjs().day();
+        setValue(`schedules.${idx}.week_day`, derived, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        setValue(`schedules.${idx}.date`, undefined, { shouldDirty: true });
+      } else {
+        const wdVal = getValues(`schedules.${idx}.week_day`);
+        const fallbackDate =
+          wdVal != null ? dayjs().day(wdVal).toDate() : dayjs().toDate();
+        setValue(`schedules.${idx}.date`, fallbackDate, {
+          shouldDirty: true,
+          shouldValidate: true,
+        });
+        setValue(`schedules.${idx}.week_day`, undefined, {
+          shouldDirty: true,
+        });
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [repeatType]);
 
-  /* Helper para obter erros aninhados dos schedules */
-  const getScheduleError = (
-    idx: number,
-    path: keyof (typeof scheduleSchema)["shape"] | string
-  ) => {
-    const scheduleErrors = errors.schedules?.[idx] as Partial<
-      Record<keyof FormValues["schedules"][number], { message?: string }>
-    >;
-    return scheduleErrors && scheduleErrors[path as keyof typeof scheduleErrors];
-  };
+  /* helper erro aninhado */
+  const errSched = (
+    i: number,
+    k: keyof FormValues["schedules"][number]
+  ) =>
+    (errors.schedules?.[i] as Record<string, { message: string }>)?.[k];
+
+    const onSubmit = (data: FormValues) => {
+      const base = {
+        college_location_id: data.college_location_id!,
+        specialty_id:        data.specialty_id!,
+        repeat_type:         data.repeat_type,
+      };
+    
+      const payload = data.schedules.map((s) => ({
+        ...base,
+        date:        s.date       ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
+        week_day:    s.week_day,
+        start_time:  dayjs(s.start_time).format("HH:mm"),
+        end_time:    dayjs(s.end_time).format("HH:mm"),
+      }));
+    
+      console.log("Payload:", payload);
+    };
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Container maxWidth="lg" sx={{ mt: 4 }}>
         {/* Header */}
-        <Stack direction="row" alignItems="center" spacing={2} mb={2}>
+        <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <Button
             startIcon={<ArrowBackIosNewIcon />}
-            onClick={() => router.back()}
             variant="outlined"
+            onClick={() => router.back()}
           >
             Voltar
           </Button>
           <Typography variant="h5" fontWeight={600} flexGrow={1}>
-            Alocar Horários Fixos com Repetição
+            Definir horários disponíveis
           </Typography>
         </Stack>
 
         <Paper elevation={3} sx={{ p: 4 }}>
-          {/* Campos de cabeçalho */}
+          {/* Campus + Especialidade */}
           <Box
             display="grid"
             gridTemplateColumns={{ xs: "1fr", sm: "repeat(2, 1fr)" }}
             gap={2}
             mb={3}
           >
-            <Controller
-              name="college_location_id"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField
-                  select
-                  label="Campus"
-                  fullWidth
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  error={!!fieldState.error}
-                  helperText={fieldState.error?.message}
-                  disabled={loadingLocs}
-                >
-                  {loadingLocs ? (
-                    <MenuItem><CircularProgress size={20} /></MenuItem>
-                  ) : (
-                    locations?.map((l) => (
+            {/* CAMPUS -------------------------------------------------- */}
+            {loadingLocs ? (
+              <Skeleton height={56} />
+            ) : (
+              <Controller
+                name="college_location_id"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    select
+                    fullWidth
+                    label="Campus"
+                    {...field}
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                  >
+                    {locations.map((l) => (
                       <MenuItem key={l.id} value={l.id}>
                         {l.name}
                       </MenuItem>
-                    ))
-                  )}
-                </TextField>
-              )}
-            />
+                    ))}
+                  </TextField>
+                )}
+              />
+            )}
 
-            <Controller
-              name="specialty_id"
-              control={control}
-              render={({ field, fieldState }) => (
-                <TextField
-                  select
-                  label="Especialidade"
-                  fullWidth
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
-                  error={!!fieldState.error}
-                  helperText={
-                    !selectedCampusId
-                      ? "Selecione o campus primeiro"
-                      : fieldState.error?.message
-                  }
-                  disabled={!selectedCampusId || loadingSpecs}
-                >
-                  {loadingSpecs ? (
-                    <MenuItem><CircularProgress size={20} /></MenuItem>
-                  ) : (
-                    specialties?.map((s) => (
+            {/* ESPECIALIDADE -------------------------------------------------- */}
+            {loadingSpecs ? (
+              <Skeleton height={56} />
+            ) : (
+              <Controller
+                name="specialty_id"
+                control={control}
+                render={({ field, fieldState }) => (
+                  <TextField
+                    select
+                    fullWidth
+                    label="Especialidade"
+                    {...field}
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    error={!!fieldState.error}
+                    helperText={
+                      !selectedCampusId
+                        ? "Selecione o campus primeiro"
+                        : fieldState.error?.message
+                    }
+                    disabled={!selectedCampusId}
+                  >
+                    {specialties.map((s) => (
                       <MenuItem key={s.id} value={s.id}>
                         {s.name}
                       </MenuItem>
-                    ))
-                  )}
+                    ))}
+                  </TextField>
+                )}
+              />
+            )}
+          </Box>
+
+          {/* Select Repetição */}
+          <Box mb={4} maxWidth={{ xs: "100%", sm: 300 }}>
+            <Controller
+              name="repeat_type"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  fullWidth
+                  label="Repetição"
+                  {...field}
+                  value={field.value}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                >
+                  <MenuItem value={0}>Não se repete (datas específicas)</MenuItem>
+                  <MenuItem value={1}>Repetir semanalmente</MenuItem>
                 </TextField>
               )}
             />
           </Box>
 
-          {/* Lista de schedules */}
+          {/* Horários -------------------------------------------------- */}
           <Stack spacing={4}>
-            {fields.map((field, index) => {
-              const schedule = watch(`schedules.${index}`);
-              return (
-                <Paper key={field.id} variant="outlined" sx={{ p: 3 }}>
-                  {/* Linha principal */}
-                  <Box
-                    display="grid"
-                    gridTemplateColumns={{
-                      xs: "1fr",
-                      sm: "2fr 1fr 2fr 2fr auto",
-                    }}
-                    gap={2}
-                    alignItems="center"
-                  >
+            {fields.map((f, i) => (
+              <Paper key={f.id} variant="outlined" sx={{ p: 3 }}>
+                <Box
+                  display="grid"
+                  gridTemplateColumns={{ xs: "1fr", sm: "2fr 2fr 2fr auto" }}
+                  gap={2}
+                  alignItems="center"
+                >
+                  {repeatType === 1 ? (
+                    /* ---------- Dia da semana ---------- */
                     <Controller
-                      name={`schedules.${index}.week_day` as const}
+                      key={`week-day-${f.id}`}
+                      name={`schedules.${i}.week_day`}
                       control={control}
                       render={({ field, fieldState }) => (
                         <TextField
                           select
-                          label="Dia da Semana"
                           fullWidth
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
-                          }
+                          label="Dia da Semana"
+                          name={field.name}
+                          inputRef={field.ref}
+                          value={field.value ?? ""}                 // ← nunca undefined
+                          onBlur={field.onBlur}
+                          onChange={e => field.onChange(+e.target.value)}
                           error={!!fieldState.error}
                           helperText={fieldState.error?.message}
                         >
-                          {weekDays.map((d) => (
+                          {weekDays.map(d => (
                             <MenuItem key={d.value} value={d.value}>
                               {d.label}
                             </MenuItem>
@@ -318,234 +330,116 @@ export default function ScheduleForm() {
                         </TextField>
                       )}
                     />
-
+                  ) : (
+                    /* ---------- Data específica ---------- */
                     <Controller
-                      name={`schedules.${index}.turn` as const}
+                      key={`date-${f.id}`}            // ← chave exclusiva!
+                      name={`schedules.${i}.date`}
                       control={control}
                       render={({ field, fieldState }) => (
-                        <TextField
-                          select
-                          label="Turno"
-                          fullWidth
-                          value={field.value}
-                          onChange={(e) =>
-                            field.onChange(Number(e.target.value))
+                        <DatePicker
+                          label="Data"
+                          value={field.value ? dayjs(field.value) : null}
+                          onChange={(d) =>
+                            field.onChange(d?.toDate() || undefined)
                           }
-                          error={!!fieldState.error}
-                          helperText={fieldState.error?.message}
-                        >
-                          {turnOptions.map((t) => (
-                            <MenuItem key={t.value} value={t.value}>
-                              {t.label}
-                            </MenuItem>
-                          ))}
-                        </TextField>
-                      )}
-                    />
-
-                    <Controller
-                      name={`schedules.${index}.start_time` as const}
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          label="Início"
-                          value={field.value || dayjs()}
-                          onChange={field.onChange}
                           slotProps={{
                             textField: {
-                              error: !!getScheduleError(index, "start_time"),
-                              helperText: getScheduleError(index, "start_time")
-                                ?.message,
+                              fullWidth: true,
+                              error: !!fieldState.error,
+                              helperText: fieldState.error?.message,
                             },
                           }}
                         />
                       )}
                     />
+                  )}
 
-                    <Controller
-                      name={`schedules.${index}.end_time` as const}
-                      control={control}
-                      render={({ field }) => (
-                        <TimePicker
-                          label="Fim"
-                          value={field.value || dayjs()}
-                          onChange={field.onChange}
-                          slotProps={{
-                            textField: {
-                              error: !!getScheduleError(index, "end_time"),
-                              helperText: getScheduleError(index, "end_time")
-                                ?.message,
-                            },
-                          }}
-                        />
-                      )}
-                    />
-
-                    <IconButton
-                      onClick={() => remove(index)}
-                      disabled={fields.length === 1}
-                      size="small"
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-
-                  {/* Recorrência */}
-                  <Box mt={2}>
+                  {/* Início -------------------------------------------------- */}
                   <Controller
-                    name={`schedules.${index}.hasRecurrence` as const}
+                    key={`start-time-${f.id}`}            // ← chave exclusiva!
+                    name={`schedules.${i}.start_time`}
                     control={control}
                     render={({ field }) => (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            {...field}
-                            checked={field.value || false}
-                            onChange={(e) => {
-                              const checked = e.target.checked;
-                              field.onChange(checked);
-
-                              if (!checked) {
-                                // remove recurrence (value + erros) do form
-                                unregister(`schedules.${index}.recurrence`);
-                              }
-                            }}
-                          />
-                        }
-                        label="Repetir esse horário"
+                      <TimePicker
+                        label="Início"
+                        {...field}
+                        slotProps={{
+                          textField: {
+                            error: !!errSched(i, "start_time"),
+                            helperText: errSched(i, "start_time")?.message,
+                          },
+                        }}
                       />
                     )}
                   />
-                  </Box>
 
-                  {schedule?.hasRecurrence && (
-                    <Box
-                      display="grid"
-                      gridTemplateColumns={{ xs: "1fr", sm: "repeat(4, 1fr)" }}
-                      gap={2}
-                      mt={2}
-                    >
-                      <Controller
-                        name={`schedules.${index}.recurrence.start_date` as const}
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <DatePicker
-                            label="Data Início"
-                            value={field.value ? dayjs(field.value) : null}
-                            onChange={(date) =>
-                              field.onChange(date?.toDate() || null)
-                            }
-                            slotProps={{
-                              textField: {
-                                error: !!fieldState.error,
-                                helperText: fieldState.error?.message,
-                              },
-                            }}
-                          />
-                        )}
+                  {/* Fim -------------------------------------------------- */}
+                  <Controller
+                    key={`end-time-${f.id}`}            // ← chave exclusiva!
+                    name={`schedules.${i}.end_time`}
+                    control={control}
+                    render={({ field }) => (
+                      <TimePicker
+                        label="Fim"
+                        {...field}
+                        slotProps={{
+                          textField: {
+                            error: !!errSched(i, "end_time"),
+                            helperText: errSched(i, "end_time")?.message,
+                          },
+                        }}
                       />
+                    )}
+                  />
 
-                      <Controller
-                        name={`schedules.${index}.recurrence.end_date` as const}
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <DatePicker
-                            label="Data Fim"
-                            value={field.value ? dayjs(field.value) : null}
-                            onChange={(date) =>
-                              field.onChange(date?.toDate() || null)
-                            }
-                            slotProps={{
-                              textField: {
-                                error: !!fieldState.error,
-                                helperText: fieldState.error?.message,
-                              },
-                            }}
-                          />
-                        )}
-                      />
-
-                      <Controller
-                        name={`schedules.${index}.recurrence.frequency_type` as const}
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <TextField
-                            select
-                            label="Frequência"
-                            fullWidth
-                            value={field.value ?? 1}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                            error={!!fieldState.error}
-                            helperText={fieldState.error?.message}
-                          >
-                            {frequencyTypes.map((f) => (
-                              <MenuItem key={f.value} value={f.value}>
-                                {f.label}
-                              </MenuItem>
-                            ))}
-                          </TextField>
-                        )}
-                      />
-
-                      <Controller
-                        name={`schedules.${index}.recurrence.frequency_interval` as const}
-                        control={control}
-                        render={({ field, fieldState }) => (
-                          <TextField
-                            type="number"
-                            label="Intervalo"
-                            fullWidth
-                            inputProps={{ min: 1 }}
-                            value={field.value ?? 1}
-                            onChange={(e) =>
-                              field.onChange(Number(e.target.value))
-                            }
-                            error={!!fieldState.error}
-                            helperText={fieldState.error?.message}
-                          />
-                        )}
-                      />
-                    </Box>
-                  )}
-                </Paper>
-              );
-            })}
+                  {/* Remover horário --------------------------------------- */}
+                  <IconButton
+                    aria-label="Remover horário"
+                    disabled={fields.length === 1}
+                    onClick={() => remove(i)}
+                    size="small"
+                  >
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Box>
+              </Paper>
+            ))}
           </Stack>
 
-          {/* Botões */}
-          <Stack direction="row" spacing={2} mt={4} justifyContent="space-between">
+          {/* Botões ------------------------------------------------------ */}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            spacing={2}
+            mt={4}
+          >
             <Button
               startIcon={<AddIcon />}
-              onClick={() =>
-                append({
-                  week_day: 1,
-                  turn: 0,
-                  start_time: dayjs().hour(8).minute(0),
-                  end_time: dayjs().hour(12).minute(0),
-                  hasRecurrence: false,
-                  recurrence: {
-                    start_date: dayjs().toDate(),
-                    end_date: dayjs().add(1, "month").toDate(),
-                    frequency_type: 1,
-                    frequency_interval: 1,
-                    max_occurrences: undefined,
-                  },
-                })
-              }
               variant="outlined"
+              onClick={() =>
+                append(
+                  repeatType === 1
+                    ? {
+                        week_day: dayjs().day(),
+                        start_time: dayjs().hour(8).minute(0),
+                        end_time: dayjs().hour(12).minute(0),
+                      }
+                    : {
+                        date: dayjs().toDate(),
+                        start_time: dayjs().hour(8).minute(0),
+                        end_time: dayjs().hour(12).minute(0),
+                      }
+                )
+              }
             >
               Adicionar horário
             </Button>
 
             <Button
-              type="submit"
               variant="contained"
               disabled={isSubmitting}
-              onClick={handleSubmit(onSubmit, (errors) => {
-                console.log("Validation errors:", errors);
-              })}
+              onClick={handleSubmit(onSubmit)}
             >
               {isSubmitting ? "Salvando..." : "Salvar Alocações"}
             </Button>
