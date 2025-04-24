@@ -136,7 +136,7 @@ export function CalendarMonthView({
                               past={past}
                               isCurrentMonth={sameMonth}
                               color={chipColor}
-                              onClick={() => !past && setSelected(ev)}
+                              onClick={() => setSelected(ev)}
                               sx={{ mt: 0.25 }}
                             >
                               {ev.allDay

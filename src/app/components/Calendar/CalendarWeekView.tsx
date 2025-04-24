@@ -123,7 +123,7 @@ export function CalendarWeekView({
                               past={past}
                               color={chipColor}
                               isCurrentMonth={true}
-                              onClick={() => !past && setSelected(ev)}
+                              onClick={() => setSelected(ev)}
                             >
                               {format(ev.date, "HH:mm")} {ev.title}
                             </EventChip>

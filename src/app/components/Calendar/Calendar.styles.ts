@@ -98,6 +98,6 @@ export const EventChip = styled("span", {
     textOverflow: "ellipsis",
     opacity: isCurrentMonth ? 1 : 0.4,
     textDecoration: past ? "line-through" : "none",
-    cursor: past ? "default" : "pointer",
+    cursor: "pointer",
   };
 });

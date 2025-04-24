@@ -50,7 +50,7 @@ const rangeFor = (v: ViewMode, ref: Date) =>
       }
     : { start: format(ref, "yyyy-MM-dd"), end: format(ref, "yyyy-MM-dd") };
 
-/* ---------- tipos auxiliares ---------- */
+/* ---------- tipos ---------- */
 type CollegeLocation = { id: number; name: string };
 type SimpleSpec = { id: number; name: string };
 
@@ -61,6 +61,7 @@ type ApiSlot = {
   specialty_name: string;
   time_slot_id?: number;
   patient_name?: string;
+  is_recurring?: boolean;
 };
 
 type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
@@ -117,7 +118,7 @@ export default function EnhancedCalendar({
         title: kind === "busy" ? slot.patient_name || "Consulta" : "Disponível",
         description: `${slot.specialty_name} • ${slot.campus_name}`,
         category: slot.specialty_name as EventCategory,
-        isRecurring: Boolean(slot.time_slot_id),
+        isRecurring: slot.is_recurring ?? Boolean(slot.time_slot_id),
         timeSlotId: slot.time_slot_id,
       });
     };
@@ -149,7 +150,7 @@ export default function EnhancedCalendar({
     [events, campusFilters, specFilters]
   );
 
-  /* ---------- navegação helpers ---------- */
+  /* ---------- navegação ---------- */
   const prev = () =>
     setCurrentDate(
       view === "month"
@@ -163,7 +164,7 @@ export default function EnhancedCalendar({
         : addDays(currentDate, view === "week" ? 7 : 1)
     );
 
-  /* ---------- callback para remoção instantânea ---------- */
+  /* ---------- callback para exclusão instantânea ---------- */
   const handleDeleted = (info: { type: "single" | "series"; id?: string; timeSlotId?: number }) => {
     setEvents((prev) =>
       info.type === "single"
@@ -249,7 +250,12 @@ export default function EnhancedCalendar({
 
       <Fab
         color="primary"
-        sx={{ position: "fixed", bottom: 16, right: 16, display: { xs: "flex", md: "none" } }}
+        sx={{
+          position: "fixed",
+          bottom: 16,
+          right: 16,
+          display: { xs: "flex", md: "none" },
+        }}
       >
         <AddIcon />
       </Fab>
