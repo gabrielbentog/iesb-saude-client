@@ -43,18 +43,25 @@ export default function ScheduleFormPage() {
     formState: { isSubmitting },
   } = methods;
 
-  /* ---------- selects (mock data) ---------- */
+  /* ---------- selects ---------- */
   const { data: locData, loading: loadingLocs } =
     useApi<CollegeLocation[]>("/api/college_locations");
   const locations = locData ?? [];
 
   const selectedCampusId = watch("college_location_id");
-  const { data: specData, loading: loadingSpecs } = useApi<Specialty[]>(
+
+  // resposta da API pode vir como array ou { specialties: [...] }
+  const { data: specData, loading: loadingSpecs } = useApi<
+    Specialty[] | { specialties: Specialty[] }
+  >(
     selectedCampusId
       ? `/api/college_locations/${selectedCampusId}/specialties`
       : ""
   );
-  const specialties = specData ?? [];
+
+  const specialties: Specialty[] = Array.isArray(specData)
+    ? specData
+    : specData?.specialties ?? [];
 
   /* ---------- schedules ---------- */
   const {
@@ -88,7 +95,6 @@ export default function ScheduleFormPage() {
 
   /* ---------- submit ---------- */
   const onSubmit = async (data: FormValues) => {
-    /* 1. Crie o objeto APENAS se repeat_type === 1 */
     const recurrenceRuleAttributes =
       data.repeat_type === 1
         ? {
@@ -96,27 +102,24 @@ export default function ScheduleFormPage() {
             startDate: dayjs(data.period_start!).format("YYYY-MM-DD"),
             endDate:   dayjs(data.period_end!).format("YYYY-MM-DD"),
           }
-        : undefined; // <- fica undefined quando não é recorrente
-  
-    /* 2. Campos de nível mais alto */
+        : undefined;
+
     const base = {
       collegeLocationId: data.college_location_id,
       specialtyId:       data.specialty_id,
-      /* só adiciona se não for undefined */
       ...(recurrenceRuleAttributes && { recurrenceRuleAttributes }),
     };
-  
-    /* 3. Construa o payload normalmente */
+
     const payload = data.schedules.flatMap((s) =>
       s.times.map((t) => ({
         ...base,
-        date:      s.date      ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
+        date:      s.date ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
         weekDay:   s.week_day,
         startTime: dayjs(t.start_time).format("HH:mm"),
         endTime:   dayjs(t.end_time).format("HH:mm"),
       }))
     );
-  
+
     try {
       await apiFetch("/api/time_slots", {
         method: "POST",
@@ -129,7 +132,6 @@ export default function ScheduleFormPage() {
       alert("Falha ao salvar horários");
     }
   };
-  
 
   /* ---------- UI ---------- */
   return (

@@ -26,7 +26,10 @@ import { CalendarHeader } from "./CalendarHeader";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
-import { CalendarEvent } from "@/app/components/Calendar/types";
+import {
+  CalendarEvent,
+  EventCategory,
+} from "@/app/components/Calendar/types";
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { useApi } from "@/app/hooks/useApi";
 
@@ -34,7 +37,7 @@ import { useApi } from "@/app/hooks/useApi";
 const toLocalDate = (isoUtcZ: string) => new Date(isoUtcZ.replace(/Z$/, ""));
 const hueFor = (s: string) =>
   `hsl(${[...s].reduce((h, c) => c.charCodeAt(0) + ((h << 5) - h), 0) % 360},65%,50%)`;
-const rangeFor = (v: "month" | "week" | "day", ref: Date) =>
+const rangeFor = (v: ViewMode, ref: Date) =>
   v === "month"
     ? {
         start: format(startOfWeek(startOfMonth(ref)), "yyyy-MM-dd"),
@@ -51,76 +54,102 @@ const rangeFor = (v: "month" | "week" | "day", ref: Date) =>
 type CollegeLocation = { id: number; name: string };
 type SimpleSpec = { id: number; name: string };
 
+type ApiSlot = {
+  id: number;
+  start_at: string;
+  campus_name: string;
+  specialty_name: string;
+  time_slot_id?: number;
+  patient_name?: string;
+};
+
+type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
+
+type ViewMode = "month" | "week" | "day";
+type ColorMap = Record<string, { color: string }>;
+
+interface EnhancedCalendarProps {
+  showScheduleButton: boolean;
+}
+
+/* ===================================================================== */
 export default function EnhancedCalendar({
   showScheduleButton,
-}: {
-  showScheduleButton: boolean;
-}) {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<"month" | "week" | "day">("month");
+}: EnhancedCalendarProps) {
+  /* ---------- state ---------- */
+  const [currentDate, setCurrentDate] = useState<Date>(new Date());
+  const [view, setView] = useState<ViewMode>("month");
   const [campusFilters, setCampusFilters] = useState<string[]>([]);
   const [specFilters, setSpecFilters] = useState<string[]>([]);
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [colorMap, setColorMap] = useState<ColorMap>({});
   const pushWithProgress = usePushWithProgress();
 
-  /* listas estáticas */
+  /* ---------- listagens estáticas ---------- */
   const { data: campusApi } = useApi<CollegeLocation[]>("/api/college_locations");
-  const campusStatic = (campusApi || []).map((c) => c.name);
+  const campusStatic = (campusApi ?? []).map((c) => c.name);
 
   const { data: specApi } = useApi<SimpleSpec[]>("/api/specialties/simple");
-  const specialtyStatic = (specApi || []).map((s) => s.name);
+  const specialtyStatic = (specApi ?? []).map((s) => s.name);
 
-  /* eventos */
+  /* ---------- eventos ---------- */
   const { start, end } = rangeFor(view, currentDate);
-  const { data: calApi, loading } = useApi<{ free: any[]; busy: any[] }>(
+  const { data: calApi, loading } = useApi<CalendarApi>(
     `/api/calendar?start=${start}&end=${end}`
   );
 
-  const [events, campusDyn, specDyn, colorMap] = useMemo(() => {
-    if (!calApi) return [[], [], [], {}] as any;
+  const [campusDyn, specDyn] = useMemo<[string[], string[]]>(() => {
+    if (!calApi) return [[], []];
 
     const campusSet = new Set<string>();
     const specSet = new Set<string>();
-    const ev: CalendarEvent[] = [];
+    const raw: CalendarEvent[] = [];
+    const cmap: ColorMap = {};
 
-    const pushEv = (o: any, kind: "free" | "busy") => {
-      const date = toLocalDate(o.start_at);
-      campusSet.add(o.campus_name);
-      specSet.add(o.specialty_name);
+    const pushEv = (slot: ApiSlot, kind: "free" | "busy") => {
+      const date = toLocalDate(slot.start_at);
+      campusSet.add(slot.campus_name);
+      specSet.add(slot.specialty_name);
 
-      ev.push({
-        id: `${kind}-${o.id}-${date.toISOString()}`,
+      raw.push({
+        id: `${kind}-${slot.id}-${date.toISOString()}`,
         date,
-        title: kind === "busy" ? o.patient_name || "Consulta" : "Disponível",
-        description: `${o.specialty_name} • ${o.campus_name}`,
-        category: o.specialty_name,
-        /* ---------- PROPS para diálogo ---------- */
-        isRecurring: Boolean(o.time_slot_id),
-        timeSlotId: o.time_slot_id,
-      } as any);
+        title: kind === "busy" ? slot.patient_name || "Consulta" : "Disponível",
+        description: `${slot.specialty_name} • ${slot.campus_name}`,
+        category: slot.specialty_name as EventCategory,
+        isRecurring: Boolean(slot.time_slot_id),
+        timeSlotId: slot.time_slot_id,
+      });
     };
 
     calApi.free.forEach((f) => pushEv(f, "free"));
     calApi.busy.forEach((b) => pushEv(b, "busy"));
 
-    const map: Record<string, { color: string }> = {};
-    Array.from(specSet).forEach((s) => (map[s] = { color: hueFor(s) }));
+    Array.from(specSet).forEach((s) => (cmap[s] = { color: hueFor(s) }));
 
-    return [ev, Array.from(campusSet), Array.from(specSet), map];
+    setEvents(raw);
+    setColorMap(cmap);
+
+    return [Array.from(campusSet), Array.from(specSet)];
   }, [calApi]);
 
   const campusList = [...new Set([...campusStatic, ...campusDyn])];
   const specialtyList = [...new Set([...specialtyStatic, ...specDyn])];
 
-  /* filtros */
-  const filteredEvents = events.filter((e) => {
-    const campusOk =
-      campusFilters.length === 0 ||
-      campusFilters.some((c) => e.description?.includes(c));
-    const specOk = specFilters.length === 0 || specFilters.includes(e.category);
-    return campusOk && specOk;
-  });
+  /* ---------- filtros ---------- */
+  const filteredEvents = useMemo(
+    () =>
+      events.filter((e) => {
+        const campusOk =
+          campusFilters.length === 0 ||
+          campusFilters.some((c) => e.description?.includes(c));
+        const specOk = specFilters.length === 0 || specFilters.includes(e.category);
+        return campusOk && specOk;
+      }),
+    [events, campusFilters, specFilters]
+  );
 
-  /* navegação helpers */
+  /* ---------- navegação helpers ---------- */
   const prev = () =>
     setCurrentDate(
       view === "month"
@@ -134,16 +163,27 @@ export default function EnhancedCalendar({
         : addDays(currentDate, view === "week" ? 7 : 1)
     );
 
-  /* view renderer */
-  const viewProps = { events: filteredEvents, categoryConfig: colorMap, onRefresh: () => window.location.reload() } as any;
-  const body =
-    view === "month" ? (
-      <CalendarMonthView currentMonth={currentDate} {...viewProps} />
-    ) : view === "week" ? (
-      <CalendarWeekView referenceDate={currentDate} {...viewProps} />
-    ) : (
-      <CalendarDayView referenceDate={currentDate} {...viewProps} />
+  /* ---------- callback para remoção instantânea ---------- */
+  const handleDeleted = (info: { type: "single" | "series"; id?: string; timeSlotId?: number }) => {
+    setEvents((prev) =>
+      info.type === "single"
+        ? prev.filter((ev) => ev.id !== info.id)
+        : prev.filter((ev) => ev.timeSlotId !== info.timeSlotId)
     );
+  };
+
+  /* ---------- props para as views ---------- */
+  const viewProps = {
+    events: filteredEvents,
+    categoryConfig: colorMap,
+    onDeleted: handleDeleted,
+  };
+
+  const body = {
+    month: <CalendarMonthView currentMonth={currentDate} {...viewProps} />,
+    week:  <CalendarWeekView referenceDate={currentDate} {...viewProps} />,
+    day:   <CalendarDayView referenceDate={currentDate} {...viewProps} />,
+  }[view];
 
   const dateLabel =
     view === "month"
@@ -189,7 +229,15 @@ export default function EnhancedCalendar({
 
         <Box sx={{ flex: 1, position: "relative" }}>
           {loading ? (
-            <Box sx={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
               <CircularProgress />
               <Typography sx={{ ml: 2 }}>Carregando…</Typography>
             </Box>
@@ -199,7 +247,10 @@ export default function EnhancedCalendar({
         </Box>
       </Paper>
 
-      <Fab color="primary" sx={{ position: "fixed", bottom: 16, right: 16, display: { xs: "flex", md: "none" } }}>
+      <Fab
+        color="primary"
+        sx={{ position: "fixed", bottom: 16, right: 16, display: { xs: "flex", md: "none" } }}
+      >
         <AddIcon />
       </Fab>
     </Box>

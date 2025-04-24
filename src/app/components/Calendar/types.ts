@@ -9,4 +9,6 @@ export interface CalendarEvent {
   category: EventCategory;
   allDay?: boolean;
   participants?: string[];
+  isRecurring?: boolean; // Added property
+  timeSlotId?: number; // Added this property
 }

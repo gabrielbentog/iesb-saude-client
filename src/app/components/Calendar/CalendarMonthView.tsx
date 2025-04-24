@@ -24,15 +24,11 @@ import {
   isBefore,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import {
-  HeaderCell,
-  DayCell,
-  DayNumber,
-  EventChip,
-} from "./Calendar.styles";
+import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
 import { EventDetailDialog } from "./EventDetailDialog";
 
 type EventCategory = string;
+
 export interface CalendarEvent {
   id: string;
   date: Date;
@@ -41,8 +37,6 @@ export interface CalendarEvent {
   location?: string;
   category: EventCategory;
   allDay?: boolean;
-
-  /* ↓ já chegam preenchidos pelo EnhancedCalendar */
   isRecurring?: boolean;
   timeSlotId?: number;
 }
@@ -51,14 +45,18 @@ interface Props {
   currentMonth: Date;
   events: CalendarEvent[];
   categoryConfig: Record<EventCategory, { color: string }>;
-  onRefresh: () => void;
+  onDeleted: (info: {
+    type: "single" | "series";
+    id?: string;
+    timeSlotId?: number;
+  }) => void;
 }
 
 export function CalendarMonthView({
   currentMonth,
   events,
   categoryConfig,
-  onRefresh,
+  onDeleted,
 }: Props) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -170,7 +168,7 @@ export function CalendarMonthView({
         open={Boolean(selected)}
         event={selected}
         onClose={() => setSelected(null)}
-        onRefresh={onRefresh}
+        onDeleted={onDeleted}
       />
     </>
   );
