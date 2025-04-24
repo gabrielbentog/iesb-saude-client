@@ -88,32 +88,38 @@ export default function ScheduleFormPage() {
 
   /* ---------- submit ---------- */
   const onSubmit = async (data: FormValues) => {
+    const recurrenceRuleAttributes =
+      data.repeat_type === 1
+        ? {
+            frequencyType: data.repeat_type,
+            startDate:  dayjs(data.period_start!).format("YYYY-MM-DD"),
+            endDate:    dayjs(data.period_end!).format("YYYY-MM-DD"),
+          }
+        : { frequencyType: data.repeat_type };
+  
+    /** 2. Campos de nível mais alto do formulário */
     const base = {
-      college_location_id: data.college_location_id,
-      specialty_id:        data.specialty_id,
-      repeat_type:         data.repeat_type,
-      ...(data.repeat_type === 1 && {
-        period_start: dayjs(data.period_start!).format("YYYY-MM-DD"),
-        period_end:   dayjs(data.period_end!).format("YYYY-MM-DD"),
-      }),
+      collegeLocationId: data.college_location_id,
+      specialtyId:        data.specialty_id,
+      recurrenceRuleAttributes,
     };
-
+  
+    /** 3. Construa o payload normalmente */
     const payload = data.schedules.flatMap((s) =>
       s.times.map((t) => ({
         ...base,
-        date: s.date ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
-        week_day: s.week_day,
-        start_time: dayjs(t.start_time).format("HH:mm"),
-        end_time: dayjs(t.end_time).format("HH:mm"),
+        date:      s.date     ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
+        weekDay:  s.week_day,
+        startTime: dayjs(t.start_time).format("HH:mm"),
+        endTime:   dayjs(t.end_time).format("HH:mm"),
       }))
     );
-
+  
     try {
       await apiFetch("/api/time_slots", {
         method: "POST",
-        body: JSON.stringify({ time_slots: payload }),
+        body:   JSON.stringify({ time_slots: payload }),
       });
-      // feedback
       alert("Horários criados com sucesso!");
       router.back();
     } catch (err) {
