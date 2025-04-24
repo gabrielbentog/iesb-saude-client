@@ -1,12 +1,38 @@
-// CalendarMonthView.tsx
-import React, { useMemo } from "react";
-import { Table, TableBody, TableContainer, TableHead, TableRow, Tooltip, Typography } from "@mui/material";
-import { startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isToday, isWeekend, isSameMonth } from "date-fns";
+"use client";
+
+import React, { useMemo, useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import {
+  startOfMonth,
+  endOfMonth,
+  startOfWeek,
+  endOfWeek,
+  addDays,
+  startOfDay,
+  format,
+  isToday,
+  isWeekend,
+  isSameMonth,
+  isBefore,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
+import {
+  HeaderCell,
+  DayCell,
+  DayNumber,
+  EventChip,
+} from "./Calendar.styles";
+import { EventDetailDialog } from "./EventDetailDialog";
 
-type EventCategory = "medical" | "training" | "work" | "holiday";
-
+type EventCategory = string;
 export interface CalendarEvent {
   id: string;
   date: Date;
@@ -15,99 +41,137 @@ export interface CalendarEvent {
   location?: string;
   category: EventCategory;
   allDay?: boolean;
-  participants?: string[];
+
+  /* ↓ já chegam preenchidos pelo EnhancedCalendar */
+  isRecurring?: boolean;
+  timeSlotId?: number;
 }
 
-interface CalendarMonthViewProps {
+interface Props {
   currentMonth: Date;
   events: CalendarEvent[];
-  categoryConfig: Record<EventCategory, { color: string; icon: React.ReactNode }>;
+  categoryConfig: Record<EventCategory, { color: string }>;
+  onRefresh: () => void;
 }
 
 export function CalendarMonthView({
   currentMonth,
   events,
   categoryConfig,
-}: CalendarMonthViewProps) {
+  onRefresh,
+}: Props) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
-  const calendarStart = startOfWeek(monthStart, { locale: ptBR });
-  const calendarEnd = endOfWeek(monthEnd, { locale: ptBR });
+  const calStart = startOfWeek(monthStart, { locale: ptBR });
+  const calEnd = endOfWeek(monthEnd, { locale: ptBR });
+  const todayStart = startOfDay(new Date());
 
-  const dayMatrix = useMemo(() => {
-    const matrix: Date[][] = [];
-    let tempDate = calendarStart;
-    while (tempDate <= calendarEnd) {
-      const week: Date[] = [];
+  const matrix = useMemo(() => {
+    const weeks: Date[][] = [];
+    let d = calStart;
+    while (d <= calEnd) {
+      const w: Date[] = [];
       for (let i = 0; i < 7; i++) {
-        week.push(tempDate);
-        tempDate = addDays(tempDate, 1);
+        w.push(d);
+        d = addDays(d, 1);
       }
-      matrix.push(week);
+      weeks.push(w);
     }
-    return matrix;
-  }, [calendarStart, calendarEnd]);
+    return weeks;
+  }, [calStart, calEnd]);
 
-  const getEventsForDay = (day: Date) =>
-    events.filter((ev) => format(ev.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd"));
+  const eventsForDay = (day: Date) =>
+    events.filter(
+      (ev) => format(ev.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
+    );
 
+  const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
   return (
-    <TableContainer sx={{ overflowX: "auto" }}>
-      <Table sx={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
-        <TableHead>
-          <TableRow>
-            {weekDays.map((dayName) => (
-              <HeaderCell key={dayName}>
-                <Typography variant="subtitle2">{dayName}</Typography>
-              </HeaderCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {dayMatrix.map((week, wIndex) => (
-            <TableRow key={wIndex}>
-              {week.map((day, dIndex) => {
-                const isCurrent = isSameMonth(day, currentMonth);
-                const dayEvents = getEventsForDay(day);
-                const isWeekendDay = isWeekend(day);
-                return (
-                  <DayCell
-                    key={dIndex}
-                    isCurrentMonth={isCurrent}
-                    isToday={isToday(day)}
-                    isWeekend={isWeekendDay}
-                    hasEvents={dayEvents.length > 0}
-                  >
-                    <DayNumber isToday={isToday(day)} isCurrentMonth={isCurrent}>
-                      {format(day, "d")}
-                    </DayNumber>
-                    {dayEvents.slice(0, 3).map((evt) => (
-                      <Tooltip key={evt.id} title={evt.title}>
-                        <EventChip
-                          color={categoryConfig[evt.category].color}
-                          isCurrentMonth={isCurrent}
-                        >
-                          {evt.allDay ? evt.title : `${format(evt.date, "HH:mm")} ${evt.title}`}
-                        </EventChip>
-                      </Tooltip>
-                    ))}
-                    {dayEvents.length > 3 && (
-                      <Typography
-                        variant="caption"
-                        sx={{ textAlign: "center", display: "block", mt: 0.5 }}
-                      >
-                        + {dayEvents.length - 3} mais
-                      </Typography>
-                    )}
-                  </DayCell>
-                );
-              })}
+    <>
+      <TableContainer sx={{ overflowX: "auto" }}>
+        <Table sx={{ tableLayout: "fixed", borderCollapse: "collapse" }}>
+          <TableHead>
+            <TableRow>
+              {weekDays.map((d) => (
+                <HeaderCell key={d}>
+                  <Typography variant="subtitle2">{d}</Typography>
+                </HeaderCell>
+              ))}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+
+          <TableBody>
+            {matrix.map((week, wi) => (
+              <TableRow key={wi}>
+                {week.map((day, di) => {
+                  const items = eventsForDay(day);
+                  const sameMonth = isSameMonth(day, currentMonth);
+                  const hasUpcoming = items.some(
+                    (ev) => !isBefore(ev.date, todayStart)
+                  );
+
+                  return (
+                    <DayCell
+                      key={di}
+                      isCurrentMonth={sameMonth}
+                      isToday={isToday(day)}
+                      isWeekend={isWeekend(day)}
+                      hasEvents={hasUpcoming}
+                    >
+                      <DayNumber
+                        isToday={isToday(day)}
+                        isCurrentMonth={sameMonth}
+                      >
+                        {format(day, "d")}
+                      </DayNumber>
+
+                      {items.slice(0, 3).map((ev) => {
+                        const past = isBefore(ev.date, todayStart);
+                        const chipColor =
+                          categoryConfig[ev.category]?.color ?? "#90a4ae";
+
+                        return (
+                          <Tooltip key={ev.id} title={ev.title}>
+                            <EventChip
+                              past={past}
+                              isCurrentMonth={sameMonth}
+                              color={chipColor}
+                              onClick={() => !past && setSelected(ev)}
+                              sx={{ mt: 0.25 }}
+                            >
+                              {ev.allDay
+                                ? ev.title
+                                : `${format(ev.date, "HH:mm")} ${ev.title}`}
+                            </EventChip>
+                          </Tooltip>
+                        );
+                      })}
+
+                      {items.length > 3 && (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: "block", mt: 0.5 }}
+                        >
+                          + {items.length - 3} mais
+                        </Typography>
+                      )}
+                    </DayCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <EventDetailDialog
+        open={Boolean(selected)}
+        event={selected}
+        onClose={() => setSelected(null)}
+        onRefresh={onRefresh}
+      />
+    </>
   );
 }

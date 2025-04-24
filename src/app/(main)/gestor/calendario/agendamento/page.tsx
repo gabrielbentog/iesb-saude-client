@@ -88,28 +88,30 @@ export default function ScheduleFormPage() {
 
   /* ---------- submit ---------- */
   const onSubmit = async (data: FormValues) => {
+    /* 1. Crie o objeto APENAS se repeat_type === 1 */
     const recurrenceRuleAttributes =
       data.repeat_type === 1
         ? {
             frequencyType: data.repeat_type,
-            startDate:  dayjs(data.period_start!).format("YYYY-MM-DD"),
-            endDate:    dayjs(data.period_end!).format("YYYY-MM-DD"),
+            startDate: dayjs(data.period_start!).format("YYYY-MM-DD"),
+            endDate:   dayjs(data.period_end!).format("YYYY-MM-DD"),
           }
-        : { frequencyType: data.repeat_type };
+        : undefined; // <- fica undefined quando não é recorrente
   
-    /** 2. Campos de nível mais alto do formulário */
+    /* 2. Campos de nível mais alto */
     const base = {
       collegeLocationId: data.college_location_id,
-      specialtyId:        data.specialty_id,
-      recurrenceRuleAttributes,
+      specialtyId:       data.specialty_id,
+      /* só adiciona se não for undefined */
+      ...(recurrenceRuleAttributes && { recurrenceRuleAttributes }),
     };
   
-    /** 3. Construa o payload normalmente */
+    /* 3. Construa o payload normalmente */
     const payload = data.schedules.flatMap((s) =>
       s.times.map((t) => ({
         ...base,
-        date:      s.date     ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
-        weekDay:  s.week_day,
+        date:      s.date      ? dayjs(s.date).format("YYYY-MM-DD") : undefined,
+        weekDay:   s.week_day,
         startTime: dayjs(t.start_time).format("HH:mm"),
         endTime:   dayjs(t.end_time).format("HH:mm"),
       }))
@@ -127,6 +129,7 @@ export default function ScheduleFormPage() {
       alert("Falha ao salvar horários");
     }
   };
+  
 
   /* ---------- UI ---------- */
   return (
