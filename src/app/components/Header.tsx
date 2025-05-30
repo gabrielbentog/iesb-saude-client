@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import {
   AppBar,
   Toolbar,
-  // Typography,
   IconButton,
   Box,
   Tooltip,
@@ -38,7 +37,6 @@ const Header: React.FC<HeaderProps> = ({
   isMobile,
 }) => {
   const theme = useTheme();
-  const collapsedWidth = 60;
 
   const [user, setUser] = useState<UserData | null>(null);
   const [useFallback, setUseFallback] = useState(false);
@@ -72,10 +70,8 @@ const Header: React.FC<HeaderProps> = ({
       sx={{
         // Em telas mobile, ocupa 100% e não adiciona margin-left.
         // Em telas maiores, empurra de acordo com a sidebar.
-        width: isMobile
-          ? "100%"
-          : `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
-        ml: isMobile ? 0 : `${open ? drawerWidth : collapsedWidth}px`,
+        width: "100%",
+        ml: isMobile ? 0 : `${drawerWidth}px`,
         transition: theme.transitions.create(["margin", "width"], {
           easing: theme.transitions.easing.sharp,
           duration: theme.transitions.duration.leavingScreen,
@@ -98,15 +94,6 @@ const Header: React.FC<HeaderProps> = ({
               <MenuIcon />
             </IconButton>
           )}
-
-          {/* <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ fontWeight: 600, color: theme.palette.text.primary }}
-          >
-            Dashboard
-          </Typography> */}
         </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>

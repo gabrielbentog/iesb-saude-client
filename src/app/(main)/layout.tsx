@@ -13,14 +13,13 @@ interface MainLayoutProps {
 }
 
 const drawerWidth = 260;
-const collapsedWidth = 60;
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const defaultTheme = useTheme();
-  
+
   // Verifica se é mobile
   const isMobile = useMediaQuery(defaultTheme.breakpoints.down("md"));
-  
+
   // Se for mobile, começamos com a sidebar fechada
   const [open, setOpen] = useState(!isMobile);
   const [darkMode, setDarkMode] = useState(false);
@@ -45,7 +44,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     <ThemeProvider theme={theme}>
       <ToastProvider>
         <Box sx={{ display: "flex" }}>
-          {/* Exemplo: um Header fixo na parte superior */}
           <Header
             open={open}
             drawerWidth={drawerWidth}
@@ -60,7 +58,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             onToggleSidebar={handleDrawerToggle}
             darkMode={darkMode}
             onToggleDarkMode={handleDarkModeToggle}
-            isMobile={isMobile} // <--- Passando essa info
+            isMobile={isMobile}
           />
 
           {/* Área principal */}
@@ -68,18 +66,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             component="main"
             sx={{
               flexGrow: 1,
-              // Em telas grandes, offset do drawer
-              ...(isMobile
-                ? {}
-                : {
-                    width: `calc(100% - ${open ? drawerWidth : collapsedWidth}px)`,
-                    ml: `${open ? drawerWidth : collapsedWidth}px`,
-                  }),
               transition: defaultTheme.transitions.create(["margin", "width"], {
                 easing: defaultTheme.transitions.easing.easeOut,
                 duration: defaultTheme.transitions.duration.enteringScreen,
               }),
-              pt: "64px", // Se seu Header tiver 64px de altura
+              pt: "64px",
               minHeight: "100vh",
               bgcolor: theme.palette.background.default,
               color: theme.palette.text.primary,

@@ -13,8 +13,10 @@ import {
   Switch,
   Typography,
   Tooltip,
+  Divider,
+  Stack,
+  useTheme,
 } from "@mui/material";
-import { useTheme } from "@mui/material/styles";
 import {
   ChevronLeft as ChevronLeftIcon,
   ChevronRight as ChevronRightIcon,
@@ -39,8 +41,40 @@ interface SidebarProps {
   onToggleSidebar: () => void;
   darkMode: boolean;
   onToggleDarkMode: () => void;
-  isMobile: boolean; // <--- Adicionado para diferenciar mobile/desktops
+  isMobile: boolean;
 }
+
+// Estilos para os itens da lista, para evitar repetição
+const listItemButtonStyles = (theme: any, open: boolean, isActive: boolean = false) => ({
+  borderRadius: theme.shape.borderRadius * 1.5, // Um pouco mais arredondado
+  mb: theme.spacing(0.5),
+  py: theme.spacing(1.25), // Ajuste de padding vertical
+  px: theme.spacing(2),    // Ajuste de padding horizontal
+  justifyContent: open ? "flex-start" : "center",
+  backgroundColor: isActive ? theme.palette.action.selected : "transparent",
+  color: isActive ? theme.palette.primary.main : theme.palette.text.secondary, // Cor do ícone e texto quando ativo
+  "&:hover": {
+    backgroundColor: theme.palette.action.hover,
+    color: theme.palette.text.primary, // Texto mais escuro no hover
+  },
+  "& .MuiListItemIcon-root": { // Estilo para o ícone dentro do botão
+    color: isActive ? theme.palette.primary.main : theme.palette.text.secondary,
+    minWidth: 0,
+    mr: open ? theme.spacing(2) : 0,
+    transition: theme.transitions.create("margin", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  },
+  "& .MuiListItemText-primary": {
+    fontWeight: isActive ? 700 : 500, // Texto mais forte quando ativo
+    transition: theme.transitions.create("opacity", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    opacity: open ? 1 : 0,
+  },
+});
 
 const Sidebar: React.FC<SidebarProps> = ({
   open,
@@ -51,21 +85,14 @@ const Sidebar: React.FC<SidebarProps> = ({
   isMobile,
 }) => {
   const theme = useTheme();
-  const isDark = theme.palette.mode === "dark";
-  const [mounted, setMounted] = useState(false);  // Controle de montagem
+  const [mounted, setMounted] = useState(false);
   const pushWithProgress = usePushWithProgress();
   const session = Cookies.get("session");
   const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
   const { showToast } = useToast();
 
-  const collapsedWidth = 60;
+  const collapsedWidth = theme.spacing(7); // Usar theme.spacing para consistência
 
-  const drawerBg = theme.palette.background.paper;
-  const textColor = theme.palette.text.primary;
-  const iconColor = theme.palette.text.secondary;
-  const hoverColor = theme.palette.action.hover;
-  const activeColor = theme.palette.action.selected;
-  const dividerColor = theme.palette.divider;
   const pathname = usePathname();
 
   const menuItemsByProfile = {
@@ -84,8 +111,32 @@ const Sidebar: React.FC<SidebarProps> = ({
       { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
     ],
   };
-  
+
   const menuItems = profile ? menuItemsByProfile[profile] : [];
+
+  const bottomMenuItems = [
+    {
+      icon: <PersonIcon />,
+      text: "Perfil",
+      path: "/perfil",
+      onClick: () => pushWithProgress("/perfil"),
+    },
+    {
+      icon: <SettingsIcon />,
+      text: "Configurações",
+      path: "/configuracoes",
+      onClick: () => pushWithProgress("/configuracoes"),
+    },
+    {
+      icon: <LogoutIcon />,
+      text: "Sair",
+      onClick: () => {
+        pushWithProgress("/auth/login");
+        Cookies.remove("session");
+        localStorage.removeItem("session");
+      },
+    },
+  ];
 
   useEffect(() => {
     setMounted(true);
@@ -95,166 +146,137 @@ const Sidebar: React.FC<SidebarProps> = ({
     return null;
   }
 
+  const DrawerHeader = (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent={open ? "space-between" : "center"}
+      sx={{
+        padding: theme.spacing(0, 1), // Ajustar padding horizontal
+        ...theme.mixins.toolbar,      // Altura padrão da toolbar para consistência
+        minHeight: theme.spacing(8),  // Altura mínima
+        px: theme.spacing(2.5),       // Padding horizontal
+        borderBottom: `1px solid ${theme.palette.divider}`,
+      }}
+    >
+      {open && (
+        <Stack direction="row" alignItems="center" spacing={1.5} component="a" href="/" sx={{ textDecoration: 'none', color: 'inherit' }}>
+          <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
+          <Typography variant="h6" sx={{ fontWeight: 700, display: { xs: 'none', sm: 'block' } }}>
+            IESB Saúde
+          </Typography>
+        </Stack>
+      )}
+       {/* Botão de Toggle sempre visível em desktop, ajusta o ícone */}
+      {!isMobile && (
+        <IconButton onClick={onToggleSidebar} sx={{ color: theme.palette.text.secondary }}>
+          {open ? <ChevronLeftIcon /> : <ChevronRightIcon />}
+        </IconButton>
+      )}
+      {/* Em mobile, o botão de fechar só aparece se o drawer estiver aberto */}
+      {isMobile && open && (
+         <IconButton onClick={onToggleSidebar} sx={{ color: theme.palette.text.secondary, ml: 'auto' /* Empurra para a direita */ }}>
+          <ChevronLeftIcon />
+        </IconButton>
+      )}
+       {/* Logo pequeno quando fechado e não é mobile (apenas para referência, pode ser removido se o ChevronRight for suficiente) */}
+      {!open && !isMobile && !isMobile && (
+         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', mt: -7 /* Ajuste para centralizar com o ícone de toggle */ }}>
+            <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
+         </Box>
+      )}
+    </Stack>
+  );
+
+
   return (
     <Drawer
-      // Se for desktop, usamos 'permanent'; se for mobile, 'temporary' (sobrepõe)
       variant={isMobile ? "temporary" : "permanent"}
-      // Em variant="temporary" precisamos de open / onClose
       open={open}
-      onClose={onToggleSidebar}
+      onClose={onToggleSidebar} // Necessário para 'temporary' e para fechar com clique fora em mobile
+      ModalProps={{
+        keepMounted: true, // Melhor para performance em mobile
+      }}
       sx={{
+        width: open ? drawerWidth : collapsedWidth,
         flexShrink: 0,
         whiteSpace: "nowrap",
+        transition: theme.transitions.create("width", {
+          easing: theme.transitions.easing.sharp,
+          duration: open ? theme.transitions.duration.enteringScreen : theme.transitions.duration.leavingScreen,
+        }),
         "& .MuiDrawer-paper": {
-          // Em telas grandes respeita a largura "aberta" ou "colapsada"
-          width: isMobile ? drawerWidth : open ? drawerWidth : collapsedWidth,
-          transition: "width 0.3s",
+          width: open ? drawerWidth : collapsedWidth,
+          transition: theme.transitions.create("width", {
+            easing: theme.transitions.easing.sharp,
+            duration: open ? theme.transitions.duration.enteringScreen : theme.transitions.duration.leavingScreen,
+          }),
           boxSizing: "border-box",
-          bgcolor: drawerBg,
-          color: textColor,
-          borderRight: `1px solid ${dividerColor}`,
-          boxShadow: isDark ? "inset -5px 0 10px rgba(0,0,0,0.2)" : "none",
+          bgcolor: theme.palette.background.paper,
+          color: theme.palette.text.primary,
+          borderRight: { xs: 'none', sm: `1px solid ${theme.palette.divider}`}, // Sem borda em mobile
+          boxShadow: isMobile && open ? theme.shadows[8] : (theme.palette.mode === 'dark' && !isMobile ? 'rgba(0, 0, 0, 0.2) 0px 0px 10px 0px inset' : 'none'),
           overflowX: "hidden",
         },
       }}
     >
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: 2,
-          borderBottom: `1px solid ${dividerColor}`,
-        }}
-      >
-        {/* Quando a sidebar está aberta (em telas grandes) */}
-        {open && !isMobile && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              width: "100%",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                IESB Saúde
-              </Typography>
-            </Box>
-            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </Box>
-        )}
+      {DrawerHeader}
 
-        {/* Quando a sidebar está fechada (telas grandes) */}
-        {!open && !isMobile && (
-          <>
-            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
-              <ChevronRightIcon />
-            </IconButton>
-            <Box mt={1}>
-              <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
-            </Box>
-          </>
-        )}
-
-        {/* Se estiver em mobile, exibe apenas um cabeçalho simples quando open */}
-        {isMobile && open && (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              width: "100%",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
-              <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                IESB Saúde
-              </Typography>
-            </Box>
-            <IconButton onClick={onToggleSidebar} sx={{ color: iconColor }}>
-              <ChevronLeftIcon />
-            </IconButton>
-          </Box>
-        )}
-      </Box>
-
-      <List sx={{ px: 1 }}>
+      <List sx={{ px: theme.spacing(1.5), pt: theme.spacing(1) }}>
         {menuItems.map((item, index) => {
           const isActive = pathname === item.path;
           return (
-            <ListItem key={index} disablePadding sx={{ mb: 0.5 }}>
-              <Tooltip title={!open ? item.text : ""} placement="right">
+            <ListItem key={`${item.text}-${index}`} disablePadding>
+              <Tooltip title={!open ? item.text : ""} placement="right" arrow>
                 <ListItemButton
                   onClick={() => {
                     if (item.path) {
                       pushWithProgress(item.path);
-                      // Se for mobile, fechar depois de navegar
                       if (isMobile) onToggleSidebar();
                     }
                   }}
-                  sx={{
-                    borderRadius: 1.5,
-                    bgcolor: isActive ? activeColor : "transparent",
-                    "&:hover": { bgcolor: hoverColor },
-                    justifyContent: open ? "flex-start" : "center",
-                    px: 2,
-                    py: 1,
-                  }}
+                  selected={isActive} // Prop 'selected' pode ser usada para estilização pelo tema
+                  sx={listItemButtonStyles(theme, open, isActive)}
                 >
-                  <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                    {item.icon}
-                  </ListItemIcon>
-                  {open && (
-                    <ListItemText primary={<Typography sx={{ fontWeight: 600 }}>{item.text}</Typography>} />
-                  )}
+                  <ListItemIcon>{item.icon}</ListItemIcon>
+                  {open && <ListItemText primary={item.text} />}
                 </ListItemButton>
               </Tooltip>
             </ListItem>
           );
         })}
       </List>
-      
-      <Box sx={{ flexGrow: 1 }} />
 
-      <Box sx={{ p: 2, borderTop: `1px solid ${dividerColor}` }}>
+      <Box sx={{ flexGrow: 1 }} /> {/* Empurra os itens abaixo para o final */}
+
+      <Box sx={{ p: theme.spacing(1.5) }}>
+        <Divider sx={{ my: theme.spacing(1) }} />
         <List sx={{ p: 0 }}>
           {/* Modo Escuro */}
-          <ListItem disablePadding sx={{ mb: 0.5 }}>
-            <Tooltip title={!open ? "Modo Escuro" : ""} placement="right">
+          <ListItem disablePadding>
+            <Tooltip title={!open ? "Modo Escuro" : ""} placement="right" arrow>
               <ListItemButton
                 onClick={() => {
-                  showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
-                  onToggleDarkMode();
-                  if (isMobile) onToggleSidebar(); // fecha em mobile, se quiser
+                  if (!open) { // Só alterna se estiver fechado, senão deixa o Switch controlar
+                    showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
+                    onToggleDarkMode();
+                  }
                 }}
-                sx={{
-                  borderRadius: 1.5,
-                  justifyContent: open ? "flex-start" : "center",
-                  px: 2,
-                  py: 1,
-                  "&:hover": { bgcolor: hoverColor },
-                }}
+                sx={listItemButtonStyles(theme, open)}
               >
-                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                  <DarkModeIcon />
-                </ListItemIcon>
+                <ListItemIcon><DarkModeIcon /></ListItemIcon>
                 {open && (
                   <>
-                    <Typography sx={{ fontWeight: 500 }}>Modo Escuro</Typography>
+                    <ListItemText primary="Modo Escuro" sx={{ mr: 1 }}/>
                     <Switch
+                      edge="end"
                       checked={darkMode}
                       onChange={() => {
                         showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
                         onToggleDarkMode();
                       }}
-                      color="primary"
+                      onClick={(e) => e.stopPropagation()} // Impede que o clique no Switch propague para o ListItemButton
+                      size="small"
                     />
                   </>
                 )}
@@ -262,101 +284,26 @@ const Sidebar: React.FC<SidebarProps> = ({
             </Tooltip>
           </ListItem>
 
-          {/* Perfil */}
-          <ListItem disablePadding sx={{ mb: 0.5 }}>
-            <Tooltip title={!open ? "Perfil" : ""} placement="right">
-              <ListItemButton
-                onClick={() => {
-                  pushWithProgress("/perfil");
-                  if (isMobile) onToggleSidebar();
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: pathname === "/perfil" ? activeColor : "transparent",
-                  "&:hover": { bgcolor: hoverColor },
-                  justifyContent: open ? "flex-start" : "center",
-                  px: 2,
-                  py: 1,
-                }}
-              >
-                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                  <PersonIcon />
-                </ListItemIcon>
-                {open && (
-                  <ListItemText
-                    primary={
-                      <Typography sx={{ fontWeight: pathname === "/perfil" ? 600 : 500 }}>
-                        Perfil
-                      </Typography>
-                    }
-                  />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-
-          {/* Configurações */}
-          <ListItem disablePadding sx={{ mb: 0.5 }}>
-            <Tooltip title={!open ? "Configurações" : ""} placement="right">
-              <ListItemButton
-                onClick={() => {
-                  pushWithProgress("/configuracoes");
-                  if (isMobile) onToggleSidebar();
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: pathname === "/configuracoes" ? activeColor : "transparent",
-                  "&:hover": { bgcolor: hoverColor },
-                  justifyContent: open ? "flex-start" : "center",
-                  px: 2,
-                  py: 1,
-                }}
-              >
-                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                  <SettingsIcon />
-                </ListItemIcon>
-                { open && (
-                  <ListItemText
-                    primary={
-                      <Typography sx={{ fontWeight: pathname === "/configuracoes" ? 600 : 500 }}>
-                        Configurações
-                      </Typography>
-                    }
-                  />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-
-          {/* Sair */}
-          <ListItem disablePadding>
-            <Tooltip title={!open ? "Sair" : ""} placement="right">
-              <ListItemButton
-                onClick={() => {
-                  pushWithProgress("/auth/login");
-                  Cookies.remove("session");
-                  localStorage.removeItem("session");
-                  if (isMobile) onToggleSidebar();
-                }}
-                sx={{
-                  borderRadius: 1.5,
-                  "&:hover": { bgcolor: hoverColor },
-                  justifyContent: open ? "flex-start" : "center",
-                  px: 2,
-                  py: 1,
-                }}
-              >
-                <ListItemIcon sx={{ color: iconColor, minWidth: 0, mr: open ? 2 : 0 }}>
-                  <LogoutIcon />
-                </ListItemIcon>
-                {open && (
-                  <ListItemText
-                    primary={<Typography sx={{ fontWeight: 500 }}>Sair</Typography>}
-                  />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
+          {bottomMenuItems.map((item) => {
+            const isActive = item.path ? pathname === item.path : false;
+            return (
+              <ListItem key={item.text} disablePadding>
+                <Tooltip title={!open ? item.text : ""} placement="right" arrow>
+                  <ListItemButton
+                    onClick={() => {
+                      if (item.onClick) item.onClick();
+                      if (isMobile) onToggleSidebar();
+                    }}
+                    selected={isActive}
+                    sx={listItemButtonStyles(theme, open, isActive)}
+                  >
+                    <ListItemIcon>{item.icon}</ListItemIcon>
+                    {open && <ListItemText primary={item.text} />}
+                  </ListItemButton>
+                </Tooltip>
+              </ListItem>
+            );
+          })}
         </List>
       </Box>
     </Drawer>
