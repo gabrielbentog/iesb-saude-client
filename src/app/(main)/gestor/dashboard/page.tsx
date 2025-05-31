@@ -21,6 +21,7 @@ import {
   useMediaQuery,
   Fab,
   styled,
+  useTheme
 } from "@mui/material"
 import { alpha, createTheme, ThemeProvider } from "@mui/material/styles"
 
@@ -41,6 +42,7 @@ import EditIcon from "@mui/icons-material/Edit"
 import { StatCard } from '@/app/components/ui/StatCard'
 import { DashboardTable } from '@/app/components/ui/DashboardTable'; // Ajuste o caminho conforme necessário
 import { StyledBadge, IconContainer } from '@/app/components/ui/DashboardTable';
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 // Mock data
 const mockStats = {
@@ -146,106 +148,6 @@ const mockUpcomingAppointments = [
   },
 ]
 
-// Custom theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#4f46e5",
-      light: "#818cf8",
-      dark: "#3730a3",
-    },
-    secondary: {
-      main: "#8b5cf6",
-      light: "#a78bfa",
-      dark: "#6d28d9",
-    },
-    success: {
-      main: "#10b981",
-      light: "#34d399",
-      dark: "#059669",
-    },
-    warning: {
-      main: "#f59e0b",
-      light: "#fbbf24",
-      dark: "#d97706",
-    },
-    info: {
-      main: "#3b82f6",
-      light: "#60a5fa",
-      dark: "#2563eb",
-    },
-    error: {
-      main: "#ef4444",
-      light: "#f87171",
-      dark: "#dc2626",
-    },
-    background: {
-      default: "#f8fafc",
-    },
-  },
-  typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 700,
-    },
-    h3: {
-      fontWeight: 700,
-    },
-    h4: {
-      fontWeight: 700,
-    },
-    h5: {
-      fontWeight: 700,
-    },
-    h6: {
-      fontWeight: 700,
-    },
-  },
-  shape: {
-    borderRadius: 12,
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: "none",
-          fontWeight: 600,
-          borderRadius: 8,
-        },
-      },
-    },
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-          transition: "box-shadow 0.3s ease",
-          "&:hover": {
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-          },
-        },
-      },
-    },
-    MuiPaper: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-        },
-      },
-    },
-    MuiChip: {
-      styleOverrides: {
-        root: {
-          fontWeight: 500,
-        },
-      },
-    },
-  },
-})
-
 const appointmentHeaders = [
   { id: 'patient', label: 'Paciente', width: 'auto' },
   { id: 'intern', label: 'Estagiário' },
@@ -263,7 +165,7 @@ const renderAppointmentCell = (appointment: typeof mockUpcomingAppointments[0], 
     case 'specialty':
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer>{appointment.icon}</IconContainer>
+            <IconContainer sx={{ color: "primary.main" }}>{appointment.icon}</IconContainer>
           {appointment.specialty}
         </Box>
       );
@@ -300,7 +202,7 @@ const renderInternCell = (intern: typeof mockInterns[0], headerId: string) => {
     case 'specialty':
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer>{intern.icon}</IconContainer>
+            <IconContainer sx={{ color: "primary.main" }}>{intern.icon}</IconContainer>
           {intern.specialty}
         </Box>
       );
@@ -372,11 +274,13 @@ function TabPanel(props: TabPanelProps) {
 }
 
 export default function ManagerDashboard() {
+  const theme = useTheme()
   const [tabValue, setTabValue] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedRow, setSelectedRow] = useState<any>(null)
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const completionRate = Math.round((mockStats.completedAppointments / mockStats.totalAppointments) * 100)
+  const pushWithProgress = usePushWithProgress()
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
@@ -393,255 +297,254 @@ export default function ManagerDashboard() {
   }
 
   return (
-    <ThemeProvider theme={theme}>
-      <Box
-        sx={{
-          minHeight: "100vh",
-          background: "linear-gradient(to bottom right, #f8fafc, #f1f5f9)",
-          py: 6,
-          px: 0,
-        }}
-      >
-        <Container maxWidth="xl">
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {/* Welcome Banner */}
-            <Paper
-              sx={{
-                overflow: "hidden",
-                border: "none",
-                background: "linear-gradient(to right, #4f46e5, #8b5cf6, #6366f1)",
-                color: "white",
-                position: "relative",
-              }}
-              elevation={0}
-            >
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ position: "relative", zIndex: 1 }}>
-                  <Typography variant="h4" fontWeight={700} gutterBottom>
-                    Painel de Gestão
-                  </Typography>
-                  <Typography variant="body1" sx={{ mb: 3, maxWidth: "80%", color: "rgba(255, 255, 255, 0.9)" }}>
-                    Gerencie estagiários, horários e consultas com eficiência. Acompanhe métricas em tempo real e
-                    otimize o atendimento.
-                  </Typography>
-                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                    <Button
-                      variant="contained"
-                      sx={{
-                        bgcolor: "white",
-                        color: theme.palette.primary.main,
-                        "&:hover": {
-                          bgcolor: "rgba(255, 255, 255, 0.9)",
-                        },
-                      }}
-                      startIcon={<PersonAddIcon />}
-                    >
-                      Adicionar Estagiário
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      sx={{
+    <Box
+      sx={{
+        minHeight: "100vh",
+        background: "background.paper",
+        py: 6,
+        px: 0,
+      }}
+    >
+      <Container maxWidth="xl">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {/* Welcome Banner */}
+          <Paper
+            sx={{
+              overflow: "hidden",
+              border: "none",
+              background: "linear-gradient(to right, #E50839,rgba(228, 44, 105, 0.88),rgb(255, 0, 76))",
+              color: "white",
+              position: "relative",
+            }}
+            elevation={0}
+          >
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ position: "relative", zIndex: 1 }}>
+                <Typography variant="h4" fontWeight={700} gutterBottom>
+                  Painel de Gestão
+                </Typography>
+                <Typography variant="body1" sx={{ mb: 3, maxWidth: "80%", color: "rgba(255, 255, 255, 0.9)" }}>
+                  Gerencie estagiários, horários e consultas com eficiência. Acompanhe métricas em tempo real e
+                  otimize o atendimento.
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <Button
+                    variant="contained"
+                    sx={{
+                      bgcolor: "white",
+                      color: theme.palette.primary.main,
+                      "&:hover": {
+                        bgcolor: "rgba(255, 255, 255, 0.9)",
+                      },
+                    }}
+                    startIcon={<PersonAddIcon />}
+                  >
+                    Adicionar Estagiário
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    sx={{
+                      border: "1px solid white",
+                      color: "white",
+                      "&:hover": {
+                        bgcolor: "rgba(255, 255, 255, 0.1)",
                         border: "1px solid white",
-                        color: "white",
-                        "&:hover": {
-                          bgcolor: "rgba(255, 255, 255, 0.1)",
-                          border: "1px solid white",
-                        },
-                      }}
-                      startIcon={<AccessTimeIcon />}
-                    >
-                      Alocar Horários
-                    </Button>
-                  </Box>
+                      },
+                    }}
+                    startIcon={<AccessTimeIcon />}
+                  >
+                    Alocar Horários
+                  </Button>
                 </Box>
-                {/* Decorative elements */}
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: -40,
-                    right: -40,
-                    width: 256,
-                    height: 256,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(255, 255, 255, 0.1)",
-                  }}
-                />
-                <Box
-                  sx={{
-                    position: "absolute",
-                    bottom: -40,
-                    right: 80,
-                    width: 128,
-                    height: 128,
-                    borderRadius: "50%",
-                    bgcolor: "rgba(255, 255, 255, 0.1)",
-                  }}
-                />
-              </CardContent>
-            </Paper>
+              </Box>
 
-            {/* Stats Grid */}
-            <Grid container spacing={3}>
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Consultas Hoje"
-                  value={mockStats.appointmentsToday}
-                  subtitle="vs. semana passada"
-                  icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
-                  iconBgColor={alpha(theme.palette.primary.main, 0.1)}
-                  trendComponent={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                      <TrendingUpIcon sx={{ color: "success.main", fontSize: 16 }} />
-                      <Typography variant="body2" sx={{ color: "success.main", fontWeight: 600 }}>
-                        +{mockStats.appointmentsTrend}%
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        vs. semana passada
-                      </Typography>
-                    </Box>
-                  }
-                />
-              </Grid>
+              {/* Decorative elements */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: -40,
+                  right: -40,
+                  width: 256,
+                  height: 256,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                }}
+              />
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: -40,
+                  right: 80,
+                  width: 128,
+                  height: 128,
+                  borderRadius: "50%",
+                  bgcolor: "rgba(255, 255, 255, 0.1)",
+                }}
+              />
+            </CardContent>
+          </Paper>
 
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Total de Consultas"
-                  value={mockStats.totalAppointments}
-                  subtitle={`${mockStats.completedAppointments} concluídas, ${mockStats.pendingAppointments} pendentes`}
-                  icon={<AssignmentIcon sx={{ color: "secondary.main" }} />}
-                  iconBgColor={alpha(theme.palette.secondary.main, 0.1)}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Estagiários Ativos"
-                  value={mockStats.totalInterns}
-                  subtitle="Em 3 especialidades"
-                  icon={<PeopleIcon sx={{ color: "success.main" }} />}
-                  iconBgColor={alpha(theme.palette.success.main, 0.1)}
-                />
-              </Grid>
-
-              <Grid item xs={12} sm={6} md={3}>
-                <StatCard
-                  title="Taxa de Conclusão"
-                  value={`${completionRate}%`}
-                  subtitle=""
-                  icon={<CheckCircleIcon sx={{ color: "success.main" }} />}
-                  iconBgColor={alpha(theme.palette.success.main, 0.1)}
-                  trendComponent={
-                    <LinearProgress
-                      variant="determinate"
-                      value={completionRate}
-                      sx={{
-                        mt: 1,
-                        height: 8,
-                        borderRadius: 4,
-                        bgcolor: alpha(theme.palette.success.main, 0.2),
-                        "& .MuiLinearProgress-bar": {
-                          bgcolor: theme.palette.success.main,
-                        },
-                      }}
-                    />
-                  }
-                />
-              </Grid>
+          {/* Stats Grid */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Consultas Hoje"
+                value={mockStats.appointmentsToday}
+                subtitle="vs. semana passada"
+                icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+                trendComponent={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <TrendingUpIcon sx={{ color: "success.main", fontSize: 16 }} />
+                    <Typography variant="body2" sx={{ color: "success.main", fontWeight: 600 }}>
+                      +{mockStats.appointmentsTrend}%
+                    </Typography>
+                    <Typography variant="body2" color="text.primary">
+                      vs. semana passada
+                    </Typography>
+                  </Box>
+                }
+              />
             </Grid>
 
-            {/* Tabs Section */}
-            <Box sx={{ width: "100%" }}>
-              <StyledTabsList value={tabValue} onChange={handleTabChange} variant="fullWidth">
-                <StyledTab
-                  label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <CalendarMonthIcon sx={{ fontSize: 16 }} />
-                      <span>Próximas Consultas</span>
-                    </Box>
-                  }
-                />
-                <StyledTab
-                  label={
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <PeopleIcon sx={{ fontSize: 16 }} />
-                      <span>Estagiários</span>
-                    </Box>
-                  }
-                />
-              </StyledTabsList>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Total de Consultas"
+                value={mockStats.totalAppointments}
+                subtitle={`${mockStats.completedAppointments} concluídas, ${mockStats.pendingAppointments} pendentes`}
+                icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+              />
+            </Grid>
 
-              {/* Appointments Tab */}
-              <TabPanel value={tabValue} index={0}>
-                <DashboardTable
-                  title="Consultas Agendadas"
-                  subtitle="Próximas consultas e seus status"
-                  headers={appointmentHeaders}
-                  data={mockUpcomingAppointments}
-                  renderCell={renderAppointmentCell}
-                  onAddClick={() => console.log('Adicionar nova consulta')} // Implemente a lógica
-                  onViewAllClick={() => console.log('Ver todas as consultas')} // Implemente a lógica
-                  rowKeyExtractor={(appointment) => appointment.id}
-                  getPriorityBorderColor={(appointment) => {
-                      switch (appointment.priority) {
-                          case "high": return `4px solid ${theme.palette.error.main}`;
-                          case "normal": return `4px solid ${theme.palette.info.main}`;
-                          case "low": return `4px solid ${theme.palette.success.main}`;
-                          default: return `4px solid ${theme.palette.grey[300]}`;
-                      }
-                  }}
-                />
-              </TabPanel>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Estagiários Ativos"
+                value={mockStats.totalInterns}
+                subtitle="Em 3 especialidades"
+                icon={<PeopleIcon sx={{ color: "success.main" }} />}
+                iconBgColor={alpha(theme.palette.success.main, 0.1)}
+              />
+            </Grid>
 
-              {/* Interns Tab */}
-              <TabPanel value={tabValue} index={1}>
-                <DashboardTable
-                  title="Gestão de Estagiários"
-                  subtitle="Acompanhe o desempenho e atividades dos estagiários"
-                  headers={internHeaders}
-                  data={mockInterns}
-                  renderCell={renderInternCell}
-                  onAddClick={() => console.log('Adicionar estagiário')} // Implemente a lógica
-                  onViewAllClick={() => console.log('Ver todos os estagiários')} // Implemente a lógica
-                  rowKeyExtractor={(intern) => intern.id}
-                />
-              </TabPanel>
-            </Box>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Taxa de Conclusão"
+                value={`${completionRate}%`}
+                subtitle=""
+                icon={<CheckCircleIcon sx={{ color: "success.main" }} />}
+                iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                trendComponent={
+                  <LinearProgress
+                    variant="determinate"
+                    value={completionRate}
+                    sx={{
+                      mt: 1,
+                      height: 8,
+                      borderRadius: 4,
+                      bgcolor: alpha(theme.palette.success.main, 0.2),
+                      "& .MuiLinearProgress-bar": {
+                        bgcolor: theme.palette.success.main,
+                      },
+                    }}
+                  />
+                }
+              />
+            </Grid>
+          </Grid>
 
-            {/* Menu for actions */}
-            <Menu
-              anchorEl={anchorEl}
-              open={Boolean(anchorEl)}
-              onClose={handleMenuClose}
-              transformOrigin={{ horizontal: "right", vertical: "top" }}
-              anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
-            >
-              <MenuItem onClick={handleMenuClose}>
-                <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
-                Ver detalhes
-              </MenuItem>
-              <MenuItem onClick={handleMenuClose}>
-                <EditIcon fontSize="small" sx={{ mr: 1 }} />
-                Editar
-              </MenuItem>
-            </Menu>
+          {/* Tabs Section */}
+          <Box sx={{ width: "100%" }}>
+            <StyledTabsList value={tabValue} onChange={handleTabChange} variant="fullWidth">
+              <StyledTab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarMonthIcon sx={{ fontSize: 16 }} />
+                    <span>Próximas Consultas</span>
+                  </Box>
+                }
+              />
+              <StyledTab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <PeopleIcon sx={{ fontSize: 16 }} />
+                    <span>Estagiários</span>
+                  </Box>
+                }
+              />
+            </StyledTabsList>
 
-            {/* Mobile Floating Button */}
-            {isMobile && (
-              <Fab
-                color="primary"
-                sx={{
-                  position: "fixed",
-                  bottom: 24,
-                  right: 24,
-                  boxShadow: theme.shadows[4],
+            {/* Appointments Tab */}
+            <TabPanel value={tabValue} index={0}>
+              <DashboardTable
+                title="Consultas Agendadas"
+                subtitle="Próximas consultas e seus status"
+                headers={appointmentHeaders}
+                data={mockUpcomingAppointments}
+                renderCell={renderAppointmentCell}
+                onAddClick={() => console.log('Adicionar nova consulta')} // Implemente a lógica
+                onViewAllClick={() => pushWithProgress('/gestor/consultas')} // Implemente a lógica
+                rowKeyExtractor={(appointment) => appointment.id}
+                getPriorityBorderColor={(appointment) => {
+                    switch (appointment.priority) {
+                        case "high": return `4px solid ${theme.palette.error.main}`;
+                        case "normal": return `4px solid ${theme.palette.info.main}`;
+                        case "low": return `4px solid ${theme.palette.success.main}`;
+                        default: return `4px solid ${theme.palette.grey[300]}`;
+                    }
                 }}
-              >
-                <AddIcon />
-              </Fab>
-            )}
+              />
+            </TabPanel>
+
+            {/* Interns Tab */}
+            <TabPanel value={tabValue} index={1}>
+              <DashboardTable
+                title="Gestão de Estagiários"
+                subtitle="Acompanhe o desempenho e atividades dos estagiários"
+                headers={internHeaders}
+                data={mockInterns}
+                renderCell={renderInternCell}
+                onAddClick={() => console.log('Adicionar estagiário')} // Implemente a lógica
+                onViewAllClick={() => console.log('Ver todos os estagiários')} // Implemente a lógica
+                rowKeyExtractor={(intern) => intern.id}
+              />
+            </TabPanel>
           </Box>
-        </Container>
-      </Box>
-    </ThemeProvider>
+
+          {/* Menu for actions */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={handleMenuClose}
+            transformOrigin={{ horizontal: "right", vertical: "top" }}
+            anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+          >
+            <MenuItem onClick={handleMenuClose}>
+              <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
+              Ver detalhes
+            </MenuItem>
+            <MenuItem onClick={handleMenuClose}>
+              <EditIcon fontSize="small" sx={{ mr: 1 }} />
+              Editar
+            </MenuItem>
+          </Menu>
+
+          {/* Mobile Floating Button */}
+          {isMobile && (
+            <Fab
+              color="primary"
+              sx={{
+                position: "fixed",
+                bottom: 24,
+                right: 24,
+                boxShadow: theme.shadows[4],
+              }}
+            >
+              <AddIcon />
+            </Fab>
+          )}
+        </Box>
+      </Container>
+    </Box>
   )
 }

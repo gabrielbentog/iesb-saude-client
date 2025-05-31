@@ -1,7 +1,9 @@
-/*  pages/gestor/calendario/agendamento/ScheduleFormPage.tsx  */
+/* pages/gestor/calendario/agendamento/ScheduleFormPage.tsx  */
+
 "use client";
 
 import React, { useEffect } from "react";
+
 import {
   Box,
   Button,
@@ -15,7 +17,15 @@ import {
 } from "@mui/material";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+
+// --- INÍCIO DA MODIFICAÇÃO CHAVE ---
 import dayjs from "dayjs";
+import "dayjs/locale/pt-br"; // Importe o locale português do Brasil
+
+// Configure o locale globalmente IMEDIATAMENTE após a importação do dayjs
+dayjs.locale("pt-br");
+// --- FIM DA MODIFICAÇÃO CHAVE ---
+
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import { useRouter } from "next/navigation";
@@ -28,6 +38,7 @@ import { useApi } from "@/app/hooks/useApi";
 import { apiFetch } from "@/app/lib/api";
 import { CollegeLocation, Specialty } from "./types";
 import { FormValues } from "@/app/components/agendamento/schemas";
+import { ptBR } from "@mui/x-date-pickers/locales";
 
 export default function ScheduleFormPage() {
   const router = useRouter();
@@ -76,22 +87,27 @@ export default function ScheduleFormPage() {
   /* ---------- week_day <-> date ---------- */
   const repeatType = watch("repeat_type");
   useEffect(() => {
-    scheduleFields.forEach((_, idx) => {
+    scheduleFields.forEach((field, idx) => {
       if (repeatType === 1) {
-        const d = getValues(`schedules.${idx}.date`);
-        setValue(
-          `schedules.${idx}.week_day`,
-          d ? dayjs(d).day() : dayjs().day()
-        );
-        setValue(`schedules.${idx}.date`, undefined);
+        // Convertendo apenas se week_day estiver indefinido
+        const currentWeekDay = getValues(`schedules.${idx}.week_day`);
+        const currentDate = getValues(`schedules.${idx}.date`);
+        if (currentWeekDay === undefined && currentDate) {
+          setValue(`schedules.${idx}.week_day`, dayjs(currentDate).day());
+          setValue(`schedules.${idx}.date`, undefined);
+        }
       } else {
-        const wd = getValues(`schedules.${idx}.week_day`);
-        setValue(`schedules.${idx}.date`, dayjs().day(wd ?? 0).toDate());
-        setValue(`schedules.${idx}.week_day`, undefined);
+        // Convertendo apenas se date estiver indefinido
+        const currentWeekDay = getValues(`schedules.${idx}.week_day`);
+        const currentDate = getValues(`schedules.${idx}.date`);
+        if (currentDate === undefined && currentWeekDay !== undefined) {
+          setValue(`schedules.${idx}.date`, dayjs().day(currentWeekDay).toDate());
+          setValue(`schedules.${idx}.week_day`, undefined);
+        }
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repeatType, scheduleFields]);
+  }, [repeatType]);
 
   /* ---------- submit ---------- */
   const onSubmit = async (data: FormValues) => {
@@ -135,8 +151,12 @@ export default function ScheduleFormPage() {
 
   /* ---------- UI ---------- */
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Container maxWidth="lg" sx={{ mt: 4 }}>
+    <LocalizationProvider   
+      dateAdapter={AdapterDayjs}
+      adapterLocale="pt-br"
+      localeText={ptBR.components.MuiLocalizationProvider.defaultProps.localeText}
+    >
+      <Container maxWidth="xl" sx={{ mt: 4 }}>
         {/* header */}
         <Stack direction="row" spacing={2} mb={2} alignItems="center">
           <Button startIcon={<ArrowBackIosNewIcon />} onClick={() => router.back()}>
@@ -233,6 +253,7 @@ export default function ScheduleFormPage() {
                     label="Período – início"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
+                    format="DD/MM/YYYY"
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -252,6 +273,7 @@ export default function ScheduleFormPage() {
                     label="Período – fim"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
+                    format="DD/MM/YYYY"
                     slotProps={{
                       textField: {
                         fullWidth: true,
