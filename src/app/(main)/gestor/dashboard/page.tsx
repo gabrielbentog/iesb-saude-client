@@ -7,7 +7,6 @@ import {
   Box,
   Typography,
   Button,
-  Card,
   CardContent,
   Grid,
   Paper,
@@ -23,7 +22,7 @@ import {
   styled,
   useTheme
 } from "@mui/material"
-import { alpha, createTheme, ThemeProvider } from "@mui/material/styles"
+import { alpha } from "@mui/material/styles"
 
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"
@@ -59,7 +58,7 @@ const mockInterns = [
     id: 1,
     name: "Ana Silva",
     specialty: "Nutrição",
-    avatar: "/placeholder.svg?height=32&width=32",
+    avatar: "",
     appointmentsCompleted: 32,
     appointmentsScheduled: 8,
     status: "Ativo",
@@ -70,7 +69,7 @@ const mockInterns = [
     id: 2,
     name: "Carlos Mendes",
     specialty: "Psicologia",
-    avatar: "/placeholder.svg?height=32&width=32",
+    avatar: "",
     appointmentsCompleted: 28,
     appointmentsScheduled: 6,
     status: "Inativo",
@@ -81,7 +80,7 @@ const mockInterns = [
     id: 3,
     name: "Juliana Costa",
     specialty: "Fisioterapia",
-    avatar: "/placeholder.svg?height=32&width=32",
+    avatar: "",
     appointmentsCompleted: 18,
     appointmentsScheduled: 4,
     status: "Ativo",
@@ -92,7 +91,7 @@ const mockInterns = [
     id: 4,
     name: "Pedro Santos",
     specialty: "Nutrição",
-    avatar: "/placeholder.svg?height=32&width=32",
+    avatar: "",
     appointmentsCompleted: 15,
     appointmentsScheduled: 5,
     status: "Ativo",
@@ -277,7 +276,7 @@ export default function ManagerDashboard() {
   const theme = useTheme()
   const [tabValue, setTabValue] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [selectedRow, setSelectedRow] = useState<any>(null)
+  // const [selectedRow, setSelectedRow] = useState<unknown>(null)
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
   const completionRate = Math.round((mockStats.completedAppointments / mockStats.totalAppointments) * 100)
   const pushWithProgress = usePushWithProgress()
@@ -286,14 +285,9 @@ export default function ManagerDashboard() {
     setTabValue(newValue)
   }
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, row: any) => {
-    setAnchorEl(event.currentTarget)
-    setSelectedRow(row)
-  }
-
   const handleMenuClose = () => {
     setAnchorEl(null)
-    setSelectedRow(null)
+    // setSelectedRow(null)
   }
 
   return (
@@ -338,6 +332,7 @@ export default function ManagerDashboard() {
                       },
                     }}
                     startIcon={<PersonAddIcon />}
+                    onClick={() => pushWithProgress('/gestor/gestao-de-estagiarios')}
                   >
                     Adicionar Estagiário
                   </Button>
@@ -347,12 +342,13 @@ export default function ManagerDashboard() {
                       border: "1px solid white",
                       color: "white",
                       "&:hover": {
-                        bgcolor: "rgba(255, 255, 255, 0.1)",
-                        border: "1px solid white",
+                      bgcolor: "rgba(255, 255, 255, 0.1)",
+                      border: "1px solid white",
                       },
                     }}
                     startIcon={<AccessTimeIcon />}
-                  >
+                    onClick={() => pushWithProgress('/gestor/calendario/agendamento')}
+                    >
                     Alocar Horários
                   </Button>
                 </Box>

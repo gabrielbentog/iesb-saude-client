@@ -26,12 +26,15 @@ import { CalendarHeader } from "./CalendarHeader";
 import { CalendarMonthView } from "./CalendarMonthView";
 import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
+import { EventDetailDialog } from "./EventDetailDialog"; // For non-patient actions or busy slots
+import { BookingDialog } from "./BookingDialog"; // New dialog for patients
 import {
   CalendarEvent,
-  EventCategory,
-} from "@/app/components/Calendar/types";
+  // EventCategory, // EventCategory might be directly used from types.ts
+} from "@/app/components/Calendar/types"; // Ensure this path is correct
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { useApi } from "@/app/hooks/useApi";
+import { useToast } from "@/app/contexts/ToastContext"; // For booking confirmation
 
 /* ---------- helpers ---------- */
 const toLocalDate = (isoUtcZ: string) => new Date(isoUtcZ.replace(/Z$/, ""));
@@ -65,19 +68,18 @@ type ApiSlot = {
 };
 
 type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
-
 type ViewMode = "month" | "week" | "day";
 type ColorMap = Record<string, { color: string }>;
 
 interface EnhancedCalendarProps {
   showScheduleButton: boolean;
+  userProfile?: "paciente" | "gestor" | "estagiario" | string; // Added userProfile prop
 }
 
-/* ===================================================================== */
 export default function EnhancedCalendar({
   showScheduleButton,
+  userProfile, // Destructure userProfile
 }: EnhancedCalendarProps) {
-  /* ---------- state ---------- */
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [view, setView] = useState<ViewMode>("month");
   const [campusFilters, setCampusFilters] = useState<string[]>([]);
@@ -85,15 +87,17 @@ export default function EnhancedCalendar({
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [colorMap, setColorMap] = useState<ColorMap>({});
   const pushWithProgress = usePushWithProgress();
+  const { showToast } = useToast();
 
-  /* ---------- listagens estáticas ---------- */
+  const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEvent | null>(null);
+  const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<CalendarEvent | null>(null);
+
   const { data: campusApi } = useApi<CollegeLocation[]>("/api/college_locations");
   const campusStatic = (campusApi ?? []).map((c) => c.name);
 
   const { data: specApi } = useApi<SimpleSpec[]>("/api/specialties/simple");
   const specialtyStatic = (specApi ?? []).map((s) => s.name);
 
-  /* ---------- eventos ---------- */
   const { start, end } = rangeFor(view, currentDate);
   const { data: calApi, loading } = useApi<CalendarApi>(
     `/api/calendar?start=${start}&end=${end}`
@@ -115,11 +119,13 @@ export default function EnhancedCalendar({
       raw.push({
         id: `${kind}-${slot.id}-${date.toISOString()}`,
         date,
-        title: kind === "busy" ? slot.patient_name || "Consulta" : "Disponível",
-        description: `${slot.specialty_name} • ${slot.campus_name}`,
-        category: slot.specialty_name as EventCategory,
+        title: kind === "busy" ? "Indisponível" : slot.specialty_name,
+        description: `${slot.specialty_name} • ${slot.campus_name}`, // Using description for specialty/campus
+        location: slot.campus_name, // Explicit location if needed elsewhere
+        category: slot.specialty_name,
         isRecurring: slot.is_recurring ?? Boolean(slot.time_slot_id),
         timeSlotId: slot.time_slot_id,
+        type: kind, // <-- Set the type here
       });
     };
 
@@ -137,20 +143,18 @@ export default function EnhancedCalendar({
   const campusList = [...new Set([...campusStatic, ...campusDyn])];
   const specialtyList = [...new Set([...specialtyStatic, ...specDyn])];
 
-  /* ---------- filtros ---------- */
   const filteredEvents = useMemo(
     () =>
       events.filter((e) => {
         const campusOk =
           campusFilters.length === 0 ||
-          campusFilters.some((c) => e.description?.includes(c));
+          campusFilters.some((c) => e.description?.includes(c) || e.location?.includes(c));
         const specOk = specFilters.length === 0 || specFilters.includes(e.category);
         return campusOk && specOk;
       }),
     [events, campusFilters, specFilters]
   );
 
-  /* ---------- navegação ---------- */
   const prev = () =>
     setCurrentDate(
       view === "month"
@@ -164,20 +168,29 @@ export default function EnhancedCalendar({
         : addDays(currentDate, view === "week" ? 7 : 1)
     );
 
-  /* ---------- callback para exclusão instantânea ---------- */
   const handleDeleted = (info: { type: "single" | "series"; id?: string; timeSlotId?: number }) => {
-    setEvents((prev) =>
+    setEvents((prevEvents) =>
       info.type === "single"
-        ? prev.filter((ev) => ev.id !== info.id)
-        : prev.filter((ev) => ev.timeSlotId !== info.timeSlotId)
+        ? prevEvents.filter((ev) => ev.id !== info.id)
+        : prevEvents.filter((ev) => ev.timeSlotId !== info.timeSlotId)
     );
+    showToast({ message: "Horário/Série excluído(a).", severity: "info" });
   };
 
-  /* ---------- props para as views ---------- */
+  const handleEventClick = (event: CalendarEvent) => {
+    if (userProfile === 'paciente' && event.type === 'free') {
+      setSelectedSlotForBooking(event); // Abre o BookingDialog
+    } else if (event.type !== 'busy') {
+      setSelectedEventForDetail(event); // Abre o EventDetailDialog apenas se NÃO for busy
+    }
+    // Se for busy, não faz nada
+  };
+
+
   const viewProps = {
     events: filteredEvents,
     categoryConfig: colorMap,
-    onDeleted: handleDeleted,
+    onEventClick: handleEventClick,
   };
 
   const body = {
@@ -200,7 +213,6 @@ export default function EnhancedCalendar({
   return (
     <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
       <CssBaseline />
-
       <Paper sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
         <CalendarHeader
           title="Calendário"
@@ -225,7 +237,7 @@ export default function EnhancedCalendar({
             setSpecFilters([]);
           }}
           showScheduleButton={showScheduleButton}
-          onScheduleClick={() => pushWithProgress("calendario/agendamento")}
+          onScheduleClick={() => pushWithProgress("/gestor/calendario/agendamento")} // Adjusted path to gestor
         />
 
         <Box sx={{ flex: 1, position: "relative" }}>
@@ -248,6 +260,47 @@ export default function EnhancedCalendar({
         </Box>
       </Paper>
 
+      {selectedEventForDetail && (
+        <EventDetailDialog
+          open={Boolean(selectedEventForDetail)}
+          event={selectedEventForDetail}
+          onClose={() => setSelectedEventForDetail(null)}
+          onDeleted={(info) => {
+            handleDeleted(info);
+            setSelectedEventForDetail(null);
+          }}
+        />
+      )}
+
+      {selectedSlotForBooking && (
+        <BookingDialog
+          open={Boolean(selectedSlotForBooking)}
+          event={selectedSlotForBooking}
+          onClose={() => setSelectedSlotForBooking(null)}
+          onSubmitBooking={async (bookingData) => {
+            // Here you would typically make an API call to book the appointment
+            console.log("Booking Submitted:", bookingData, "for slot:", selectedSlotForBooking);
+            // Example:
+            // try {
+            //   await apiFetch('/api/appointments', {
+            //     method: 'POST',
+            //     body: JSON.stringify({
+            //       slotId: selectedSlotForBooking.id, // or timeSlotId if it's a recurring slot
+            //       objective: bookingData.objective,
+            //       date: selectedSlotForBooking.date,
+            //     }),
+            //   });
+            //   showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
+            //   // Optionally, refetch events here or update local state
+            // } catch (error) {
+            //   showToast({ message: "Falha ao agendar consulta.", severity: "error" });
+            // }
+            showToast({ message: "Agendamento solicitado! (Simulação)", severity: "success" });
+            setSelectedSlotForBooking(null); // Close dialog
+          }}
+        />
+      )}
+
       <Fab
         color="primary"
         sx={{
@@ -255,6 +308,14 @@ export default function EnhancedCalendar({
           bottom: 16,
           right: 16,
           display: { xs: "flex", md: "none" },
+        }}
+        onClick={() => {
+            if (userProfile === 'paciente') {
+                pushWithProgress("/paciente/agendamento");
+            } else if (userProfile === 'gestor' && showScheduleButton) {
+                 pushWithProgress("/gestor/calendario/agendamento");
+            }
+            // Add other profiles or default behavior if needed
         }}
       >
         <AddIcon />

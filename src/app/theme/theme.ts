@@ -24,7 +24,7 @@ const baseTheme: ThemeOptions = {
     },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 3,
   },
   components: {
     MuiButton: {

@@ -40,8 +40,13 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
     name: `schedules.${sIdx}.times` as const,
   });
 
+  type TimeError = {
+    start_time?: { message?: string };
+    end_time?: { message?: string };
+  };
+
   const err = (t: number, k: "start_time" | "end_time") =>
-    (control._formState.errors.schedules?.[sIdx]?.times?.[t] as any)?.[k];
+    (control._formState.errors.schedules?.[sIdx]?.times?.[t] as TimeError | undefined)?.[k];
 
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>

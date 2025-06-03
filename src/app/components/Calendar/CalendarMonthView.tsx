@@ -1,6 +1,7 @@
+// src/app/components/Calendar/CalendarMonthView.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -25,38 +26,20 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
-import { EventDetailDialog } from "./EventDetailDialog";
-
-type EventCategory = string;
-
-export interface CalendarEvent {
-  id: string;
-  date: Date;
-  title: string;
-  description?: string;
-  location?: string;
-  category: EventCategory;
-  allDay?: boolean;
-  isRecurring?: boolean;
-  timeSlotId?: number;
-}
+import { CalendarEvent } from "./types"; // Importar de types.ts
 
 interface Props {
   currentMonth: Date;
   events: CalendarEvent[];
-  categoryConfig: Record<EventCategory, { color: string }>;
-  onDeleted: (info: {
-    type: "single" | "series";
-    id?: string;
-    timeSlotId?: number;
-  }) => void;
+  categoryConfig: Record<string, { color: string }>;
+  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
 }
 
 export function CalendarMonthView({
   currentMonth,
   events,
   categoryConfig,
-  onDeleted,
+  onEventClick,
 }: Props) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -83,7 +66,6 @@ export function CalendarMonthView({
       (ev) => format(ev.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
     );
 
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
   const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 
   return (
@@ -99,15 +81,14 @@ export function CalendarMonthView({
               ))}
             </TableRow>
           </TableHead>
-
           <TableBody>
             {matrix.map((week, wi) => (
               <TableRow key={wi}>
                 {week.map((day, di) => {
                   const items = eventsForDay(day);
                   const sameMonth = isSameMonth(day, currentMonth);
-                  const hasUpcoming = items.some(
-                    (ev) => !isBefore(ev.date, todayStart)
+                  const hasUpcomingOrFreeSlots = items.some(
+                    (ev) => ev.type === 'free' || !isBefore(ev.date, todayStart)
                   );
 
                   return (
@@ -116,42 +97,30 @@ export function CalendarMonthView({
                       isCurrentMonth={sameMonth}
                       isToday={isToday(day)}
                       isWeekend={isWeekend(day)}
-                      hasEvents={hasUpcoming}
+                      hasEvents={hasUpcomingOrFreeSlots} // Atualizado para refletir free slots também
                     >
-                      <DayNumber
-                        isToday={isToday(day)}
-                        isCurrentMonth={sameMonth}
-                      >
+                      <DayNumber isToday={isToday(day)} isCurrentMonth={sameMonth}>
                         {format(day, "d")}
                       </DayNumber>
-
                       {items.slice(0, 3).map((ev) => {
-                        const past = isBefore(ev.date, todayStart);
-                        const chipColor =
-                          categoryConfig[ev.category]?.color ?? "#90a4ae";
-
+                        const past = isBefore(ev.date, todayStart) && ev.type === 'busy';
+                        const chipColor = categoryConfig[ev.category]?.color ?? (ev.type === 'free' ? "#66bb6a" : "#90a4ae");
                         return (
                           <Tooltip key={ev.id} title={ev.title}>
                             <EventChip
                               past={past}
                               isCurrentMonth={sameMonth}
                               color={chipColor}
-                              onClick={() => setSelected(ev)}
+                              onClick={() => onEventClick(ev)} // Chama o handler do pai
                               sx={{ mt: 0.25 }}
                             >
-                              {ev.allDay
-                                ? ev.title
-                                : `${format(ev.date, "HH:mm")} ${ev.title}`}
+                              {ev.allDay ? ev.title : `${format(ev.date, "HH:mm")} ${ev.title}`}
                             </EventChip>
                           </Tooltip>
                         );
                       })}
-
                       {items.length > 3 && (
-                        <Typography
-                          variant="caption"
-                          sx={{ display: "block", mt: 0.5 }}
-                        >
+                        <Typography variant="caption" sx={{ display: "block", mt: 0.5 }}>
                           + {items.length - 3} mais
                         </Typography>
                       )}
@@ -163,13 +132,7 @@ export function CalendarMonthView({
           </TableBody>
         </Table>
       </TableContainer>
-
-      <EventDetailDialog
-        open={Boolean(selected)}
-        event={selected}
-        onClose={() => setSelected(null)}
-        onDeleted={onDeleted}
-      />
+      {/* Nenhum diálogo renderizado aqui */}
     </>
   );
 }

@@ -1,316 +1,346 @@
-"use client"
+// src/app/(main)/paciente/consultas/page.tsx
+"use client";
 
-import React, { useState, useMemo } from "react"
+import type React from "react";
+import { useState, useEffect } from "react"; // Adicionado useEffect para simular fetch
 import {
   Box,
-  Paper,
-  Typography,
-  Chip,
   Button,
-  Avatar,
-  Tooltip,
-  useMediaQuery,
+  Container,
+  Typography,
+  Grid,
+  useTheme,
   Menu,
   MenuItem,
   IconButton,
-  Select,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  TablePagination,
-} from "@mui/material"
-import { useTheme } from "@mui/material/styles"
-import { motion } from "framer-motion"
-import MoreVertIcon from "@mui/icons-material/MoreVert"
-import CalendarTodayOutlinedIcon from "@mui/icons-material/CalendarTodayOutlined"
-import AccessTimeOutlinedIcon from "@mui/icons-material/AccessTimeOutlined"
-import LocationOnOutlinedIcon from "@mui/icons-material/LocationOnOutlined"
-import DataTable from "@/app/components/DataTable/DataTable"
+  Avatar, // Será usado para o Estagiário
+  CircularProgress // Para feedback de carregamento
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
-interface Appointment {
-  id: string
-  specialty: string
-  professional: string
-  date: string
-  time: string
-  location: string
-  status: "Confirmada" | "Pendente" | "Realizada"
+// Icons
+import EventAvailableIcon from "@mui/icons-material/EventAvailable"; // Próximas Consultas
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline"; // Consultas Realizadas
+import PendingActionsIcon from "@mui/icons-material/PendingActions"; // Consultas Pendentes
+import AddIcon from "@mui/icons-material/Add";
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import CancelIcon from '@mui/icons-material/Cancel'; // Para Cancelar Consulta
+import EditCalendarIcon from '@mui/icons-material/EditCalendar'; // Para Reagendar
+
+// Ícones de especialidade (mantidos para consistência)
+import RestaurantIcon from "@mui/icons-material/Restaurant";
+import PsychologyIcon from "@mui/icons-material/Psychology";
+import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
+
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
+
+// Componentes de UI
+import { StatCard } from "@/app/components/ui/StatCard";
+import { DashboardTable, StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable";
+
+// Interface de Dados para Consulta do Paciente
+// (patientName e patientAvatar não são mais necessários na tabela principal,
+// mas podem ser úteis se a API os retornar para a página de detalhes)
+interface ConsultaPaciente {
+  id: number;
+  internName: string; // Nome do estagiário/profissional
+  internAvatar?: string; // Avatar do estagiário (opcional)
+  specialty: string;
+  date: string;
+  time: string;
+  status: "Confirmada" | "Pendente" | "Reagendada" | "Cancelada" | "Concluída";
+  priority?: "low" | "normal" | "high"; // Mantido se relevante para o paciente
+  specialtyIcon: React.ReactNode;
+  location?: string; // Adicionado para detalhes
 }
 
-const appointments: Appointment[] = [
+// Dados Mock (substituir por chamada à API)
+const mockMinhasConsultas: ConsultaPaciente[] = [
   {
-    id: "1",
-    specialty: "Clínico Geral",
-    professional: "Dr. João Silva",
-    date: "10/04/2025",
-    time: "14:00",
-    location: "Clínica Central - Sala 3",
+    id: 1,
+    internName: "Ana Silva",
+    internAvatar: "/placeholder-avatar.png", // Caminho para avatar do estagiário
+    specialty: "Nutrição",
+    date: "05/06/2025", // Usando formato DD/MM/YYYY
+    time: "10:00",
     status: "Confirmada",
+    priority: "normal",
+    specialtyIcon: <RestaurantIcon fontSize="small" />,
+    location: "Clínica IESB Saúde - Asa Sul, Sala 101",
   },
   {
-    id: "2",
-    specialty: "Dermatologia",
-    professional: "Dra. Ana Costa",
-    date: "12/04/2025",
-    time: "09:30",
-    location: "Policlínica Sul - Sala 2",
+    id: 2,
+    internName: "Dr. Carlos Mendes",
+    specialty: "Psicologia",
+    date: "10/06/2025",
+    time: "11:30",
     status: "Pendente",
+    priority: "high",
+    specialtyIcon: <PsychologyIcon fontSize="small" />,
+    location: "Atendimento Online via Plataforma",
   },
   {
-    id: "3",
-    specialty: "Cardiologia",
-    professional: "Dr. Carlos Mendes",
-    date: "02/03/2025",
-    time: "11:00",
-    location: "Hospital Vida - Sala 5",
-    status: "Realizada",
+    id: 3,
+    internName: "Juliana Costa",
+    specialty: "Fisioterapia",
+    date: "12/04/2025", // Data passada
+    time: "09:00",
+    status: "Concluída",
+    priority: "low",
+    specialtyIcon: <FitnessCenterIcon fontSize="small" />,
+    location: "Clínica IESB Saúde - Taguatinga, Sala 05",
   },
-]
+  {
+    id: 4,
+    internName: "Ana Silva",
+    specialty: "Nutrição",
+    date: "15/06/2025",
+    time: "14:00",
+    status: "Reagendada",
+    specialtyIcon: <RestaurantIcon fontSize="small" />,
+    location: "Clínica IESB Saúde - Asa Sul, Sala 102",
+  },
+];
 
-const getStatusColor = (status: Appointment["status"]) => {
-  switch (status) {
-    case "Confirmada":
-      return "success"
-    case "Pendente":
-      return "warning"
-    case "Realizada":
-      return "info"
-    default:
-      return "default"
-  }
-}
+// Cabeçalhos da Tabela para Paciente
+const headersMinhasConsultas = [
+  // A coluna "Paciente" foi removida
+  { id: "intern", label: "Profissional/Estagiário" },
+  { id: "specialty", label: "Especialidade" },
+  { id: "dateTime", label: "Data/Hora" },
+  { id: "location", label: "Local" }, // Adicionada coluna Local
+  { id: "status", label: "Status" },
+];
 
-const getInitials = (name: string) =>
-  name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .substring(0, 2)
+// Função de Renderização de Célula para Paciente
+import type { Theme } from "@mui/material/styles";
 
-const ConsultasScreen: React.FC = () => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const [page, setPage] = useState(0)
-  const [rowsPerPage, setRowsPerPage] = useState(5)
-  const [statusFilter, setStatusFilter] = useState("Todos")
-
-  // Menu & Modal
-  const [menuAnchorEl, setMenuAnchorEl] = useState<null | HTMLElement>(null)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
-  const [openDialog, setOpenDialog] = useState(false)
-
-  const handleOpenMenu = (event: React.MouseEvent<HTMLElement>, id: string) => {
-    setSelectedId(id)
-    setMenuAnchorEl(event.currentTarget)
-  }
-
-  const handleCloseMenu = () => setMenuAnchorEl(null)
-
-  const handleCancel = () => {
-    setOpenDialog(true)
-    handleCloseMenu()
-  }
-
-  const confirmCancel = () => {
-    console.log("Consulta cancelada:", selectedId)
-    setOpenDialog(false)
-  }
-
-  const filteredAppointments = useMemo(() => {
-    return statusFilter === "Todos"
-      ? appointments
-      : appointments.filter((a) => a.status === statusFilter)
-  }, [statusFilter])
-
-  const paginatedData = useMemo(() => {
-    const start = page * rowsPerPage
-    return filteredAppointments.slice(start, start + rowsPerPage)
-  }, [page, rowsPerPage, filteredAppointments])
-
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage)
-  const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(event.target.value, 10))
-    setPage(0)
-  }
-
-  const columns = [
-    { label: "Especialidade", accessor: "specialty" as keyof Appointment },
-    {
-      label: "Profissional",
-      render: (a: Appointment) => (
-        <Box display="flex" gap={1} alignItems="center">
-          {a.professional}
+const renderMinhaConsultaCell = (consulta: ConsultaPaciente, headerId: string, theme: Theme) => {
+  switch (headerId) {
+    case "intern":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Avatar src={consulta.internAvatar} sx={{ width: 32, height: 32 }}>
+            {consulta.internName.split(" ").map((n) => n[0]).join("").substring(0,2)}
+          </Avatar>
+          <Typography variant="body2" fontWeight={500}>{consulta.internName}</Typography>
         </Box>
-      ),
-    },
-    { label: "Data", accessor: "date" as keyof Appointment },
-    { label: "Horário", accessor: "time" as keyof Appointment },
-    {
-      label: "Local",
-      render: (a: Appointment) => (
-        <Tooltip title={a.location}>
-          <Typography noWrap sx={{ maxWidth: 150 }}>{a.location}</Typography>
-        </Tooltip>
-      ),
-    },
-    {
-      label: "Status",
-      render: (a: Appointment) => (
-        <Chip label={a.status} color={getStatusColor(a.status)} size="small" />
-      ),
-    },
-  ]
+      );
+    case "specialty":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconContainer sx={{bgcolor: alpha(theme.palette.primary.light, 0.2), color: theme.palette.primary.main }}> {/* Exemplo de cor */}
+            {consulta.specialtyIcon}
+          </IconContainer>
+          <Typography variant="body2">{consulta.specialty}</Typography>
+        </Box>
+      );
+    case "dateTime":
+      return `${consulta.date} às ${consulta.time}`;
+    case "location":
+      return <Typography variant="body2" noWrap title={consulta.location}>{consulta.location || "Não especificado"}</Typography>;
+    case "status":
+      return <StyledBadge label={consulta.status} badgeType={consulta.status} />;
+    default:
+      return null;
+  }
+};
 
-  const renderDesktopTable = () => (
-    <>
-      <DataTable
-        data={paginatedData}
-        columns={columns}
-        actions={(row: Appointment) => (
-          <IconButton onClick={(e) => handleOpenMenu(e, row.id)}>
-            <MoreVertIcon />
-          </IconButton>
-        )}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalCount={filteredAppointments.length}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
-      />
+export default function MinhasConsultasPacientePage() {
+  const theme = useTheme(); // Definido aqui para ser usado em toda a função
+  const pushWithProgress = usePushWithProgress();
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [consultas, setConsultas] = useState<ConsultaPaciente[]>([]);
+  const [loadingConsultas, setLoadingConsultas] = useState(true);
 
-      <Menu anchorEl={menuAnchorEl} open={Boolean(menuAnchorEl)} onClose={handleCloseMenu}>
-        <MenuItem onClick={() => console.log("Ver detalhes:", selectedId)}>Ver Detalhes</MenuItem>
-        <MenuItem onClick={() => console.log("Reagendar:", selectedId)}>Reagendar</MenuItem>
-        <MenuItem onClick={handleCancel}>Cancelar</MenuItem>
-      </Menu>
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [selectedConsulta, setSelectedConsulta] = useState<ConsultaPaciente | null>(null);
 
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)}>
-        <DialogTitle>Cancelar Consulta</DialogTitle>
-        <DialogContent>
-          <Typography>Deseja realmente cancelar esta consulta?</Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenDialog(false)}>Não</Button>
-          <Button onClick={confirmCancel} color="error" variant="contained">Sim, Cancelar</Button>
-        </DialogActions>
-      </Dialog>
-    </>
-  )
+  // Simular busca de dados da API
+  useEffect(() => {
+    setLoadingConsultas(true);
+    // Simulação de chamada à API
+    // Em um app real:
+    // apiFetch<ConsultaPaciente[]>('/api/paciente/consultas')
+    //   .then(data => setConsultas(data || []))
+    //   .catch(err => console.error("Erro ao buscar consultas", err))
+    //   .finally(() => setLoadingConsultas(false));
+    setTimeout(() => {
+      setConsultas(mockMinhasConsultas);
+      setLoadingConsultas(false);
+    }, 1000);
+  }, []);
 
-  const renderMobileCards = () => (
-    <Box>
-      {paginatedData.map((a, i) => (
-        <motion.div
-          key={a.id}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: i * 0.05 }}
-        >
-          <Paper elevation={0} sx={{ mb: 2, p: 2, borderRadius: 3, border: `1px solid ${theme.palette.divider}` }}>
-            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-              <Box display="flex" gap={1} alignItems="center">
-                <Avatar>{getInitials(a.professional)}</Avatar>
-                <Box>
-                  <Typography fontWeight={600}>{a.specialty}</Typography>
-                  <Typography variant="body2" color="text.secondary">{a.professional}</Typography>
-                </Box>
-              </Box>
-              <Chip label={a.status} color={getStatusColor(a.status)} size="small" />
-            </Box>
+  // KPIs para Paciente
+  const proximasConsultasCount = consultas.filter(
+    c => c.status === "Confirmada" || c.status === "Pendente" || c.status === "Reagendada"
+  ).length;
+  const consultasRealizadasCount = consultas.filter(c => c.status === "Concluída").length;
+  const consultasPendentesCount = consultas.filter(c => c.status === "Pendente").length;
 
-            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-              <CalendarTodayOutlinedIcon fontSize="small" />
-              <Typography variant="body2">{a.date}</Typography>
-            </Box>
-            <Box display="flex" alignItems="center" gap={1} mb={0.5}>
-              <AccessTimeOutlinedIcon fontSize="small" />
-              <Typography variant="body2">{a.time}</Typography>
-            </Box>
-            <Box display="flex" alignItems="center" gap={1}>
-              <LocationOnOutlinedIcon fontSize="small" />
-              <Typography variant="body2" noWrap sx={{ maxWidth: "80%" }}>
-                {a.location}
-              </Typography>
-            </Box>
+  const handlePageChange = (_event: unknown, newPage: number) => {
+    setPage(newPage);
+  };
 
-            <Box display="flex" justifyContent="flex-end" mt={2}>
-              <IconButton onClick={(e) => handleOpenMenu(e, a.id)}>
-                <MoreVertIcon />
-              </IconButton>
-            </Box>
-          </Paper>
-        </motion.div>
-      ))}
+  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setRowsPerPage(Number.parseInt(event.target.value, 10));
+    setPage(0);
+  };
 
-      <TablePagination
-        rowsPerPageOptions={[5, 10, 15]}
-        component="div"
-        count={filteredAppointments.length}
-        rowsPerPage={rowsPerPage}
-        page={page}
-        onPageChange={handleChangePage}
-        onRowsPerPageChange={(e) => {
-          setRowsPerPage(parseInt(e.target.value, 10))
-          setPage(0)
-        }}
-        sx={{ justifyContent: "center", display: "flex" }}
-      />
-    </Box>
-  )
+  const paginatedData = consultas.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
+  const handleMenuClick = (event: React.MouseEvent<HTMLElement>, consulta: ConsultaPaciente) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedConsulta(consulta);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+    setSelectedConsulta(null);
+  };
+
+  const handleViewDetails = () => {
+    if (selectedConsulta) {
+      pushWithProgress(`/paciente/consultas/${selectedConsulta.id}`);
+    }
+    handleMenuClose();
+  };
+
+  const handleCancelAppointment = () => {
+    if (selectedConsulta) {
+      // Lógica para cancelar (ex: chamada à API, atualização do estado)
+      alert(`Consulta ${selectedConsulta.id} cancelada! (Simulação)`);
+      // Ex: setConsultas(prev => prev.map(c => c.id === selectedConsulta.id ? {...c, status: "Cancelada"} : c));
+    }
+    handleMenuClose();
+  };
+  
+  const handleRescheduleAppointment = () => {
+    if (selectedConsulta) {
+      // Lógica para reagendar (provavelmente navegar para a tela de agendamento com dados pré-carregados)
+      alert(`Redirecionando para reagendar consulta ${selectedConsulta.id}! (Simulação)`);
+      pushWithProgress(`/paciente/agendamento?reagendar=${selectedConsulta.id}`);
+    }
+    handleMenuClose();
+  };
+
+
+  const consultaActions = (consulta: ConsultaPaciente) => (
+    <IconButton size="small" onClick={(e) => handleMenuClick(e, consulta)} sx={{ color: "text.secondary" }}>
+      <MoreHorizIcon fontSize="small" />
+    </IconButton>
+  );
+  
+  // Função para a borda (opcional para paciente, mas mantida para exemplo)
+  const getConsultaPriorityBorderColor = (consulta: ConsultaPaciente) => {
+    if (!consulta.priority) return `4px solid ${theme.palette.grey[300]}`;
+    switch (consulta.priority) {
+      case "high": return `4px solid ${theme.palette.error.main}`;
+      case "normal": return `4px solid ${theme.palette.info.main}`;
+      case "low": return `4px solid ${theme.palette.success.light}`;
+      default: return `4px solid ${theme.palette.grey[300]}`;
+    }
+  };
+
+  if (loadingConsultas) {
+    return (
+      <Container maxWidth="xl" sx={{ mt: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '70vh' }}>
+        <CircularProgress />
+        <Typography sx={{ml: 2}}>Carregando suas consultas...</Typography>
+      </Container>
+    );
+  }
 
   return (
-    <Box sx={{ backgroundColor: theme.palette.background.default, minHeight: "100vh", py: 6, px: { xs: 2, md: 8 } }}>
-      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
-          <Typography variant="h5" fontWeight={700} sx={{
-            position: "relative",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: -8,
-              left: 0,
-              width: 40,
-              height: 4,
-              backgroundColor: theme.palette.primary.main,
-              borderRadius: 2,
-            },
-          }}>
-            Minhas Consultas
-          </Typography>
-
-          <Button variant="outlined" sx={{ borderRadius: "8px" }}>
-            Nova Consulta
-          </Button>
-        </Box>
-
-        <Box mb={4} maxWidth={200}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Status</InputLabel>
-            <Select
-              native
-              label="Status"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value)
-                setPage(0)
-              }}
-            >
-              <option value="Todos">Todos</option>
-              <option value="Confirmada">Confirmada</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Realizada">Realizada</option>
-            </Select>
-          </FormControl>
-        </Box>
-
-        {isMobile ? renderMobileCards() : renderDesktopTable()}
+    <Container maxWidth="xl" sx={{ mt: {xs: 2, md: 4}, mb: 4 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3, flexDirection: {xs: 'column', sm: 'row'}, gap: 2 }}>
+        <Typography variant="h5" component="h1" fontWeight={700}>
+          Minhas Consultas
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<AddIcon />}
+          onClick={() => pushWithProgress("/paciente/agendamento")} // Navega para a página de agendamento do paciente
+        >
+          Agendar Nova Consulta
+        </Button>
       </Box>
-    </Box>
-  )
-}
 
-export default ConsultasScreen
+      <Grid container spacing={3} mb={4}>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            title="Próximas Consultas"
+            value={proximasConsultasCount}
+            subtitle="Agendadas e confirmadas"
+            icon={<EventAvailableIcon sx={{ color: theme.palette.primary.main }} />}
+            iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            title="Consultas Realizadas"
+            value={consultasRealizadasCount}
+            subtitle="Total de consultas concluídas"
+            icon={<CheckCircleOutlineIcon sx={{ color: theme.palette.success.main }} />}
+            iconBgColor={alpha(theme.palette.success.main, 0.1)}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <StatCard
+            title="Pendentes/Aguardando"
+            value={consultasPendentesCount}
+            subtitle="Aguardando confirmação"
+            icon={<PendingActionsIcon sx={{ color: theme.palette.warning.main }} />}
+            iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+          />
+        </Grid>
+      </Grid>
+
+      <DashboardTable<ConsultaPaciente>
+        title="Meus Agendamentos"
+        subtitle="Acompanhe seus compromissos de saúde"
+        headers={headersMinhasConsultas}
+        data={paginatedData}
+        renderCell={(consulta, headerId) => renderMinhaConsultaCell(consulta, headerId, theme)}
+        rowKeyExtractor={(consulta) => consulta.id}
+        actionsColumnLabel="Opções"
+        actions={consultaActions}
+        getPriorityBorderColor={getConsultaPriorityBorderColor}
+        totalCount={consultas.length}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        onPageChange={handlePageChange}
+        onRowsPerPageChange={handleRowsPerPageChange}
+        emptyMessage="Você ainda não possui consultas agendadas."
+      />
+
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={handleMenuClose}
+        transformOrigin={{ horizontal: "right", vertical: "top" }}
+        anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
+      >
+        <MenuItem onClick={handleViewDetails}>
+          <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
+          Ver Detalhes
+        </MenuItem>
+        {selectedConsulta && (selectedConsulta.status === "Confirmada" || selectedConsulta.status === "Pendente") && (
+          <MenuItem onClick={handleRescheduleAppointment}>
+            <EditCalendarIcon fontSize="small" sx={{ mr: 1 }} />
+            Reagendar
+          </MenuItem>
+        )}
+        {selectedConsulta && (selectedConsulta.status === "Confirmada" || selectedConsulta.status === "Pendente") && (
+          <MenuItem onClick={handleCancelAppointment} sx={{ color: theme.palette.error.main }}>
+            <CancelIcon fontSize="small" sx={{ mr: 1 }} />
+            Cancelar Consulta
+          </MenuItem>
+        )}
+      </Menu>
+    </Container>
+  );
+}

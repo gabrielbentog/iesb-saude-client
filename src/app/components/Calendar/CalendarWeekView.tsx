@@ -1,6 +1,7 @@
+// src/app/components/Calendar/CalendarWeekView.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Table,
   TableContainer,
@@ -20,36 +21,20 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
-import { EventDetailDialog } from "./EventDetailDialog";
-
-export interface CalendarEvent {
-  id: string;
-  date: Date;
-  title: string;
-  description?: string;
-  location?: string;
-  category: string;
-  allDay?: boolean;
-  isRecurring?: boolean;
-  timeSlotId?: number;
-}
+import { CalendarEvent } from "./types"; // Importar de types.ts
 
 interface Props {
   referenceDate: Date;
   events: CalendarEvent[];
   categoryConfig: Record<string, { color: string }>;
-  onDeleted: (info: {
-    type: "single" | "series";
-    id?: string;
-    timeSlotId?: number;
-  }) => void;
+  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
 }
 
 export function CalendarWeekView({
   referenceDate,
   events,
   categoryConfig,
-  onDeleted,
+  onEventClick,
 }: Props) {
   const weekStart = startOfWeek(referenceDate, { locale: ptBR });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -63,16 +48,13 @@ export function CalendarWeekView({
         ev.date.getHours() === hour
     );
 
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
-
   return (
     <>
       <TableContainer sx={{ overflowX: "auto" }}>
-        <Table
-          sx={{ tableLayout: "fixed", borderCollapse: "collapse", minWidth: 800 }}
-        >
+        <Table sx={{ tableLayout: "fixed", borderCollapse: "collapse", minWidth: 800 }}>
           <TableHead>
-            <TableRow sx={{ borderBottom: "2px solid", borderColor: "divider" }}>
+            {/* ... Cabeçalho da tabela ... */}
+             <TableRow sx={{ borderBottom: "2px solid", borderColor: "divider" }}>
               <HeaderCell sx={{ width: 80, fontSize: "0.85rem", py: 1 }}>
                 <Typography variant="subtitle2">Hora</Typography>
               </HeaderCell>
@@ -85,45 +67,26 @@ export function CalendarWeekView({
               ))}
             </TableRow>
           </TableHead>
-
           <TableBody>
             {hours.map((hour) => (
               <TableRow key={hour} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
-                <TableCell
-                  sx={{
-                    textAlign: "center",
-                    fontWeight: "bold",
-                    bgcolor: "grey.50",
-                  }}
-                >
+                <TableCell sx={{ textAlign: "center", fontWeight: "bold", bgcolor: "grey.50" }}>
                   {hour.toString().padStart(2, "0")}:00
                 </TableCell>
-
                 {weekDays.map((day) => {
                   const dayEvents = getEventsFor(day, hour);
                   return (
-                    <TableCell
-                      key={day.toISOString() + hour}
-                      sx={{
-                        verticalAlign: "top",
-                        width: 120,
-                        px: 0.5,
-                        py: 0.5,
-                        borderRight: "1px solid",
-                        borderColor: "divider",
-                      }}
-                    >
+                    <TableCell key={day.toISOString() + hour} sx={{ verticalAlign: "top", width: 120, px: 0.5, py: 0.5, borderRight: "1px solid", borderColor: "divider" }}>
                       {dayEvents.map((ev) => {
-                        const past = isBefore(ev.date, todayStart);
-                        const chipColor =
-                          categoryConfig[ev.category]?.color ?? "#90a4ae";
+                        const past = isBefore(ev.date, todayStart) && ev.type === 'busy';
+                        const chipColor = categoryConfig[ev.category]?.color ?? (ev.type === 'free' ? "#66bb6a" : "#90a4ae");
                         return (
                           <Tooltip key={ev.id} title={ev.title}>
                             <EventChip
                               past={past}
                               color={chipColor}
                               isCurrentMonth={true}
-                              onClick={() => setSelected(ev)}
+                              onClick={() => onEventClick(ev)} // Chama o handler do pai
                             >
                               {format(ev.date, "HH:mm")} {ev.title}
                             </EventChip>
@@ -138,14 +101,7 @@ export function CalendarWeekView({
           </TableBody>
         </Table>
       </TableContainer>
-
-      {/* diálogo */}
-      <EventDetailDialog
-        open={Boolean(selected)}
-        event={selected}
-        onClose={() => setSelected(null)}
-        onDeleted={onDeleted}
-      />
+      {/* Nenhum diálogo renderizado aqui */}
     </>
   );
 }

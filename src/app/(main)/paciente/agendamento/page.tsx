@@ -1,5 +1,7 @@
+// src/app/(main)/paciente/agendamento/page.tsx
 'use client';
 
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
@@ -12,229 +14,254 @@ import {
   Card,
   Grid,
   Divider,
+  Alert,
+  Badge,
+  CircularProgress,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import { useState } from 'react';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import {
   LocalizationProvider,
   DatePicker,
+  PickersDay,
 } from '@mui/x-date-pickers';
-import dayjs, { Dayjs } from 'dayjs';
+import type { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
+import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
+import { apiFetch } from '@/app/lib/api';
 
-const especialidades = ['Psicologia', 'Nutrição', 'Fisioterapia'];
-const campusList = ['Asa Sul', 'Ceilândia', 'Taguatinga'];
-const turnos = ['Manhã', 'Tarde', 'Noite'];
-const horariosDisponiveis = ['08:00', '10:00', '14:00', '16:00', '18:00'];
+interface Campus {
+  id: number | string;
+  name: string;
+}
 
-const steps = ['Consulta', 'Data & Horário', 'Objetivo', 'Confirmação'];
+interface Especialidade {
+  id: number | string;
+  name: string;
+}
+
+interface Slot {
+  id: number | string;
+  start_at: string;
+  end_at: string;
+}
+
+dayjs.locale('pt-br');
+
+const steps = ['Informações', 'Data e Horário', 'Objetivo', 'Confirmação'];
 
 export default function AgendarConsultaPage() {
   const theme = useTheme();
-  const [activeStep, setActiveStep] = useState(0);
+  const [activeStep, setActiveStep] = useState<number>(0);
+  const [campusList, setCampusList] = useState<Campus[]>([]);
+  const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
+  const [loadingCampuses, setLoadingCampuses] = useState<boolean>(true);
+  const [loadingSpecialties, setLoadingSpecialties] = useState<boolean>(false);
+  const [selectedCampusId, setSelectedCampusId] = useState<string>('');
+  const [selectedEspecialidadeId, setSelectedEspecialidadeId] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<Dayjs | null>(null);
+  const [currentPickerMonth, setCurrentPickerMonth] = useState<Dayjs>(dayjs());
+  const [availableDatesInMonth, setAvailableDatesInMonth] = useState<Set<string>>(new Set());
+  const [timeSlotsForSelectedDate, setTimeSlotsForSelectedDate] = useState<Slot[]>([]);
+  const [selectedApiSlot, setSelectedApiSlot] = useState<Slot | null>(null);
+  const [loadingAvailableDates, setLoadingAvailableDates] = useState<boolean>(false);
+  const [loadingTimeSlots, setLoadingTimeSlots] = useState<boolean>(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [objetivo, setObjetivo] = useState<string>('');
 
-  const [especialidade, setEspecialidade] = useState('');
-  const [campus, setCampus] = useState('');
-  const [turno, setTurno] = useState('');
-  const [data, setData] = useState<Dayjs | null>(null);
-  const [horario, setHorario] = useState('');
-  const [objetivo, setObjetivo] = useState('');
+  useEffect(() => {
+    setLoadingCampuses(true);
+    apiFetch('/api/college_locations')
+      .then((res) => setCampusList(res))
+      .catch(() => setApiError("Erro ao carregar opções de campus."))
+      .finally(() => setLoadingCampuses(false));
+  }, []);
 
-  const handleNext = () => setActiveStep((prev) => prev + 1);
-  const handleBack = () => setActiveStep((prev) => prev - 1);
+  useEffect(() => {
+    setSelectedEspecialidadeId('');
+    setEspecialidades([]);
+    setSelectedDate(null);
+    setAvailableDatesInMonth(new Set());
+    setTimeSlotsForSelectedDate([]);
+    setSelectedApiSlot(null);
+    setApiError(null);
 
-  const isLastStep = activeStep === steps.length - 1;
+    if (selectedCampusId) {
+      setLoadingSpecialties(true);
+      apiFetch(`/api/college_locations/${selectedCampusId}/specialties`)
+        .then((res) => setEspecialidades(Array.isArray(res) ? res : res.specialties))
+        .catch(() => setApiError("Erro ao carregar especialidades."))
+        .finally(() => setLoadingSpecialties(false));
+    }
+  }, [selectedCampusId]);
 
-  const handleSubmit = () => {
-    console.log({
-      especialidade,
-      campus,
-      turno,
-      data: data?.format('DD/MM/YYYY'),
-      horario,
-      objetivo,
-    });
+  const fetchAvailableDatesForMonth = useCallback(async (monthToFetch: Dayjs) => {
+    if (!selectedEspecialidadeId || !selectedCampusId) return;
+    setLoadingAvailableDates(true);
+    setApiError(null);
+    try {
+      const start = monthToFetch.startOf('month').format('YYYY-MM-DD');
+      const end = monthToFetch.endOf('month').format('YYYY-MM-DD');
+      const response = await apiFetch(`/api/calendar?start=${start}&end=${end}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`);
+      const uniqueDates = new Set<string>();
+      response.free?.forEach((slot: Slot) => uniqueDates.add(dayjs(slot.start_at).format('YYYY-MM-DD')));
+      setAvailableDatesInMonth(uniqueDates);
+    } catch {
+      setApiError("Não foi possível carregar as datas disponíveis.");
+    } finally {
+      setLoadingAvailableDates(false);
+    }
+  }, [selectedEspecialidadeId, selectedCampusId]);
+
+  useEffect(() => {
+    if (activeStep === 1) fetchAvailableDatesForMonth(currentPickerMonth);
+  }, [fetchAvailableDatesForMonth, currentPickerMonth, activeStep]);
+
+  useEffect(() => {
+    if (selectedDate && selectedEspecialidadeId && selectedCampusId && activeStep === 1) {
+      setLoadingTimeSlots(true);
+      setSelectedApiSlot(null);
+      setTimeSlotsForSelectedDate([]);
+      const dateStr = selectedDate.format('YYYY-MM-DD');
+      apiFetch(`/api/calendar?start=${dateStr}&end=${dateStr}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`)
+        .then((res) => {
+          const slots = res.free?.sort((a: Slot, b: Slot) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+          setTimeSlotsForSelectedDate(slots || []);
+        })
+        .catch(() => setApiError("Não foi possível carregar os horários."))
+        .finally(() => setLoadingTimeSlots(false));
+    }
+  }, [selectedDate, selectedEspecialidadeId, selectedCampusId, activeStep]);
+
+  const handleSubmit = async () => {
+    setApiError(null);
+
+    if (!selectedApiSlot || !objetivo.trim() || !selectedDate) {
+      setApiError("Por favor, complete todos os campos obrigatórios.");
+      return;
+    }
+
+    try {
+      const sessionStr = localStorage.getItem('session');
+      if (!sessionStr) {
+        setApiError("Sessão não encontrada. Faça login novamente.");
+        return;
+      }
+
+      const session = JSON.parse(sessionStr);
+      const userId = session?.user?.id;
+
+      if (!userId) {
+        setApiError("ID do usuário não encontrado na sessão.");
+        return;
+      }
+
+      const payload = {
+        appointment: {
+          time_slot_id: selectedApiSlot.id,
+          user_id: userId,
+          date: selectedDate.format('YYYY-MM-DD'),
+          start_time: selectedApiSlot.start_at,
+          end_time: selectedApiSlot.end_at,
+          status: 'pending',
+          notes: objetivo.trim(),
+        },
+      };
+
+      await apiFetch('/api/appointments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      alert("Agendamento criado com sucesso!");
+      setActiveStep(0); // Ou redirecione se quiser
+    } catch (err: any) {
+      if (err?.response?.status === 422 && err?.response?.json) {
+        const errorData = await err.response.json();
+        setApiError(errorData.errors?.join(', ') || "Erro ao agendar.");
+      } else {
+        setApiError("Erro inesperado ao tentar agendar a consulta.");
+      }
+    }
+  };
+
+  const renderDayWithBadge = (props: PickersDayProps<Dayjs>) => {
+    const dateString = props.day.format('YYYY-MM-DD');
+    const hasSlots = availableDatesInMonth.has(dateString);
+    return (
+      <Badge overlap="circular" color="primary" variant={hasSlots ? "dot" : undefined}>
+        <PickersDay {...props} disabled={props.disabled || (!hasSlots && !!selectedEspecialidadeId && !!selectedCampusId && !loadingAvailableDates)} />
+      </Badge>
+    );
   };
 
   return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Box
-        sx={{
-          minHeight: '100vh',
-          bgcolor: theme.palette.background.default,
-          color: theme.palette.text.primary,
-          px: { xs: 2, md: 6 },
-          py: { xs: 4, md: 6 },
-        }}
-      >
-        <Typography variant="h5" fontWeight={700} mb={1}>
-          Agendamento de Consulta
-        </Typography>
-
-        <Typography variant="body2" color="text.secondary" mb={3}>
-          Existem 3 consultórios disponíveis para alocação automática.
-        </Typography>
-
+    <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+      <Box sx={{ p: 4 }}>
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
-          {steps.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
+          {steps.map((label) => (<Step key={label}><StepLabel>{label}</StepLabel></Step>))}
         </Stepper>
 
-        <Card sx={{ p: 4, borderRadius: 3 }}>
+        {apiError && <Alert severity="error">{apiError}</Alert>}
+
+        <Card sx={{ p: 3 }}>
           {activeStep === 0 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <TextField
-                  label="Especialidade"
-                  select
-                  fullWidth
-                  value={especialidade}
-                  onChange={(e) => setEspecialidade(e.target.value)}
-                >
-                  {especialidades.map((esp) => (
-                    <MenuItem key={esp} value={esp}>
-                      {esp}
-                    </MenuItem>
-                  ))}
+                <TextField label="Campus" select fullWidth value={selectedCampusId} onChange={(e) => setSelectedCampusId(e.target.value)}>
+                  {campusList.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
                 </TextField>
               </Grid>
-
               <Grid item xs={12} md={6}>
-                <TextField
-                  label="Campus"
-                  select
-                  fullWidth
-                  value={campus}
-                  onChange={(e) => setCampus(e.target.value)}
-                >
-                  {campusList.map((c) => (
-                    <MenuItem key={c} value={c}>
-                      {c}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Turno"
-                  select
-                  fullWidth
-                  value={turno}
-                  onChange={(e) => setTurno(e.target.value)}
-                >
-                  {turnos.map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {t}
-                    </MenuItem>
-                  ))}
+                <TextField label="Especialidade" select fullWidth value={selectedEspecialidadeId} onChange={(e) => setSelectedEspecialidadeId(e.target.value)}>
+                  {especialidades.map((e) => <MenuItem key={e.id} value={e.id}>{e.name}</MenuItem>)}
                 </TextField>
               </Grid>
             </Grid>
           )}
 
           {activeStep === 1 && (
-            <Grid container spacing={3}>
+            <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <DatePicker
-                  label="Data da Consulta"
-                  value={data}
-                  onChange={(newValue) => setData(newValue)}
-                  slotProps={{ textField: { fullWidth: true } }}
-                />
+                <DatePicker label="Data da Consulta" value={selectedDate} onChange={setSelectedDate} onMonthChange={setCurrentPickerMonth} slots={{ day: renderDayWithBadge }} slotProps={{ textField: { fullWidth: true } }} disablePast />
               </Grid>
-
               <Grid item xs={12} md={6}>
-                <TextField
-                  label="Horário"
-                  select
-                  fullWidth
-                  value={horario}
-                  onChange={(e) => setHorario(e.target.value)}
-                >
-                  {horariosDisponiveis.map((h) => (
-                    <MenuItem key={h} value={h}>
-                      {h}
-                    </MenuItem>
-                  ))}
+                <TextField label="Horário" select fullWidth value={selectedApiSlot?.start_at || ''} onChange={(e) => setSelectedApiSlot(timeSlotsForSelectedDate.find((s) => s.start_at === e.target.value) || null)}>
+                  {timeSlotsForSelectedDate.map((s) => <MenuItem key={s.id} value={s.start_at}>{dayjs(s.start_at).format('HH:mm')} - {dayjs(s.end_at).format('HH:mm')}</MenuItem>)}
                 </TextField>
               </Grid>
             </Grid>
           )}
 
           {activeStep === 2 && (
-            <TextField
-              label="Objetivo da Consulta"
-              fullWidth
-              multiline
-              rows={4}
-              value={objetivo}
-              onChange={(e) => setObjetivo(e.target.value)}
-            />
+            <TextField label="Objetivo da Consulta" fullWidth multiline rows={4} value={objetivo} onChange={(e) => setObjetivo(e.target.value)} />
           )}
 
           {activeStep === 3 && (
             <Box>
-              <Typography variant="subtitle1" fontWeight={600} mb={2}>
-                Revise os dados
-              </Typography>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <strong>Especialidade:</strong> {especialidade}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <strong>Campus:</strong> {campus}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <strong>Turno:</strong> {turno}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <strong>Data:</strong> {data?.format('DD/MM/YYYY')}
-                </Grid>
-                <Grid item xs={12} sm={6}>
-                  <strong>Horário:</strong> {horario}
-                </Grid>
-                <Grid item xs={12}>
-                  <strong>Objetivo:</strong> {objetivo}
-                </Grid>
-              </Grid>
+              <Typography variant="h6">Revise os Dados</Typography>
+              <Typography>Campus: {campusList.find((c) => String(c.id) === String(selectedCampusId))?.name}</Typography>
+              <Typography>Especialidade: {especialidades.find((e) => String(e.id) === String(selectedEspecialidadeId))?.name}</Typography>
+              <Typography>Data: {selectedDate?.format('DD/MM/YYYY')}</Typography>
+              <Typography>Horário: {selectedApiSlot ? `${dayjs(selectedApiSlot.start_at).format('HH:mm')} - ${dayjs(selectedApiSlot.end_at).format('HH:mm')}` : ''}</Typography>
+              <Typography>Objetivo: {objetivo}</Typography>
             </Box>
           )}
 
-          <Divider sx={{ my: 4 }} />
+          <Divider sx={{ my: 2 }} />
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button
-              variant="text"
-              onClick={handleBack}
-              disabled={activeStep === 0}
-            >
-              Voltar
-            </Button>
-            {isLastStep ? (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleSubmit}
-              >
-                Confirmar Agendamento
+            <Button disabled={activeStep === 0} onClick={() => setActiveStep((p) => p - 1)}>Voltar</Button>
+            {activeStep < steps.length - 1 ? (
+              <Button onClick={() => setActiveStep((p) => p + 1)} disabled={(activeStep === 0 && (!selectedCampusId || !selectedEspecialidadeId)) || (activeStep === 1 && (!selectedDate || !selectedApiSlot)) || (activeStep === 2 && !objetivo.trim())}>
+                Próximo
               </Button>
             ) : (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={handleNext}
-                disabled={
-                  (activeStep === 0 && (!especialidade || !campus || !turno)) ||
-                  (activeStep === 1 && (!data || !horario)) ||
-                  (activeStep === 2 && !objetivo)
-                }
-              >
-                Avançar
-              </Button>
+              <Button variant="contained" onClick={handleSubmit}>Confirmar</Button>
             )}
           </Box>
         </Card>

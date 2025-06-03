@@ -1,4 +1,4 @@
-export type EventCategory = "medical" | "training" | "work" | "holiday";
+export type EventCategory = "medical" | "training" | "work" | "holiday" | string; // Allow any string for dynamic categories
 
 export interface CalendarEvent {
   id: string;
@@ -11,4 +11,5 @@ export interface CalendarEvent {
   participants?: string[];
   isRecurring?: boolean; // Added property
   timeSlotId?: number; // Added this property
+  type: 'free' | 'busy';
 }

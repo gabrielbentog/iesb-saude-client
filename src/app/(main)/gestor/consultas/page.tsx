@@ -59,7 +59,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 1,
     patientName: "Maria Oliveira",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Ana Silva",
     specialty: "Nutrição",
     date: "31/05/2025",
@@ -71,7 +71,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 2,
     patientName: "João Pereira",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Carlos Mendes",
     specialty: "Psicologia",
     date: "31/05/2025",
@@ -83,7 +83,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 3,
     patientName: "Luiza Souza",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Juliana Costa",
     specialty: "Fisioterapia",
     date: "01/06/2025",
@@ -95,7 +95,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 4,
     patientName: "Pedro Lima",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Ana Silva",
     specialty: "Nutrição",
     date: "01/06/2025",
@@ -107,7 +107,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 5,
     patientName: "Clara Guedes",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Carlos Mendes",
     specialty: "Psicologia",
     date: "02/06/2025",
@@ -119,7 +119,7 @@ const mockAppointments: Appointment[] = [
   {
     id: 6,
     patientName: "Fernando Torres",
-    patientAvatar: "/placeholder.svg?height=32&width=32",
+    patientAvatar: "",
     internName: "Juliana Costa",
     specialty: "Fisioterapia",
     date: "02/06/2025",

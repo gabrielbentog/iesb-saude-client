@@ -1,6 +1,7 @@
+// src/app/components/Calendar/CalendarDayView.tsx
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import {
   Table,
   TableContainer,
@@ -19,36 +20,20 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
-import { EventDetailDialog } from "./EventDetailDialog";
-
-export interface CalendarEvent {
-  id: string;
-  date: Date;
-  title: string;
-  description?: string;
-  location?: string;
-  category: string;
-  allDay?: boolean;
-  isRecurring?: boolean;
-  timeSlotId?: number;
-}
+import { CalendarEvent } from "./types"; // Importar de types.ts
 
 interface Props {
   referenceDate: Date;
   events: CalendarEvent[];
   categoryConfig: Record<string, { color: string }>;
-  onDeleted: (info: {
-    type: "single" | "series";
-    id?: string;
-    timeSlotId?: number;
-  }) => void;
+  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
 }
 
 export function CalendarDayView({
   referenceDate,
   events,
   categoryConfig,
-  onDeleted,
+  onEventClick,
 }: Props) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const todayStart = startOfDay(new Date());
@@ -58,13 +43,12 @@ export function CalendarDayView({
       (ev) => isSameDay(ev.date, referenceDate) && ev.date.getHours() === h
     );
 
-  const [selected, setSelected] = useState<CalendarEvent | null>(null);
-
   return (
     <>
       <TableContainer sx={{ overflowX: "auto" }}>
         <Table sx={{ tableLayout: "fixed", minWidth: 600, borderCollapse: "collapse" }}>
           <TableHead>
+            {/* ... Cabeçalho da tabela ... */}
             <TableRow sx={{ borderBottom: "2px solid", borderColor: "divider" }}>
               <HeaderCell sx={{ width: 80, fontSize: "0.85rem", py: 1 }}>
                 <Typography variant="subtitle2">Hora</Typography>
@@ -76,34 +60,25 @@ export function CalendarDayView({
               </HeaderCell>
             </TableRow>
           </TableHead>
-
           <TableBody>
             {hours.map((h) => {
               const items = eventsForHour(h);
               return (
                 <TableRow key={h} sx={{ borderBottom: "1px solid", borderColor: "divider" }}>
-                  <TableCell
-                    sx={{
-                      textAlign: "center",
-                      fontWeight: "bold",
-                      bgcolor: "grey.50",
-                    }}
-                  >
+                  <TableCell sx={{ textAlign: "center", fontWeight: "bold", bgcolor: "grey.50" }}>
                     {h.toString().padStart(2, "0")}:00
                   </TableCell>
-
                   <TableCell sx={{ px: 1, py: 1, verticalAlign: "top" }}>
                     {items.map((ev) => {
-                      const past = isBefore(ev.date, todayStart);
-                      const chipColor =
-                        categoryConfig[ev.category]?.color ?? "#90a4ae";
+                      const past = isBefore(ev.date, todayStart) && ev.type === 'busy';
+                      const chipColor = categoryConfig[ev.category]?.color ?? (ev.type === 'free' ? "#66bb6a" : "#90a4ae");
                       return (
                         <Tooltip key={ev.id} title={ev.title}>
                           <EventChip
                             past={past}
                             color={chipColor}
-                            isCurrentMonth={true}
-                            onClick={() => setSelected(ev)}
+                            isCurrentMonth={true} // Em DayView, sempre é o "mês corrente" do dia
+                            onClick={() => onEventClick(ev)} // Chama o handler do pai
                           >
                             {format(ev.date, "HH:mm")} {ev.title}
                           </EventChip>
@@ -117,13 +92,7 @@ export function CalendarDayView({
           </TableBody>
         </Table>
       </TableContainer>
-
-      <EventDetailDialog
-        open={Boolean(selected)}
-        event={selected}
-        onClose={() => setSelected(null)}
-        onDeleted={onDeleted}
-      />
+      {/* Nenhum diálogo renderizado aqui */}
     </>
   );
 }
