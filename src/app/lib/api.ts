@@ -40,7 +40,6 @@ export async function apiFetch<T = unknown>(
   if (res.status === 204) return undefined as unknown as T;             // 204 No Content
   const ct = res.headers.get("content-type") ?? "";
   if (!ct.includes("application/json")) {
-    // se não for JSON devolve texto/bruto
     return (await res.text()) as unknown as T;
   }
 
