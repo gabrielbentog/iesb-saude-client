@@ -62,9 +62,6 @@ export default function PerfilPage() {
     try {
       const res = await apiFetch(`/api/users/${user.id}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           user: {
             name: newName,

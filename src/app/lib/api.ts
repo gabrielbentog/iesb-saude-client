@@ -1,3 +1,5 @@
+import Cookies from 'js-cookie';
+
 export async function apiFetch<T = unknown>(
   url: string,
   options: RequestInit = {},
@@ -6,11 +8,25 @@ export async function apiFetch<T = unknown>(
   const baseUrl = process.env.NEXT_PUBLIC_API_HOST;
   if (!baseUrl) throw new Error("API_HOST não definido nas variáveis de ambiente.");
 
+  let token: string | undefined;
+  try {
+    if (typeof window !== 'undefined') {
+      const storage = localStorage.getItem('session') ?? Cookies.get('session');
+      if (storage) {
+        const parsed = JSON.parse(storage);
+        token = parsed?.token;
+      }
+    }
+  } catch {
+    token = undefined;
+  }
+
   const res = await fetch(`${baseUrl}${url}`, {
     ...options,
     cache,
     headers: {
       "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
   });

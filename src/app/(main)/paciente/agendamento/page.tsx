@@ -160,9 +160,6 @@ export default function AgendarConsultaPage() {
 
       await apiFetch('/api/appointments', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify(payload),
       });
 

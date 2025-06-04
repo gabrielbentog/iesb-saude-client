@@ -91,9 +91,6 @@ export default function RegisterPage() {
         token: string;
       }>("/api/users", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({
           user: {
             name: formData.name,
