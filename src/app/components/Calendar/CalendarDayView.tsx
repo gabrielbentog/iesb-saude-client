@@ -20,21 +20,15 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
-import { CalendarEvent } from "./types"; // Importar de types.ts
+import type { CalendarEvent, CalendarDayViewProps } from '@/app/types';
 
-interface Props {
-  referenceDate: Date;
-  events: CalendarEvent[];
-  categoryConfig: Record<string, { color: string }>;
-  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
-}
 
 export function CalendarDayView({
   referenceDate,
   events,
   categoryConfig,
   onEventClick,
-}: Props) {
+}: CalendarDayViewProps) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const todayStart = startOfDay(new Date());
 

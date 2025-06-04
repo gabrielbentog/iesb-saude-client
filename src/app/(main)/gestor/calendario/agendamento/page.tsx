@@ -36,11 +36,9 @@ import { apiFetch } from "@/app/lib/api";
 import { CollegeLocation, Specialty } from "./types";
 import { FormValues } from "@/app/components/agendamento/schemas";
 import { ptBR } from "@mui/x-date-pickers/locales";
+import type { ApiResponse } from '@/app/types';
 
 // Defina um tipo para a resposta da API que inclui a propriedade 'data'
-interface ApiResponse<T> {
-  data: T;
-}
 
 export default function ScheduleFormPage() {
   const router = useRouter();

@@ -19,6 +19,7 @@ import {
   Tab,
   Tabs,
   TextField,
+import type { TabPanelProps } from "@/app/types";
   Typography,
   Alert,
   CircularProgress,
@@ -75,12 +76,6 @@ type FormValues = z.infer<typeof formSchema>;
 
 /* ──────────────────────────────────────────────────────────
  * Helpers
- * ────────────────────────────────────────────────────────── */
-interface TabPanelProps {
-  children?: React.ReactNode;
-  index: number;
-  value: number;
-}
 const TabPanel = ({ children, value, index }: TabPanelProps) =>
   value === index ? <Box sx={{ mt: 2 }}>{children}</Box> : null;
 

@@ -36,25 +36,11 @@ import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 // Importar os componentes da tela anterior (ajuste os caminhos conforme necessário)
 import { StatCard } from "@/app/components/ui/StatCard"
 import { DashboardTable } from "@/app/components/ui/DashboardTable"
+import type { Intern } from "@/app/types";
 import { StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable" // Importar componentes auxiliares
 
 // Mock data
 // Adicionei performance e icons específicos para cada estagiário para compatibilidade com DashboardTable
-interface Intern {
-  id: number
-  name: string
-  specialty: string
-  avatar: string
-  appointmentsCompleted: number
-  appointmentsScheduled: number
-  status: "Ativo" | "Inativo"
-  icon: React.ReactNode // Alterado para React.ReactNode para ícones de especialidade
-  performance: number // Adicionado para compatibilidade com DashboardTable
-}
-
-const mockInterns: Intern[] = [
-  {
-    id: 1,
     name: "Ana Silva",
     specialty: "Nutrição",
     avatar: "", // Caminho real da imagem

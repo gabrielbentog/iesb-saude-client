@@ -43,6 +43,7 @@ import { DashboardTable } from '@/app/components/ui/DashboardTable'; // Ajuste o
 import { StyledBadge, IconContainer } from '@/app/components/ui/DashboardTable';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
+import type { TabPanelProps } from "@/app/types";
 // Mock data
 const mockStats = {
   totalAppointments: 128,
@@ -256,13 +257,6 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
-interface TabPanelProps {
-  children?: React.ReactNode
-  value: number
-  index: number
-}
-
-function TabPanel(props: TabPanelProps) {
   const { children, value, index, ...other } = props
 
   return (

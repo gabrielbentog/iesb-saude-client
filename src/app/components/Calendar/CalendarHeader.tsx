@@ -30,30 +30,8 @@ import ScheduleIcon from "@mui/icons-material/Schedule";
 import CalendarViewMonthIcon from "@mui/icons-material/CalendarViewMonth";
 import CalendarViewWeekIcon from "@mui/icons-material/CalendarViewWeek";
 import CalendarViewDayIcon from "@mui/icons-material/CalendarViewDay";
+import type { CalendarHeaderProps } from '@/app/types';
 
-interface CalendarHeaderProps {
-  /* navegação */
-  title: string;
-  viewMode: "month" | "week" | "day";
-  dateDisplay: string;
-  onPrev: () => void;
-  onNext: () => void;
-  onToday: () => void;
-  onViewModeChange: (v: "month" | "week" | "day") => void;
-
-  /* filtros */
-  campusList: string[];
-  specialtyList: string[];
-  campusFilters: string[];
-  specialtyFilters: string[];
-  onToggleCampus: (c: string) => void;
-  onToggleSpecialty: (s: string) => void;
-  onClearFilters: () => void;
-
-  /* CTA agendar */
-  showScheduleButton?: boolean;
-  onScheduleClick?: () => void;
-}
 
 export function CalendarHeader({
   /* navegação */

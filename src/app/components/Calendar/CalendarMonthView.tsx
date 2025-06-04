@@ -26,21 +26,15 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
-import { CalendarEvent } from "./types"; // Importar de types.ts
+import type { CalendarEvent, CalendarMonthViewProps } from '@/app/types';
 
-interface Props {
-  currentMonth: Date;
-  events: CalendarEvent[];
-  categoryConfig: Record<string, { color: string }>;
-  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
-}
 
 export function CalendarMonthView({
   currentMonth,
   events,
   categoryConfig,
   onEventClick,
-}: Props) {
+}: CalendarMonthViewProps) {
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const calStart = startOfWeek(monthStart, { locale: ptBR });

@@ -13,26 +13,10 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiFetch } from "@/app/lib/api";
+import type { EventDetail, EventDetailDialogProps } from '@/app/types';
 
 /* ===== Tipos ===== */
-export interface EventDetail {
-  id: string;
-  date: Date;
-  title: string;
-  description?: string;
-  location?: string;
-  allDay?: boolean;
 
-  isRecurring?: boolean;
-  timeSlotId?: number;
-}
-
-interface Props {
-  open: boolean;
-  event: EventDetail | null;
-  onClose: () => void;
-  onDeleted: (info: { type: "single" | "series"; id?: string; timeSlotId?: number }) => void;
-}
 
 export function EventDetailDialog({ open, event, onClose, onDeleted }: Props) {
   const [loading, setLoading] = useState(false);

@@ -24,15 +24,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { apiFetch } from "@/app/lib/api";
 import { useToast } from '@/app/contexts/ToastContext';
+import type { User } from '@/app/types';
 
-interface User {
-  id: number;
-  name: string | null;
-  email: string;
-  profile_id: number;
-  image: string | null;
-  created_at: string;
-}
 
 export default function PerfilPage() {
   const theme = useTheme();

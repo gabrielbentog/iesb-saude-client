@@ -12,7 +12,7 @@ import {
 } from "@mui/material"
 import { motion } from "framer-motion"
 import { useTheme } from "@mui/material/styles"
-import { DataTableProps } from "./types"
+import type { DataTableProps } from "@/app/types"
 
 function DataTable<T>({
   data,

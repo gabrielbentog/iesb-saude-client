@@ -39,20 +39,9 @@ import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 import { StatCard } from "@/app/components/ui/StatCard"
 import { DashboardTable } from "@/app/components/ui/DashboardTable"
 import { StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable"
+import type { Appointment } from '@/app/types';
 
 // --- Interfaces de Dados ---
-interface Appointment {
-  id: number
-  patientName: string
-  patientAvatar: string // Caminho para o avatar do paciente
-  internName: string
-  specialty: string
-  date: string // Ex: "2024-06-01"
-  time: string // Ex: "10:00"
-  status: "Confirmada" | "Pendente" | "Reagendada" | "Cancelada" | "Concluída"
-  priority: "low" | "normal" | "high"
-  specialtyIcon: React.ReactNode // Ícone da especialidade
-}
 
 // --- Dados Mock de Consultas ---
 const mockAppointments: Appointment[] = [

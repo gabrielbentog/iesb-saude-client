@@ -34,15 +34,7 @@ import { usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import Image from "next/image";
 import { useToast } from '@/app/contexts/ToastContext';
-
-interface SidebarProps {
-  open: boolean;
-  drawerWidth: number;
-  onToggleSidebar: () => void;
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
-  isMobile: boolean;
-}
+import type { SidebarProps } from '@/app/types';
 
 // Estilos para os itens da lista, para evitar repetição
 const listItemButtonStyles = (theme: any, open: boolean, isActive: boolean = false) => ({

@@ -28,10 +28,16 @@ import { CalendarWeekView } from "./CalendarWeekView";
 import { CalendarDayView } from "./CalendarDayView";
 import { EventDetailDialog } from "./EventDetailDialog"; // For non-patient actions or busy slots
 import { BookingDialog } from "./BookingDialog"; // New dialog for patients
-import {
+import type {
   CalendarEvent,
-  // EventCategory, // EventCategory might be directly used from types.ts
-} from "@/app/components/Calendar/types"; // Ensure this path is correct
+  CollegeLocation,
+  SimpleSpec,
+  ApiSlot,
+  CalendarApi,
+  ViewMode,
+  ColorMap,
+  EnhancedCalendarProps,
+} from '@/app/types';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { useApi } from "@/app/hooks/useApi";
 import { useToast } from "@/app/contexts/ToastContext"; // For booking confirmation
@@ -54,27 +60,6 @@ const rangeFor = (v: ViewMode, ref: Date) =>
     : { start: format(ref, "yyyy-MM-dd"), end: format(ref, "yyyy-MM-dd") };
 
 /* ---------- tipos ---------- */
-type CollegeLocation = { id: number; name: string };
-type SimpleSpec = { id: number; name: string };
-
-type ApiSlot = {
-  id: number;
-  start_at: string;
-  campus_name: string;
-  specialty_name: string;
-  time_slot_id?: number;
-  patient_name?: string;
-  is_recurring?: boolean;
-};
-
-type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
-type ViewMode = "month" | "week" | "day";
-type ColorMap = Record<string, { color: string }>;
-
-interface EnhancedCalendarProps {
-  showScheduleButton: boolean;
-  userProfile?: "paciente" | "gestor" | "estagiario" | string; // Added userProfile prop
-}
 
 export default function EnhancedCalendar({
   showScheduleButton,

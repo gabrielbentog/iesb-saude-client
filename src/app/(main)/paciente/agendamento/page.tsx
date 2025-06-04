@@ -30,22 +30,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { apiFetch } from '@/app/lib/api';
+import type { Campus, Especialidade, Slot } from '@/app/types';
 
-interface Campus {
-  id: number | string;
-  name: string;
-}
-
-interface Especialidade {
-  id: number | string;
-  name: string;
-}
-
-interface Slot {
-  id: number | string;
-  start_at: string;
-  end_at: string;
-}
 
 dayjs.locale('pt-br');
 

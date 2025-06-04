@@ -19,6 +19,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import { styled, alpha } from '@mui/material/styles';
 
+import type { TableHeader, DashboardTableProps } from "@/app/types";
 // StyledBadge e IconContainer (certifique-se de que estão definidos ou importados corretamente)
 export const StyledBadge = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "badgeType",
@@ -63,43 +64,6 @@ export const IconContainer = styled(Box)(({ theme }) => ({
 }));
 
 
-interface TableHeader {
-  id: string;
-  label: string;
-  align?: 'left' | 'center' | 'right';
-  width?: number | string;
-}
-
-interface DashboardTableProps<T> {
-  title: string;
-  subtitle: string;
-  headers: TableHeader[];
-  data: T[];
-  renderCell: (row: T, headerId: string) => React.ReactNode;
-  onAddClick?: () => void;
-  onViewAllClick?: () => void;
-  rowKeyExtractor: (row: T) => string | number;
-  getPriorityBorderColor?: (row: T) => string;
-  page?: number;
-  rowsPerPage?: number;
-  totalCount?: number;
-  onPageChange?: (event: unknown, newPage: number) => void;
-  onRowsPerPageChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  rowsPerPageOptions?: Array<number | { value: -1; label: string }>;
-  /**
-   * Função para renderizar as ações personalizadas para cada linha da tabela.
-   * Recebe o objeto da linha como argumento e deve retornar um React.ReactNode (ex: IconButton, Menu, etc.).
-   */
-  actions?: (row: T) => React.ReactNode;
-  /**
-   * O rótulo para a coluna de ações da tabela. Só é exibido se a prop 'actions' for fornecida.
-   */
-  actionsColumnLabel?: string;
-  /**
-   * Mensagem a ser exibida quando não houver dados na tabela.
-   */
-  emptyMessage?: string;
-}
 
 export function DashboardTable<T extends { id: string | number }>({
   title,

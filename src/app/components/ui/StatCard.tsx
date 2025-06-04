@@ -1,15 +1,7 @@
 import React from "react";
 import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-
-interface StatCardProps {
-  title: string;
-  value: string | number;
-  subtitle: string;
-  icon: React.ReactNode;
-  iconBgColor?: string;
-  trendComponent?: React.ReactNode;
-}
+import type { StatCardProps } from '@/app/types';
 
 export const StatCard: React.FC<StatCardProps> = ({
   title,

@@ -1,0 +1,102 @@
+import type React from 'react';
+
+export type EventCategory = 'medical' | 'training' | 'work' | 'holiday' | string;
+
+export interface CalendarEvent {
+  id: string;
+  date: Date;
+  title: string;
+  description?: string;
+  location?: string;
+  category: EventCategory;
+  allDay?: boolean;
+  participants?: string[];
+  isRecurring?: boolean;
+  timeSlotId?: number;
+  type: 'free' | 'busy';
+}
+
+export interface BookingDialogProps {
+  open: boolean;
+  event: CalendarEvent | null;
+  onClose: () => void;
+  onSubmitBooking: (bookingData: { objective: string }) => Promise<void>;
+}
+
+export interface CalendarDayViewProps {
+  referenceDate: Date;
+  events: CalendarEvent[];
+  categoryConfig: Record<string, { color: string }>;
+  onEventClick: (event: CalendarEvent) => void;
+}
+
+export interface CalendarWeekViewProps {
+  referenceDate: Date;
+  events: CalendarEvent[];
+  categoryConfig: Record<string, { color: string }>;
+  onEventClick: (event: CalendarEvent) => void;
+}
+
+export interface CalendarMonthViewProps {
+  currentMonth: Date;
+  events: CalendarEvent[];
+  categoryConfig: Record<string, { color: string }>;
+  onEventClick: (event: CalendarEvent) => void;
+}
+
+export interface CalendarHeaderProps {
+  title: string;
+  viewMode: 'month' | 'week' | 'day';
+  dateDisplay: string;
+  onPrev: () => void;
+  onNext: () => void;
+  onToday: () => void;
+  onViewModeChange: (v: 'month' | 'week' | 'day') => void;
+  campusList: string[];
+  specialtyList: string[];
+  campusFilters: string[];
+  specialtyFilters: string[];
+  onToggleCampus: (c: string) => void;
+  onToggleSpecialty: (s: string) => void;
+  onClearFilters: () => void;
+  showScheduleButton?: boolean;
+  onScheduleClick?: () => void;
+}
+
+export interface EnhancedCalendarProps {
+  showScheduleButton: boolean;
+  userProfile?: 'paciente' | 'gestor' | 'estagiario' | string;
+}
+
+export interface EventDetail {
+  id: string;
+  date: Date;
+  title: string;
+  description?: string;
+  location?: string;
+  allDay?: boolean;
+  isRecurring?: boolean;
+  timeSlotId?: number;
+}
+
+export interface EventDetailDialogProps {
+  open: boolean;
+  event: EventDetail | null;
+  onClose: () => void;
+  onDeleted: (info: { type: 'single' | 'series'; id?: string; timeSlotId?: number }) => void;
+}
+
+export type CollegeLocation = { id: number; name: string };
+export type SimpleSpec = { id: number; name: string };
+export type ApiSlot = {
+  id: number;
+  start_at: string;
+  campus_name: string;
+  specialty_name: string;
+  time_slot_id?: number;
+  patient_name?: string;
+  is_recurring?: boolean;
+};
+export type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
+export type ViewMode = 'month' | 'week' | 'day';
+export type ColorMap = Record<string, { color: string }>;

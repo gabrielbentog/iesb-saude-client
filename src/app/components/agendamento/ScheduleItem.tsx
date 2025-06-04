@@ -6,6 +6,7 @@ import dayjs from "dayjs";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import { FormValues } from "./schemas";
+import type { ScheduleItemProps } from '@/app/types';
 
 const GRID_SM = "240px 1fr 1fr auto auto";   // Data | Início | Fim | + | 🗑️
 const GRID_XS = "1fr 1fr auto auto";         // mobile (data quebra pra cima)
@@ -20,13 +21,6 @@ const weekDays = [
   { value: 6, label: "Sábado" },
 ] as const;
 
-interface ScheduleItemProps {
-  control: Control<FormValues>;
-  index: number;
-  repeatType: number;
-  onRemoveDay: () => void;
-  disableRemoveDay: boolean;
-}
 
 export const ScheduleItem: React.FC<ScheduleItemProps> = ({
   control,

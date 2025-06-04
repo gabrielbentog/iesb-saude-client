@@ -8,14 +8,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { CalendarEvent } from './types'; // Adjust path if necessary
-
-interface BookingDialogProps {
-  open: boolean;
-  event: CalendarEvent | null; // This will be the 'free' slot
-  onClose: () => void;
-  onSubmitBooking: (bookingData: { objective: string }) => Promise<void>; // Make it async
-}
+import type { CalendarEvent, BookingDialogProps } from '@/app/types';
 
 export function BookingDialog({ open, event, onClose, onSubmitBooking }: BookingDialogProps) {
   const [objective, setObjective] = useState('');

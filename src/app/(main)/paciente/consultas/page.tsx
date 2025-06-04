@@ -45,64 +45,8 @@ import { apiFetch } from "@/app/lib/api";
 
 // --- Interfaces de Dados ---
 
+import type { ConsultaPaciente, ApiAppointment, MetaInfo, PaginatedAppointmentsResponse } from "@/app/types";
 // Interface de Dados para Consulta do Paciente (usada na UI)
-interface ConsultaPaciente {
-  id: number;
-  internName: string;
-  internAvatar?: string;
-  specialty: string;
-  date: string; // Formato DD/MM/YYYY
-  time: string; // Formato HH:mm
-  status: "Confirmada" | "Pendente" | "Reagendada" | "Cancelada" | "Concluída";
-  priority?: "low" | "normal" | "high";
-  specialtyIcon: React.ReactNode;
-  location: string;
-}
-
-// Interface para um único agendamento retornado pela API (dentro do array 'data')
-interface ApiAppointment {
-  id: number;
-  date: string; // Ex: "2025-06-09"
-  start_time: string; // Ex: "2000-01-01T09:15:00.000-02:00"
-  end_time: string; // Ex: "2000-01-01T10:15:00.000-02:00"
-  status: string; // Ex: "pending"
-  notes?: string;
-  time_slot: {
-    id: number;
-    // turn: number; // Removed as per example, add back if API sends it
-    // start_time: string; // This start_time is for the slot, appointment has its own
-    // end_time: string;   // This end_time is for the slot, appointment has its own
-    // week_day: number; // Removed as per example, add back if API sends it
-    college_location_name: string;
-    specialty_name: string;
-  };
-  user: {
-    id: number;
-    name: string;
-    email: string;
-    created_at: string;
-    updated_at: string;
-    profile: {
-      id: number;
-      name: string;
-      users_count: number;
-    };
-  };
-}
-
-// Interface para informações de metadados da paginação da API
-interface MetaInfo {
-  total_count: number;
-  total_pages: number;
-  current_page: number;
-  per_page: number;
-}
-
-// Interface para a resposta completa da API (dados + metadados de paginação)
-interface PaginatedAppointmentsResponse {
-  data: ApiAppointment[];
-  meta: MetaInfo;
-}
 
 
 // --- Mapeamento de Status da API para Status da UI ---

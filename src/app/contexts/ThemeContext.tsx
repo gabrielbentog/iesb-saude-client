@@ -4,10 +4,7 @@ import { createContext, useContext, useState, useMemo, ReactNode, useEffect } fr
 import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material'
 import { lightTheme, darkTheme } from '@/app/theme/theme'
 
-interface ThemeContextProps {
-  toggleTheme: () => void
-  isDark: boolean
-}
+import type { ThemeContextProps } from '@/app/types'
 
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined)
 

@@ -6,11 +6,9 @@ import { ToastProvider } from "@/app/contexts/ToastContext";
 import { ThemeProvider } from "@mui/material/styles";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
+import type { MainLayoutProps } from '@/app/types';
 import { lightTheme, darkTheme } from "../theme/theme";
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
 
 const drawerWidth = 260;
 

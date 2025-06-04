@@ -21,21 +21,15 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
-import { CalendarEvent } from "./types"; // Importar de types.ts
+import type { CalendarEvent, CalendarWeekViewProps } from '@/app/types';
 
-interface Props {
-  referenceDate: Date;
-  events: CalendarEvent[];
-  categoryConfig: Record<string, { color: string }>;
-  onEventClick: (event: CalendarEvent) => void; // Prop para lidar com cliques
-}
 
 export function CalendarWeekView({
   referenceDate,
   events,
   categoryConfig,
   onEventClick,
-}: Props) {
+}: CalendarWeekViewProps) {
   const weekStart = startOfWeek(referenceDate, { locale: ptBR });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const hours = Array.from({ length: 24 }, (_, i) => i);

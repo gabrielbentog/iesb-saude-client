@@ -1,34 +1,16 @@
 // contexts/ToastContext.tsx
 "use client";
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Snackbar, Alert, AlertColor } from '@mui/material';
-
-interface Toast {
-  open: boolean;
-  message: string;
-  severity: AlertColor;
-}
-
-interface ToastOptions {
-  message: string;
-  severity?: AlertColor;
-}
-
-interface ToastContextType {
-  showToast: (options: ToastOptions) => void;
-}
+import React, { createContext, useContext, useState } from 'react';
+import { Snackbar, Alert } from '@mui/material';
+import type {
+  Toast,
+  ToastOptions,
+  ToastContextType,
+  AnchorOrigin,
+  ToastProviderProps,
+} from '@/app/types';
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
-
-interface AnchorOrigin {
-  vertical: 'top' | 'bottom';
-  horizontal: 'left' | 'center' | 'right';
-}
-
-interface ToastProviderProps {
-  children: ReactNode;
-  anchorOrigin?: AnchorOrigin;
-}
 
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children, anchorOrigin }) => {
   const [toast, setToast] = useState<Toast>({

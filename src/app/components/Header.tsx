@@ -11,24 +11,14 @@ import {
   Badge,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
+import type { Theme } from "@mui/material/styles";
+import type { HeaderProps, UserData } from '@/app/types';
 import {
   Menu as MenuIcon,
   Search as SearchIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 
-interface HeaderProps {
-  open: boolean;                   // se a sidebar está aberta
-  drawerWidth: number;
-  onToggleSidebar: () => void;     // callback para abrir/fechar a sidebar
-  isMobile: boolean;               // se está em modo responsivo
-}
-
-interface UserData {
-  name?: string;
-  avatar?: string;
-  email?: string;
-}
 
 const Header: React.FC<HeaderProps> = ({
   open,
