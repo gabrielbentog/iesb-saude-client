@@ -18,13 +18,10 @@ import {
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-// --- INÍCIO DA MODIFICAÇÃO CHAVE ---
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br"; // Importe o locale português do Brasil
 
-// Configure o locale globalmente IMEDIATAMENTE após a importação do dayjs
 dayjs.locale("pt-br");
-// --- FIM DA MODIFICAÇÃO CHAVE ---
 
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -39,6 +36,11 @@ import { apiFetch } from "@/app/lib/api";
 import { CollegeLocation, Specialty } from "./types";
 import { FormValues } from "@/app/components/agendamento/schemas";
 import { ptBR } from "@mui/x-date-pickers/locales";
+
+// Defina um tipo para a resposta da API que inclui a propriedade 'data'
+interface ApiResponse<T> {
+  data: T;
+}
 
 export default function ScheduleFormPage() {
   const router = useRouter();
@@ -55,24 +57,30 @@ export default function ScheduleFormPage() {
   } = methods;
 
   /* ---------- selects ---------- */
-  const { data: locData, loading: loadingLocs } =
-    useApi<CollegeLocation[]>("/api/college_locations");
-  const locations = locData ?? [];
+  // Modificado para esperar ApiResponse contendo CollegeLocation[]
+  const { data: locResponse, loading: loadingLocs } =
+    useApi<ApiResponse<CollegeLocation[]>>("/api/college_locations");
+  // --- MODIFICAÇÃO CHAVE ---
+  const locations = locResponse?.data ?? [];
 
   const selectedCampusId = watch("college_location_id");
 
-  // resposta da API pode vir como array ou { specialties: [...] }
-  const { data: specData, loading: loadingSpecs } = useApi<
-    Specialty[] | { specialties: Specialty[] }
+  // Modificado para esperar ApiResponse contendo Specialty[] ou { specialties: { data: Specialty[] } }
+  const { data: specResponse, loading: loadingSpecs } = useApi<
+    ApiResponse<Specialty[] | { specialties: { data: Specialty[] } }>
   >(
     selectedCampusId
       ? `/api/college_locations/${selectedCampusId}/specialties`
       : ""
   );
 
+  // --- MODIFICAÇÃO CHAVE ---
+  // Primeiro, acesse a propriedade 'data' da resposta da API
+  const specData = specResponse?.data;
+  // Então, aplique a lógica existente para extrair as especialidades
   const specialties: Specialty[] = Array.isArray(specData)
     ? specData
-    : specData?.specialties ?? [];
+    : specData?.specialties?.data ?? [];
 
   /* ---------- schedules ---------- */
   const {
@@ -89,7 +97,6 @@ export default function ScheduleFormPage() {
   useEffect(() => {
     scheduleFields.forEach((field, idx) => {
       if (repeatType === 1) {
-        // Convertendo apenas se week_day estiver indefinido
         const currentWeekDay = getValues(`schedules.${idx}.week_day`);
         const currentDate = getValues(`schedules.${idx}.date`);
         if (currentWeekDay === undefined && currentDate) {
@@ -97,7 +104,6 @@ export default function ScheduleFormPage() {
           setValue(`schedules.${idx}.date`, undefined);
         }
       } else {
-        // Convertendo apenas se date estiver indefinido
         const currentWeekDay = getValues(`schedules.${idx}.week_day`);
         const currentDate = getValues(`schedules.${idx}.date`);
         if (currentDate === undefined && currentWeekDay !== undefined) {
@@ -151,7 +157,7 @@ export default function ScheduleFormPage() {
 
   /* ---------- UI ---------- */
   return (
-    <LocalizationProvider   
+    <LocalizationProvider
       dateAdapter={AdapterDayjs}
       adapterLocale="pt-br"
       localeText={ptBR.components.MuiLocalizationProvider.defaultProps.localeText}
@@ -189,7 +195,10 @@ export default function ScheduleFormPage() {
                     label="Campus"
                     {...field}
                     value={field.value ?? ""}
-                    onChange={(e) => field.onChange(+e.target.value)}
+                    onChange={(e) => {
+                      field.onChange(+e.target.value);
+                      setValue("specialty_id", undefined); // Reset specialty when campus changes
+                    }}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                   >
@@ -218,11 +227,13 @@ export default function ScheduleFormPage() {
                     {...field}
                     value={field.value ?? ""}
                     onChange={(e) => field.onChange(+e.target.value)}
-                    disabled={!selectedCampusId}
+                    disabled={!selectedCampusId || specialties.length === 0}
                     error={!!fieldState.error}
                     helperText={
                       !selectedCampusId
                         ? "Selecione o campus primeiro"
+                        : specialties.length === 0 && selectedCampusId
+                        ? "Nenhuma especialidade encontrada para este campus"
                         : fieldState.error?.message
                     }
                   >
@@ -298,7 +309,7 @@ export default function ScheduleFormPage() {
                   fullWidth
                   label="Repetição"
                   {...field}
-                  value={field.value}
+                  value={field.value} // Certifique-se de que isso não seja undefined no início
                   onChange={(e) => field.onChange(+e.target.value)}
                 >
                   <MenuItem value={0}>Não se repete (datas)</MenuItem>
@@ -312,7 +323,7 @@ export default function ScheduleFormPage() {
           <Stack spacing={4}>
             {scheduleFields.map((_, idx) => (
               <ScheduleItem
-                key={idx}
+                key={idx} // Idealmente use field.id se disponível e estável
                 control={control}
                 index={idx}
                 repeatType={repeatType}
@@ -331,12 +342,12 @@ export default function ScheduleFormPage() {
                 appendSchedule(
                   repeatType === 1
                     ? {
-                        week_day: dayjs().day(),
-                        times: [{ start_time: dayjs().hour(9), end_time: dayjs().hour(10) }],
+                        week_day: dayjs().day(), // Usa o dia atual como padrão
+                        times: [{ start_time: dayjs().hour(9).minute(0).second(0), end_time: dayjs().hour(10).minute(0).second(0) }],
                       }
                     : {
-                        date: dayjs().toDate(),
-                        times: [{ start_time: dayjs().hour(9), end_time: dayjs().hour(10) }],
+                        date: dayjs().startOf('day').toDate(), // Usa a data atual como padrão
+                        times: [{ start_time: dayjs().hour(9).minute(0).second(0), end_time: dayjs().hour(10).minute(0).second(0) }],
                       }
                 )
               }

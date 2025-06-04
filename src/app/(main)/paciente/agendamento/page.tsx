@@ -18,7 +18,7 @@ import {
   Badge,
   CircularProgress,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+// import { useTheme } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import {
   LocalizationProvider,
@@ -52,7 +52,6 @@ dayjs.locale('pt-br');
 const steps = ['Informações', 'Data e Horário', 'Objetivo', 'Confirmação'];
 
 export default function AgendarConsultaPage() {
-  const theme = useTheme();
   const [activeStep, setActiveStep] = useState<number>(0);
   const [campusList, setCampusList] = useState<Campus[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
@@ -73,7 +72,7 @@ export default function AgendarConsultaPage() {
   useEffect(() => {
     setLoadingCampuses(true);
     apiFetch('/api/college_locations')
-      .then((res) => setCampusList(res))
+      .then((res) => setCampusList((res as { data: Campus[] }).data))
       .catch(() => setApiError("Erro ao carregar opções de campus."))
       .finally(() => setLoadingCampuses(false));
   }, []);
@@ -90,7 +89,10 @@ export default function AgendarConsultaPage() {
     if (selectedCampusId) {
       setLoadingSpecialties(true);
       apiFetch(`/api/college_locations/${selectedCampusId}/specialties`)
-        .then((res) => setEspecialidades(Array.isArray(res) ? res : res.specialties))
+        .then((res) => {
+          const data = (res as { data: Especialidade[] }).data;
+          setEspecialidades(data);
+        })
         .catch(() => setApiError("Erro ao carregar especialidades."))
         .finally(() => setLoadingSpecialties(false));
     }
@@ -105,7 +107,7 @@ export default function AgendarConsultaPage() {
       const end = monthToFetch.endOf('month').format('YYYY-MM-DD');
       const response = await apiFetch(`/api/calendar?start=${start}&end=${end}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`);
       const uniqueDates = new Set<string>();
-      response.free?.forEach((slot: Slot) => uniqueDates.add(dayjs(slot.start_at).format('YYYY-MM-DD')));
+      (response as { free?: Slot[] }).free?.forEach((slot: Slot) => uniqueDates.add(dayjs(slot.start_at).format('YYYY-MM-DD')));
       setAvailableDatesInMonth(uniqueDates);
     } catch {
       setApiError("Não foi possível carregar as datas disponíveis.");
@@ -126,7 +128,8 @@ export default function AgendarConsultaPage() {
       const dateStr = selectedDate.format('YYYY-MM-DD');
       apiFetch(`/api/calendar?start=${dateStr}&end=${dateStr}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`)
         .then((res) => {
-          const slots = res.free?.sort((a: Slot, b: Slot) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+          const typedRes = res as { free?: Slot[] };
+          const slots = typedRes.free?.sort((a: Slot, b: Slot) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
           setTimeSlotsForSelectedDate(slots || []);
         })
         .catch(() => setApiError("Não foi possível carregar os horários."))
@@ -162,8 +165,8 @@ export default function AgendarConsultaPage() {
           time_slot_id: selectedApiSlot.id,
           user_id: userId,
           date: selectedDate.format('YYYY-MM-DD'),
-          start_time: selectedApiSlot.start_at,
-          end_time: selectedApiSlot.end_at,
+          start_time: dayjs(selectedApiSlot.start_at).format('HH:mm'),
+          end_time: dayjs(selectedApiSlot.end_at).format('HH:mm'),
           status: 'pending',
           notes: objetivo.trim(),
         },
@@ -212,14 +215,42 @@ export default function AgendarConsultaPage() {
           {activeStep === 0 && (
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <TextField label="Campus" select fullWidth value={selectedCampusId} onChange={(e) => setSelectedCampusId(e.target.value)}>
-                  {campusList.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
-                </TextField>
+                {loadingCampuses ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 56 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : (
+                  <TextField
+                    label="Campus"
+                    select
+                    fullWidth
+                    value={selectedCampusId}
+                    onChange={(e) => setSelectedCampusId(e.target.value)}
+                  >
+                    {campusList.map((c) => (
+                      <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>
+                    ))}
+                  </TextField>
+                )}
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField label="Especialidade" select fullWidth value={selectedEspecialidadeId} onChange={(e) => setSelectedEspecialidadeId(e.target.value)}>
-                  {especialidades.map((e) => <MenuItem key={e.id} value={e.id}>{e.name}</MenuItem>)}
-                </TextField>
+                {loadingSpecialties ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 56 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : (
+                  <TextField
+                    label="Especialidade"
+                    select
+                    fullWidth
+                    value={selectedEspecialidadeId}
+                    onChange={(e) => setSelectedEspecialidadeId(e.target.value)}
+                  >
+                    {especialidades.map((e) => (
+                      <MenuItem key={e.id} value={e.id}>{e.name}</MenuItem>
+                    ))}
+                  </TextField>
+                )}
               </Grid>
             </Grid>
           )}
@@ -227,12 +258,51 @@ export default function AgendarConsultaPage() {
           {activeStep === 1 && (
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <DatePicker label="Data da Consulta" value={selectedDate} onChange={setSelectedDate} onMonthChange={setCurrentPickerMonth} slots={{ day: renderDayWithBadge }} slotProps={{ textField: { fullWidth: true } }} disablePast />
+                <Box sx={{ position: 'relative' }}>
+                  <DatePicker
+                    label="Data da Consulta"
+                    value={selectedDate}
+                    onChange={setSelectedDate}
+                    onMonthChange={setCurrentPickerMonth}
+                    slots={{ day: renderDayWithBadge }}
+                    slotProps={{ textField: { fullWidth: true } }}
+                    disablePast
+                  />
+                  {loadingAvailableDates && (
+                    <CircularProgress
+                      size={24}
+                      sx={{
+                        position: 'absolute',
+                        top: '50%',
+                        right: 16,
+                        marginTop: '-12px',
+                      }}
+                    />
+                  )}
+                </Box>
               </Grid>
               <Grid item xs={12} md={6}>
-                <TextField label="Horário" select fullWidth value={selectedApiSlot?.start_at || ''} onChange={(e) => setSelectedApiSlot(timeSlotsForSelectedDate.find((s) => s.start_at === e.target.value) || null)}>
-                  {timeSlotsForSelectedDate.map((s) => <MenuItem key={s.id} value={s.start_at}>{dayjs(s.start_at).format('HH:mm')} - {dayjs(s.end_at).format('HH:mm')}</MenuItem>)}
-                </TextField>
+                {loadingTimeSlots ? (
+                  <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 56 }}>
+                    <CircularProgress size={24} />
+                  </Box>
+                ) : (
+                  <TextField
+                    label="Horário"
+                    select
+                    fullWidth
+                    value={selectedApiSlot?.start_at || ''}
+                    onChange={(e) =>
+                      setSelectedApiSlot(timeSlotsForSelectedDate.find((s) => s.start_at === e.target.value) || null)
+                    }
+                  >
+                    {timeSlotsForSelectedDate.map((s) => (
+                      <MenuItem key={s.id} value={s.start_at}>
+                        {dayjs(s.start_at).format('HH:mm')} - {dayjs(s.end_at).format('HH:mm')}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
               </Grid>
             </Grid>
           )}

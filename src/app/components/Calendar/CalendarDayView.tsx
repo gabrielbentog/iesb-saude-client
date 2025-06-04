@@ -42,7 +42,7 @@ export function CalendarDayView({
     events.filter(
       (ev) => isSameDay(ev.date, referenceDate) && ev.date.getHours() === h
     );
-
+  console.log("Events for hour:", eventsForHour);
   return (
     <>
       <TableContainer sx={{ overflowX: "auto" }}>
