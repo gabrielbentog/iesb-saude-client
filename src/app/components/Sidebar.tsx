@@ -172,7 +172,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         </IconButton>
       )}
        {/* Logo pequeno quando fechado e não é mobile (apenas para referência, pode ser removido se o ChevronRight for suficiente) */}
-      {!open && !isMobile && !isMobile && (
+      {!open && !isMobile && (
          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%', mt: -7 /* Ajuste para centralizar com o ícone de toggle */ }}>
             <Image src="/logos/iesb.png" alt="IESB Saúde" width={32} height={32} />
          </Box>

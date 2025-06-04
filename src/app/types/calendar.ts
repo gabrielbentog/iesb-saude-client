@@ -1,5 +1,3 @@
-import type React from 'react';
-
 export type EventCategory = 'medical' | 'training' | 'work' | 'holiday' | string;
 
 export interface CalendarEvent {

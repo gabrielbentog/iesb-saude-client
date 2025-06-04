@@ -39,7 +39,7 @@ import { useToast } from "@/app/contexts/ToastContext";
 
 // Componentes de UI
 import { StatCard } from "@/app/components/ui/StatCard";
-import { DashboardTable, StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable";
+import { DataTable, StyledBadge, IconContainer } from "@/app/components/DataTable";
 
 import { apiFetch } from "@/app/lib/api";
 
@@ -352,7 +352,7 @@ export default function MinhasConsultasPacientePage() {
         <Typography color="error" align="center" sx={{my:2}}>{error}</Typography>
       )}
 
-      <DashboardTable<ConsultaPaciente>
+      <DataTable<ConsultaPaciente>
         title="Meus Agendamentos"
         subtitle="Acompanhe seus compromissos de saúde"
         headers={headersMinhasConsultas}
@@ -368,7 +368,7 @@ export default function MinhasConsultasPacientePage() {
         rowsPerPage={rowsPerPage}
         onPageChange={handlePageChange}
         onRowsPerPageChange={handleRowsPerPageChange}
-        // TODO: Adicionar suporte para ordenação no DashboardTable e ligar a setSortField/setSortDirection
+        // TODO: Adicionar suporte para ordenação no DataTable e ligar a setSortField/setSortDirection
         // onSortRequest={handleSortRequest}
         // sortField={sortField}
         // sortDirection={sortDirection}

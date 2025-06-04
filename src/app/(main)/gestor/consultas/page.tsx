@@ -37,8 +37,8 @@ import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 // Importar os componentes de UI (ajuste os caminhos conforme necessário)
 import { StatCard } from "@/app/components/ui/StatCard"
-import { DashboardTable } from "@/app/components/ui/DashboardTable"
-import { StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable"
+import { DataTable } from "@/app/components/DataTable"
+import { StyledBadge, IconContainer } from "@/app/components/DataTable"
 import type { Appointment } from '@/app/types';
 
 // --- Interfaces de Dados ---
@@ -128,7 +128,7 @@ const appointmentHeaders = [
   { id: "status", label: "Status" },
 ]
 
-// --- Função de Renderização de Célula para DashboardTable ---
+// --- Função de Renderização de Célula para DataTable ---
 const renderAppointmentCell = (appointment: Appointment, headerId: string) => {
   switch (headerId) {
     case "patient":
@@ -334,8 +334,8 @@ export default function AppointmentManagementScreen() {
         </Grid>
       </Grid>
 
-      {/* Tabela de Gestão de Consultas usando DashboardTable */}
-      <DashboardTable<Appointment>
+      {/* Tabela de Gestão de Consultas usando DataTable */}
+      <DataTable<Appointment>
         title="Consultas Agendadas"
         subtitle="Gerencie todas as consultas e seus status"
         headers={appointmentHeaders}
@@ -353,7 +353,7 @@ export default function AppointmentManagementScreen() {
         emptyMessage="Nenhuma consulta encontrada."
       />
 
-      {/* Menu de ações da tabela (fora do DashboardTable) */}
+      {/* Menu de ações da tabela (fora do DataTable) */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

@@ -39,7 +39,7 @@ export interface TableHeader {
   width?: number | string;
 }
 
-export interface DashboardTableProps<T> {
+export interface DataTableProps<T> {
   title: string;
   subtitle: string;
   headers: TableHeader[];

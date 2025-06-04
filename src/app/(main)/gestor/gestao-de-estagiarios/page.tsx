@@ -35,12 +35,12 @@ import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 // Importar os componentes da tela anterior (ajuste os caminhos conforme necessário)
 import { StatCard } from "@/app/components/ui/StatCard"
-import { DashboardTable } from "@/app/components/ui/DashboardTable"
+import { DataTable } from "@/app/components/DataTable"
 import type { Intern } from "@/app/types";
-import { StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable" // Importar componentes auxiliares
+import { StyledBadge, IconContainer } from "@/app/components/DataTable" // Importar componentes auxiliares
 
 // Mock data
-// Adicionei performance e icons específicos para cada estagiário para compatibilidade com DashboardTable
+// Adicionei performance e icons específicos para cada estagiário para compatibilidade com DataTable
     name: "Ana Silva",
     specialty: "Nutrição",
     avatar: "", // Caminho real da imagem
@@ -107,7 +107,7 @@ import { StyledBadge, IconContainer } from "@/app/components/ui/DashboardTable" 
   },
 ]
 
-// Defina as colunas para a tabela de estagiários usando o formato do DashboardTable
+// Defina as colunas para a tabela de estagiários usando o formato do DataTable
 const internHeaders = [
   { id: "name", label: "Estagiário" },
   { id: "specialty", label: "Especialidade" },
@@ -117,7 +117,7 @@ const internHeaders = [
   { id: "status", label: "Status" },
 ]
 
-// Função de renderização de célula para a DashboardTable
+// Função de renderização de célula para a DataTable
 const renderInternCell = (intern: Intern, headerId: string) => {
   // O useTheme deve ser chamado dentro do componente funcional principal ou de um Hook
   // Para fins de demonstração, simulamos o theme para a renderização da célula.
@@ -224,7 +224,7 @@ export default function InternManagementScreen() {
     handleMenuClose();
   };
 
-  // Função para renderizar as ações da tabela, passada para o DashboardTable
+  // Função para renderizar as ações da tabela, passada para o DataTable
   const internActions = (intern: Intern) => (
     <IconButton
       size="small"
@@ -313,8 +313,8 @@ export default function InternManagementScreen() {
         </Grid>
       </Grid>
 
-      {/* Tabela de Gestão de Estagiários usando DashboardTable */}
-      <DashboardTable<Intern>
+      {/* Tabela de Gestão de Estagiários usando DataTable */}
+      <DataTable<Intern>
         title="Gestão de Estagiários"
         subtitle="Acompanhe o desempenho e atividades dos estagiários"
         headers={internHeaders}
@@ -331,7 +331,7 @@ export default function InternManagementScreen() {
         emptyMessage="Nenhum estagiário encontrado."
       />
 
-      {/* Menu de ações da tabela (fora do DashboardTable) */}
+      {/* Menu de ações da tabela (fora do DataTable) */}
       <Menu
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}

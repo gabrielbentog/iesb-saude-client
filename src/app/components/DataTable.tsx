@@ -1,4 +1,4 @@
-// components/DashboardTable.tsx
+// components/DataTable.tsx
 
 import React from 'react';
 import {
@@ -19,7 +19,7 @@ import AddIcon from '@mui/icons-material/Add';
 import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import { styled, alpha } from '@mui/material/styles';
 
-import type { TableHeader, DashboardTableProps } from "@/app/types";
+import type { DataTableProps } from "@/app/types";
 // StyledBadge e IconContainer (certifique-se de que estão definidos ou importados corretamente)
 export const StyledBadge = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "badgeType",
@@ -63,9 +63,7 @@ export const IconContainer = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.grey[100],
 }));
 
-
-
-export function DashboardTable<T extends { id: string | number }>({
+export function DataTable<T extends { id: string | number }>({
   title,
   subtitle,
   headers,
@@ -84,7 +82,7 @@ export function DashboardTable<T extends { id: string | number }>({
   actionsColumnLabel = '', // Prop para o rótulo da coluna de ações, com valor padrão vazio
   emptyMessage = 'Nenhum registro encontrado.', // Prop para mensagem de vazio, com valor padrão
   rowsPerPageOptions = [5, 10, 25, { label: 'Todas', value: -1 }],
-}: DashboardTableProps<T>) {
+}: DataTableProps<T>) {
 
   const showActionsColumn = typeof actions === 'function'; // Verifica se a prop actions foi fornecida
 

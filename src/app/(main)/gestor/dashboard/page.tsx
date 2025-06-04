@@ -39,8 +39,8 @@ import AddIcon from "@mui/icons-material/Add"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
 import { StatCard } from '@/app/components/ui/StatCard'
-import { DashboardTable } from '@/app/components/ui/DashboardTable'; // Ajuste o caminho conforme necessário
-import { StyledBadge, IconContainer } from '@/app/components/ui/DashboardTable';
+import { DataTable } from '@/app/components/DataTable'; // Ajuste o caminho conforme necessário
+import { StyledBadge, IconContainer } from '@/app/components/DataTable';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 import type { TabPanelProps } from "@/app/types";
@@ -257,6 +257,8 @@ const StyledTab = styled(Tab)(({ theme }) => ({
   },
 }));
 
+function TabPanel(props: TabPanelProps) {
+
   const { children, value, index, ...other } = props
 
   return (
@@ -466,7 +468,7 @@ export default function ManagerDashboard() {
 
             {/* Appointments Tab */}
             <TabPanel value={tabValue} index={0}>
-              <DashboardTable
+              <DataTable
                 title="Consultas Agendadas"
                 subtitle="Próximas consultas e seus status"
                 headers={appointmentHeaders}
@@ -488,7 +490,7 @@ export default function ManagerDashboard() {
 
             {/* Interns Tab */}
             <TabPanel value={tabValue} index={1}>
-              <DashboardTable
+              <DataTable
                 title="Gestão de Estagiários"
                 subtitle="Acompanhe o desempenho e atividades dos estagiários"
                 headers={internHeaders}
