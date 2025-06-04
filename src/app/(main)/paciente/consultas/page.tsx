@@ -197,7 +197,7 @@ export default function MinhasConsultasPacientePage() {
     } finally {
       setLoadingConsultas(false);
     }
-  }, [page, rowsPerPage, sortField, sortDirection, showToast]);
+  }, [page, rowsPerPage, sortField, sortDirection]);
 
   useEffect(() => {
     fetchConsultas();
