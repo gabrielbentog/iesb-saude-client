@@ -89,7 +89,7 @@ const transformApiAppointments = (apiAppointments: ApiAppointment[]): ConsultaPa
     return [];
   }
   return apiAppointments.map(apiAppt => {
-    const dateObj = new Date(apiAppt.date + "T" + apiAppt.start_time.substring(11,19)); // Combine date and time
+    const dateObj = new Date(apiAppt.date + "T" + apiAppt.startTime.substring(11,19)); // Combine date and time
     const formattedDate = dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const formattedTime = dateObj.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', hour12: false });
 
@@ -97,13 +97,13 @@ const transformApiAppointments = (apiAppointments: ApiAppointment[]): ConsultaPa
       id: apiAppt.id,
       internName: "Profissional Não Informado", // Placeholder - API não fornece nome do profissional diretamente no agendamento
       internAvatar: undefined, // Placeholder
-      specialty: apiAppt.time_slot?.specialty_name || "Não informada",
-      specialtyIcon: getSpecialtyIcon(apiAppt.time_slot?.specialty_name || ""),
+      specialty: apiAppt.timeSlot?.specialtyName || "Não informada",
+      specialtyIcon: getSpecialtyIcon(apiAppt.timeSlot?.specialtyName || ""),
       date: formattedDate,
       time: formattedTime,
       status: mapApiStatusToUiStatus(apiAppt.status),
       priority: "normal", // Placeholder - API não fornece prioridade
-      location: apiAppt.time_slot?.college_location_name || "Não informado",
+      location: apiAppt.timeSlot?.collegeLocationName || "Não informado",
     };
   });
 };
@@ -363,7 +363,7 @@ export default function MinhasConsultasPacientePage() {
         actions={consultaActions}
         getPriorityBorderColor={getConsultaPriorityBorderColor}
         // Informações de paginação vêm do metaInfo
-        totalCount={metaInfo?.total_count || 0}
+        totalCount={metaInfo?.totalCount || 0}
         page={page} // 0-indexed
         rowsPerPage={rowsPerPage}
         onPageChange={handlePageChange}

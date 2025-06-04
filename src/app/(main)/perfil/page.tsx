@@ -215,7 +215,7 @@ export default function PerfilPage() {
             <Info label="ID do Usuário" value={String(user.id)} />
             <Info
               label="Criado em"
-              value={new Date(user.created_at).toLocaleString("pt-BR")}
+              value={new Date(user.createdAt).toLocaleString("pt-BR")}
             />
           </Box>
         </Paper>

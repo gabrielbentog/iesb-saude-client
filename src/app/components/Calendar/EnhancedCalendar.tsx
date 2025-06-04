@@ -97,19 +97,19 @@ export default function EnhancedCalendar({
     const cmap: ColorMap = {};
 
     const pushEv = (slot: ApiSlot, kind: "free" | "busy") => {
-      const date = toLocalDate(slot.start_at);
-      campusSet.add(slot.campus_name);
-      specSet.add(slot.specialty_name);
+      const date = toLocalDate(slot.startAt);
+      campusSet.add(slot.campusName);
+      specSet.add(slot.specialtyName);
 
       raw.push({
         id: `${kind}-${slot.id}-${date.toISOString()}`,
         date,
-        title: kind === "busy" ? "Indisponível" : slot.specialty_name,
-        description: `${slot.specialty_name} • ${slot.campus_name}`, // Using description for specialty/campus
-        location: slot.campus_name, // Explicit location if needed elsewhere
-        category: slot.specialty_name,
-        isRecurring: slot.is_recurring ?? Boolean(slot.time_slot_id),
-        timeSlotId: slot.time_slot_id,
+        title: kind === "busy" ? "Indisponível" : slot.specialtyName,
+        description: `${slot.specialtyName} • ${slot.campusName}`, // Using description for specialty/campus
+        location: slot.campusName, // Explicit location if needed elsewhere
+        category: slot.specialtyName,
+        isRecurring: slot.isRecurring ?? Boolean(slot.timeSlotId),
+        timeSlotId: slot.timeSlotId,
         type: kind, // <-- Set the type here
       });
     };

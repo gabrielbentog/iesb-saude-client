@@ -93,7 +93,7 @@ export default function AgendarConsultaPage() {
       const end = monthToFetch.endOf('month').format('YYYY-MM-DD');
       const response = await apiFetch(`/api/calendar?start=${start}&end=${end}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`);
       const uniqueDates = new Set<string>();
-      (response as { free?: Slot[] }).free?.forEach((slot: Slot) => uniqueDates.add(dayjs(slot.start_at).format('YYYY-MM-DD')));
+      (response as { free?: Slot[] }).free?.forEach((slot: Slot) => uniqueDates.add(dayjs(slot.startAt).format('YYYY-MM-DD')));
       setAvailableDatesInMonth(uniqueDates);
     } catch {
       setApiError("Não foi possível carregar as datas disponíveis.");
@@ -115,7 +115,7 @@ export default function AgendarConsultaPage() {
       apiFetch(`/api/calendar?start=${dateStr}&end=${dateStr}&specialtyId=${selectedEspecialidadeId}&campusId=${selectedCampusId}`)
         .then((res) => {
           const typedRes = res as { free?: Slot[] };
-          const slots = typedRes.free?.sort((a: Slot, b: Slot) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime());
+          const slots = typedRes.free?.sort((a: Slot, b: Slot) => new Date(a.startAt).getTime() - new Date(b.startAt).getTime());
           setTimeSlotsForSelectedDate(slots || []);
         })
         .catch(() => setApiError("Não foi possível carregar os horários."))
@@ -148,11 +148,11 @@ export default function AgendarConsultaPage() {
 
       const payload = {
         appointment: {
-          time_slot_id: selectedApiSlot.id,
-          user_id: userId,
+          timeSlotId: selectedApiSlot.id,
+          userId: userId,
           date: selectedDate.format('YYYY-MM-DD'),
-          start_time: dayjs(selectedApiSlot.start_at).format('HH:mm'),
-          end_time: dayjs(selectedApiSlot.end_at).format('HH:mm'),
+          startTime: dayjs(selectedApiSlot.startAt).format('HH:mm'),
+          endTime: dayjs(selectedApiSlot.endAt).format('HH:mm'),
           status: 'pending',
           notes: objetivo.trim(),
         },
@@ -274,14 +274,14 @@ export default function AgendarConsultaPage() {
                     label="Horário"
                     select
                     fullWidth
-                    value={selectedApiSlot?.start_at || ''}
+                    value={selectedApiSlot?.startAt || ''}
                     onChange={(e) =>
-                      setSelectedApiSlot(timeSlotsForSelectedDate.find((s) => s.start_at === e.target.value) || null)
+                      setSelectedApiSlot(timeSlotsForSelectedDate.find((s) => s.startAt === e.target.value) || null)
                     }
                   >
                     {timeSlotsForSelectedDate.map((s) => (
-                      <MenuItem key={s.id} value={s.start_at}>
-                        {dayjs(s.start_at).format('HH:mm')} - {dayjs(s.end_at).format('HH:mm')}
+                      <MenuItem key={s.id} value={s.startAt}>
+                        {dayjs(s.startAt).format('HH:mm')} - {dayjs(s.endAt).format('HH:mm')}
                       </MenuItem>
                     ))}
                   </TextField>
@@ -300,7 +300,7 @@ export default function AgendarConsultaPage() {
               <Typography>Campus: {campusList.find((c) => String(c.id) === String(selectedCampusId))?.name}</Typography>
               <Typography>Especialidade: {especialidades.find((e) => String(e.id) === String(selectedEspecialidadeId))?.name}</Typography>
               <Typography>Data: {selectedDate?.format('DD/MM/YYYY')}</Typography>
-              <Typography>Horário: {selectedApiSlot ? `${dayjs(selectedApiSlot.start_at).format('HH:mm')} - ${dayjs(selectedApiSlot.end_at).format('HH:mm')}` : ''}</Typography>
+              <Typography>Horário: {selectedApiSlot ? `${dayjs(selectedApiSlot.startAt).format('HH:mm')} - ${dayjs(selectedApiSlot.endAt).format('HH:mm')}` : ''}</Typography>
               <Typography>Objetivo: {objetivo}</Typography>
             </Box>
           )}

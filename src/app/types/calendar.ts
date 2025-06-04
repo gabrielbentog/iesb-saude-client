@@ -88,12 +88,12 @@ export type CollegeLocation = { id: number; name: string };
 export type SimpleSpec = { id: number; name: string };
 export type ApiSlot = {
   id: number;
-  start_at: string;
-  campus_name: string;
-  specialty_name: string;
-  time_slot_id?: number;
-  patient_name?: string;
-  is_recurring?: boolean;
+  startAt: string;
+  campusName: string;
+  specialtyName: string;
+  timeSlotId?: number;
+  patientName?: string;
+  isRecurring?: boolean;
 };
 export type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };
 export type ViewMode = 'month' | 'week' | 'day';

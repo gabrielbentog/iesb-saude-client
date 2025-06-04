@@ -20,10 +20,10 @@ export async function fetchInterns(
   const pagination =
     meta.pagination ??
     {
-      total:        Number(meta.total_count ?? 0),
-      per_page:     Number(meta.per_page ?? 0),
-      current_page: Number(meta.current_page ?? 0),
-      total_pages:  Number(meta.total_pages ?? 0),
+      total:       Number(meta.totalCount ?? 0),
+      perPage:     Number(meta.perPage ?? 0),
+      currentPage: Number(meta.currentPage ?? 0),
+      totalPages:  Number(meta.totalPages ?? 0),
     };
 
   return {

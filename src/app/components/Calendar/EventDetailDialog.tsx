@@ -29,8 +29,8 @@ export function EventDetailDialog({ open, event, onClose, onDeleted }: Props) {
       await apiFetch("/api/time_slot_exceptions", {
         method: "POST",
         body: JSON.stringify({
-          time_slot_exception: {
-            time_slot_id: event.timeSlotId,
+          timeSlotException: {
+            timeSlotId: event.timeSlotId,
             date: format(event.date, "yyyy-MM-dd"),
           },
         }),

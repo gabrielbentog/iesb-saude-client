@@ -15,8 +15,8 @@ export interface Especialidade {
 
 export interface Slot {
   id: number | string;
-  start_at: string;
-  end_at: string;
+  startAt: string;
+  endAt: string;
 }
 
 export interface ConsultaPaciente {
@@ -35,34 +35,34 @@ export interface ConsultaPaciente {
 export interface ApiAppointment {
   id: number;
   date: string;
-  start_time: string;
-  end_time: string;
+  startTime: string;
+  endTime: string;
   status: string;
   notes?: string;
-  time_slot: {
+  timeSlot: {
     id: number;
-    college_location_name: string;
-    specialty_name: string;
+    collegeLocationName: string;
+    specialtyName: string;
   };
   user: {
     id: number;
     name: string;
     email: string;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
     profile: {
       id: number;
       name: string;
-      users_count: number;
+      usersCount: number;
     };
   };
 }
 
 export interface MetaInfo {
-  total_count: number;
-  total_pages: number;
-  current_page: number;
-  per_page: number;
+  totalCount: number;
+  totalPages: number;
+  currentPage: number;
+  perPage: number;
 }
 
 export interface PaginatedAppointmentsResponse {
@@ -87,9 +87,9 @@ export interface User {
   id: number;
   name: string | null;
   email: string;
-  profile_id: number;
+  profileId: number;
   image: string | null;
-  created_at: string;
+  createdAt: string;
 }
 
 export interface Intern {

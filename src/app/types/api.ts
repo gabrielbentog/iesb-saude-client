@@ -3,9 +3,9 @@ export interface PaginatedResponse<T> {
   meta: {
     pagination: {
       total: number;
-      per_page: number;
-      current_page: number;
-      total_pages: number;
+      perPage: number;
+      currentPage: number;
+      totalPages: number;
     };
   };
 }
@@ -13,9 +13,9 @@ export interface PaginatedResponse<T> {
 export type MetaWithPagination = {
   pagination?: {
     total: number;
-    per_page: number;
-    current_page: number;
-    total_pages: number;
+    perPage: number;
+    currentPage: number;
+    totalPages: number;
   };
   [key: string]: unknown;
 };
