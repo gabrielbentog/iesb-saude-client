@@ -19,3 +19,5 @@ export type MetaWithPagination = {
   };
   [key: string]: unknown;
 };
+
+export type FormValues = z.infer<typeof formSchema>
