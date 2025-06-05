@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -20,7 +20,8 @@ import {
   useMediaQuery,
   Fab,
   styled,
-  useTheme
+  useTheme,
+  CircularProgress
 } from "@mui/material"
 import { alpha } from "@mui/material/styles"
 
@@ -42,17 +43,10 @@ import { StatCard } from '@/app/components/ui/StatCard'
 import { DataTable } from '@/app/components/DataTable'; // Ajuste o caminho conforme necessário
 import { StyledBadge, IconContainer } from '@/app/components/DataTable';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
+import { apiFetch } from "@/app/lib/api"
+import type { KpiResponse, DashboardStats } from "@/app/types/kpiResponse"
 
 import type { TabPanelProps } from "@/app/types";
-// Mock data
-const mockStats = {
-  totalAppointments: 128,
-  completedAppointments: 87,
-  pendingAppointments: 41,
-  totalInterns: 24,
-  appointmentsToday: 12,
-  appointmentsTrend: 8.5,
-}
 
 const mockInterns = [
   {
@@ -270,12 +264,32 @@ function TabPanel(props: TabPanelProps) {
 
 export default function ManagerDashboard() {
   const theme = useTheme()
+
+  const [stats, setStats]   = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+
   const [tabValue, setTabValue] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   // const [selectedRow, setSelectedRow] = useState<unknown>(null)
   const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const completionRate = Math.round((mockStats.completedAppointments / mockStats.totalAppointments) * 100)
+  const completionRate = stats?.completionRate || 0// já vem pronto
+
   const pushWithProgress = usePushWithProgress()
+  const isPositive = (stats?.appointmentsTrend ?? 0) > 0;
+  const isNegative = (stats?.appointmentsTrend ?? 0) < 0;
+
+  const trendColor = isPositive
+    ? theme.palette.success.main          // verde
+    : isNegative
+      ? theme.palette.error.main          // vermelho
+      : theme.palette.text.secondary;     // cinza neutro
+
+  // Usa o mesmo ícone virado 180° ou outro ícone, se preferir
+  const TrendIcon = isPositive
+    ? TrendingUpIcon
+    : isNegative
+      ? TrendingUpIcon                    // será girado ↓
+      : TrendingUpIcon;                   // neutro sem rotação
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTabValue(newValue)
@@ -285,6 +299,52 @@ export default function ManagerDashboard() {
     setAnchorEl(null)
     // setSelectedRow(null)
   }
+
+    useEffect(() => {
+    let ignore = false
+
+    ;(async () => {
+      try {
+        const res = await apiFetch<KpiResponse>("/api/dashboard/kpis")
+        if (ignore) return
+
+        const {
+          appointmentsToday,
+          totalAppointments,
+          interns,
+          completionRate,
+        } = res.data
+
+        setStats({
+          appointmentsToday:     appointmentsToday.total,
+          appointmentsTrend:     appointmentsToday.percentChange,
+          totalAppointments:     totalAppointments.total,
+          completedAppointments: totalAppointments.completed,
+          pendingAppointments:   totalAppointments.pending,
+          totalInterns:          interns.activeCount,
+          completionRate, // vem redondo do back-end
+        })
+      } catch (err) {
+        console.error("Falha ao carregar KPIs", err)
+      } finally {
+        if (!ignore) setLoading(false)
+      }
+    })()
+
+    return () => { ignore = true }
+  }, [])
+
+  // Enquanto carrega, você pode exibir um skeleton/loader simples
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  // Se a API falhar (stats === null), mostre algo vazio em vez de quebrar tudo
+  if (!stats) return <Typography>Não foi possível carregar o painel.</Typography>
 
   return (
     <Box
@@ -381,15 +441,22 @@ export default function ManagerDashboard() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Consultas Hoje"
-                value={mockStats.appointmentsToday}
+                value={stats.appointmentsToday}
                 subtitle="vs. semana passada"
                 icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
                 trendComponent={
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                    <TrendingUpIcon sx={{ color: "success.main", fontSize: 16 }} />
-                    <Typography variant="body2" sx={{ color: "success.main", fontWeight: 600 }}>
-                      +{mockStats.appointmentsTrend}%
+                    <TrendIcon
+                      sx={{
+                        fontSize: 16,
+                        color: trendColor,
+                        transform: isNegative ? "rotate(180deg)" : "none",
+                      }}
+                    />
+                    <Typography variant="body2" sx={{ color: trendColor, fontWeight: 600 }}>
+                      {stats.appointmentsTrend > 0 && "+"}
+                      {stats.appointmentsTrend}%
                     </Typography>
                     <Typography variant="body2" color="text.primary">
                       vs. semana passada
@@ -402,8 +469,8 @@ export default function ManagerDashboard() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Total de Consultas"
-                value={mockStats.totalAppointments}
-                subtitle={`${mockStats.completedAppointments} concluídas, ${mockStats.pendingAppointments} pendentes`}
+                value={stats.totalAppointments}
+                subtitle={`${stats.completedAppointments} concluídas, ${stats.pendingAppointments} pendentes`}
                 icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
               />
@@ -412,7 +479,7 @@ export default function ManagerDashboard() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Estagiários Ativos"
-                value={mockStats.totalInterns}
+                value={stats.totalInterns}
                 subtitle="Em 3 especialidades"
                 icon={<PeopleIcon sx={{ color: "success.main" }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}
