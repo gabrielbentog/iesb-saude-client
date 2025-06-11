@@ -61,7 +61,7 @@ const renderInternCell = (intern: Intern, headerId: string) => {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <Avatar src={intern.avatar ?? undefined} sx={{ width: 32, height: 32 }}>
-            {intern.name.split(" ").map((n) => n[0]).join("")}
+            {intern.name[0]}
           </Avatar>
           <Typography fontWeight={500}>{intern.name}</Typography>
         </Box>

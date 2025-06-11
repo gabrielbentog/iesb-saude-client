@@ -144,7 +144,9 @@ export default function AppointmentManagementScreen() {
         if (cancel) return
 
         setAppointments(res.data.map(mapRaw))
-        setMetaInfo(res.meta);
+        console.log(res.meta)
+        setMetaInfo(res.meta)
+        console.log(metaInfo);
       } catch (err) {
         console.error("Falha ao buscar consultas", err)
       } finally {
