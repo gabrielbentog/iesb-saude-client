@@ -1,4 +1,6 @@
 import type React from "react";
+import { MetaWithPagination } from "./api";
+
 export interface ApiResponse<T> {
   data: T;
 }
@@ -58,16 +60,9 @@ export interface ApiAppointment {
   };
 }
 
-export interface MetaInfo {
-  totalCount: number;
-  totalPages: number;
-  currentPage: number;
-  perPage: number;
-}
-
 export interface PaginatedAppointmentsResponse {
   data: ApiAppointment[];
-  meta: MetaInfo;
+  meta: MetaWithPagination;
 }
 
 export interface Appointment {
@@ -102,4 +97,15 @@ export interface Intern {
   status: 'Ativo' | 'Inativo';
   icon: React.ReactNode;
   performance: number;
+}
+
+export interface ApiIntern {
+  id: number
+  name: string
+  specialty: string | null
+  avatarUrl: string | null
+  appointmentsCompleted: number
+  appointmentsScheduled: number
+  status: "Ativo" | "Inativo"
+  performance: number        // 0-100
 }

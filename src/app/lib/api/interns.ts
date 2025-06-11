@@ -12,7 +12,7 @@ export async function fetchInterns(
   const raw   = await apiFetch<{
     data: Intern[];
     meta: Record<string, unknown>;
-  }>(`/api/users/${userId}/interns?${query}`);
+  }>(`/api/interns?${query}`);
 
   // ---------------- normalização do meta ----------------
   const meta = raw.meta as MetaWithPagination;
@@ -20,7 +20,7 @@ export async function fetchInterns(
   const pagination =
     meta.pagination ??
     {
-      total:       Number(meta.totalCount ?? 0),
+      totalCount:       Number(meta.totalCount ?? 0),
       perPage:     Number(meta.perPage ?? 0),
       currentPage: Number(meta.currentPage ?? 0),
       totalPages:  Number(meta.totalPages ?? 0),

@@ -33,15 +33,17 @@ import { ScheduleItem } from "@/app/components/agendamento/ScheduleItem";
 
 import { useApi } from "@/app/hooks/useApi";
 import { apiFetch } from "@/app/lib/api";
-import { CollegeLocation, Specialty } from "./types";
+import { CollegeLocation } from "./types";
 import { FormValues } from "@/app/components/agendamento/schemas";
 import { ptBR } from "@mui/x-date-pickers/locales";
 import type { ApiResponse } from '@/app/types';
+import { useToast } from "@/app/contexts/ToastContext";
 
 // Defina um tipo para a resposta da API que inclui a propriedade 'data'
 
 export default function ScheduleFormPage() {
   const router = useRouter();
+  const { showToast } = useToast();
 
   /* ---------- RHF ---------- */
   const methods = useScheduleForm();
@@ -58,27 +60,8 @@ export default function ScheduleFormPage() {
   // Modificado para esperar ApiResponse contendo CollegeLocation[]
   const { data: locResponse, loading: loadingLocs } =
     useApi<ApiResponse<CollegeLocation[]>>("/api/college_locations");
-  // --- MODIFICAÇÃO CHAVE ---
+
   const locations = locResponse?.data ?? [];
-
-  const selectedCampusId = watch("college_location_id");
-
-  // Modificado para esperar ApiResponse contendo Specialty[] ou { specialties: { data: Specialty[] } }
-  const { data: specResponse, loading: loadingSpecs } = useApi<
-    ApiResponse<Specialty[] | { specialties: { data: Specialty[] } }>
-  >(
-    selectedCampusId
-      ? `/api/college_locations/${selectedCampusId}/specialties`
-      : ""
-  );
-
-  // --- MODIFICAÇÃO CHAVE ---
-  // Primeiro, acesse a propriedade 'data' da resposta da API
-  const specData = specResponse?.data;
-  // Então, aplique a lógica existente para extrair as especialidades
-  const specialties: Specialty[] = Array.isArray(specData)
-    ? specData
-    : specData?.specialties?.data ?? [];
 
   /* ---------- schedules ---------- */
   const {
@@ -126,7 +109,6 @@ export default function ScheduleFormPage() {
 
     const base = {
       collegeLocationId: data.college_location_id,
-      specialtyId:       data.specialty_id,
       ...(recurrenceRuleAttributes && { recurrenceRuleAttributes }),
     };
 
@@ -145,11 +127,17 @@ export default function ScheduleFormPage() {
         method: "POST",
         body:   JSON.stringify({ time_slots: payload }),
       });
-      alert("Horários criados com sucesso!");
+      showToast({
+        message: "Horários salvos com sucesso!",
+        severity: "success",
+      });
       router.back();
     } catch (err) {
       console.error(err);
-      alert("Falha ao salvar horários");
+      showToast({
+        message: "Falha ao salvar horários",
+        severity: "error",
+      });
     }
   };
 
@@ -195,7 +183,6 @@ export default function ScheduleFormPage() {
                     value={field.value ?? ""}
                     onChange={(e) => {
                       field.onChange(+e.target.value);
-                      setValue("specialty_id", undefined); // Reset specialty when campus changes
                     }}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
@@ -209,41 +196,24 @@ export default function ScheduleFormPage() {
                 )}
               />
             )}
-
-            {/* especialidade */}
-            {loadingSpecs ? (
-              <Skeleton height={56} />
-            ) : (
-              <Controller
-                name="specialty_id"
-                control={control}
-                render={({ field, fieldState }) => (
-                  <TextField
-                    select
-                    fullWidth
-                    label="Especialidade"
-                    {...field}
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(+e.target.value)}
-                    disabled={!selectedCampusId || specialties.length === 0}
-                    error={!!fieldState.error}
-                    helperText={
-                      !selectedCampusId
-                        ? "Selecione o campus primeiro"
-                        : specialties.length === 0 && selectedCampusId
-                        ? "Nenhuma especialidade encontrada para este campus"
-                        : fieldState.error?.message
-                    }
-                  >
-                    {specialties.map((s) => (
-                      <MenuItem key={s.id} value={s.id}>
-                        {s.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            )}
+            {/* repetição */}
+            <Controller
+              name="repeat_type"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  select
+                  fullWidth
+                  label="Repetição"
+                  {...field}
+                  value={field.value ?? 0}
+                  onChange={(e) => field.onChange(+e.target.value)}
+                >
+                  <MenuItem value={0}>Não se repete (datas)</MenuItem>
+                  <MenuItem value={1}>Repetir semanalmente</MenuItem>
+                </TextField>
+              )}
+            />
           </Box>
 
           {/* período */}
@@ -295,27 +265,6 @@ export default function ScheduleFormPage() {
               />
             </Box>
           )}
-
-          {/* repetição */}
-          <Box mb={4} maxWidth={{ xs: "100%", sm: 300 }}>
-            <Controller
-              name="repeat_type"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  select
-                  fullWidth
-                  label="Repetição"
-                  {...field}
-                  value={field.value} // Certifique-se de que isso não seja undefined no início
-                  onChange={(e) => field.onChange(+e.target.value)}
-                >
-                  <MenuItem value={0}>Não se repete (datas)</MenuItem>
-                  <MenuItem value={1}>Repetir semanalmente</MenuItem>
-                </TextField>
-              )}
-            />
-          </Box>
 
           {/* cards */}
           <Stack spacing={4}>

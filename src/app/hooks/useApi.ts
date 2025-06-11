@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/app/lib/api';
 
-export function useApi<T = any>(url: string) {
+export function useApi<T = unknown>(url: string) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
 

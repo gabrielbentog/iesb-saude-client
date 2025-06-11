@@ -4,3 +4,6 @@ export * from './domain';
 export * from './forms';
 export * from './calendar';
 export * from './api';
+export * from './kpiResponse';
+export * from './appointments';
+export * from './pagination';

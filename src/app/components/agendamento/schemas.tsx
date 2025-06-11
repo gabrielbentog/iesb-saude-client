@@ -20,7 +20,6 @@ export const scheduleSchema = z.object({
 export const formSchema = z
   .object({
     college_location_id: z.coerce.number().optional(),
-    specialty_id: z.coerce.number().optional(),
     repeat_type: z.coerce.number(), // 0 data | 1 semanal
     period_start: z.date().nullable().optional(),   // ← nullable()
     period_end:   z.date().nullable().optional(),
@@ -29,10 +28,6 @@ export const formSchema = z
   .refine((d) => d.college_location_id != null, {
     path: ["college_location_id"],
     message: "Selecione o local",
-  })
-  .refine((d) => d.specialty_id != null, {
-    path: ["specialty_id"],
-    message: "Selecione a especialidade",
   })
   .refine(
     (d) =>

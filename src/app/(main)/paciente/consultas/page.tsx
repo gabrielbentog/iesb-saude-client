@@ -45,7 +45,7 @@ import { apiFetch } from "@/app/lib/api";
 
 // --- Interfaces de Dados ---
 
-import type { ConsultaPaciente, ApiAppointment, MetaInfo, PaginatedAppointmentsResponse } from "@/app/types";
+import type { ConsultaPaciente, ApiAppointment, MetaWithPagination, PaginatedAppointmentsResponse } from "@/app/types";
 // Interface de Dados para Consulta do Paciente (usada na UI)
 
 
@@ -158,7 +158,7 @@ export default function MinhasConsultasPacientePage() {
   const [page, setPage] = useState(0); // MUI TablePagination é 0-indexed
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [consultas, setConsultas] = useState<ConsultaPaciente[]>([]);
-  const [metaInfo, setMetaInfo] = useState<MetaInfo | null>(null);
+  const [metaInfo, setMetaInfo] = useState<MetaWithPagination | null>(null);
   const [loadingConsultas, setLoadingConsultas] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -362,8 +362,7 @@ export default function MinhasConsultasPacientePage() {
         actionsColumnLabel="Opções"
         actions={consultaActions}
         getPriorityBorderColor={getConsultaPriorityBorderColor}
-        // Informações de paginação vêm do metaInfo
-        totalCount={metaInfo?.totalCount || 0}
+        totalCount={typeof metaInfo?.totalCount === "number" ? metaInfo.totalCount : 0}
         page={page} // 0-indexed
         rowsPerPage={rowsPerPage}
         onPageChange={handlePageChange}

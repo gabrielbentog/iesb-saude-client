@@ -44,135 +44,26 @@ import { DataTable } from '@/app/components/DataTable'; // Ajuste o caminho conf
 import { StyledBadge, IconContainer } from '@/app/components/DataTable';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 import { apiFetch } from "@/app/lib/api"
-import type { KpiResponse, DashboardStats } from "@/app/types/kpiResponse"
+import type { KpiResponse, DashboardStats, AppointmentsResponse, UIAppointment, Intern, ApiResponse, ApiIntern } from "@/app/types"
+import { humanDate, STATUS_LABEL, statusPriority } from "@/app/types/appointments"
+import { format, parseISO } from "date-fns"
 
 import type { TabPanelProps } from "@/app/types";
 
-const mockInterns = [
-  {
-    id: 1,
-    name: "Ana Silva",
-    specialty: "Nutrição",
-    avatar: "",
-    appointmentsCompleted: 32,
-    appointmentsScheduled: 8,
-    status: "Ativo",
-    icon: <RestaurantIcon fontSize="small" />,
-    performance: 95,
-  },
-  {
-    id: 2,
-    name: "Carlos Mendes",
-    specialty: "Psicologia",
-    avatar: "",
-    appointmentsCompleted: 28,
-    appointmentsScheduled: 6,
-    status: "Inativo",
-    icon: <PsychologyIcon fontSize="small" />,
-    performance: 88,
-  },
-  {
-    id: 3,
-    name: "Juliana Costa",
-    specialty: "Fisioterapia",
-    avatar: "",
-    appointmentsCompleted: 18,
-    appointmentsScheduled: 4,
-    status: "Ativo",
-    icon: <FitnessCenterIcon fontSize="small" />,
-    performance: 92,
-  },
-  {
-    id: 4,
-    name: "Pedro Santos",
-    specialty: "Nutrição",
-    avatar: "",
-    appointmentsCompleted: 15,
-    appointmentsScheduled: 5,
-    status: "Ativo",
-    icon: <RestaurantIcon fontSize="small" />,
-    performance: 85,
-  },
-]
 
-const mockUpcomingAppointments = [
-  {
-    id: 1,
-    patient: "Maria Oliveira",
-    intern: "Ana Silva",
-    specialty: "Nutrição",
-    date: "Hoje",
-    time: "14:00",
-    status: "Confirmada",
-    icon: <RestaurantIcon fontSize="small" />,
-    priority: "normal",
-  },
-  {
-    id: 2,
-    patient: "João Pereira",
-    intern: "Carlos Mendes",
-    specialty: "Psicologia",
-    date: "Hoje",
-    time: "15:30",
-    status: "Pendente",
-    icon: <PsychologyIcon fontSize="small" />,
-    priority: "high",
-  },
-  {
-    id: 3,
-    patient: "Luiza Souza",
-    intern: "Juliana Costa",
-    specialty: "Fisioterapia",
-    date: "Amanhã",
-    time: "09:00",
-    status: "Confirmada",
-    icon: <FitnessCenterIcon fontSize="small" />,
-    priority: "normal",
-  },
-  {
-    id: 4,
-    patient: "Roberto Lima",
-    intern: "Pedro Santos",
-    specialty: "Nutrição",
-    date: "Amanhã",
-    time: "10:30",
-    status: "Reagendada",
-    icon: <RestaurantIcon fontSize="small" />,
-    priority: "low",
-  },
-]
-
-const appointmentHeaders = [
-  { id: 'patient', label: 'Paciente', width: 'auto' },
-  { id: 'intern', label: 'Estagiário' },
-  { id: 'specialty', label: 'Especialidade' },
-  { id: 'dateTime', label: 'Data/Hora' },
-  { id: 'status', label: 'Status' },
-];
-
-const renderAppointmentCell = (appointment: typeof mockUpcomingAppointments[0], headerId: string) => {
-  switch (headerId) {
-    case 'patient':
-      return <Typography fontWeight={500}>{appointment.patient}</Typography>;
-    case 'intern':
-      return appointment.intern;
-    case 'specialty':
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <IconContainer sx={{ color: "primary.main" }}>{appointment.icon}</IconContainer>
-          {appointment.specialty}
-        </Box>
-      );
-    case 'dateTime':
-      return `${appointment.date} às ${appointment.time}`;
-    case 'status':
-      return <StyledBadge label={appointment.status} badgeType={appointment.status} />;
+const specialtyIcon = (name?: string) => {
+  switch (name) {
+    case "Nutrição":
+      return <RestaurantIcon fontSize="small" />
+    case "Psicologia":
+      return <PsychologyIcon fontSize="small" />
+    case "Fisioterapia":
+      return <FitnessCenterIcon fontSize="small" />
     default:
-      return null;
+      return <AssignmentIcon fontSize="small" />
   }
-};
+}
 
-// Defina as colunas para a tabela de estagiários
 const internHeaders = [
   { id: 'name', label: 'Estagiário' },
   { id: 'specialty', label: 'Especialidade' },
@@ -182,7 +73,17 @@ const internHeaders = [
   { id: 'status', label: 'Status' },
 ];
 
-const renderInternCell = (intern: typeof mockInterns[0], headerId: string) => {
+const appointmentHeaders = [
+  { id: "patient",   label: "Paciente",    width: "auto" },
+  { id: "intern",    label: "Estagiário" },
+  { id: "specialty", label: "Especialidade" },
+  { id: "location",  label: "Local" },
+  { id: "room",      label: "Sala" }, 
+  { id: "dateTime",  label: "Data/Hora" },
+  { id: "status",    label: "Status" },
+]
+
+const renderInternCell = (intern: Intern, headerId: string) => {
   switch (headerId) {
     case 'name':
       return (
@@ -219,6 +120,32 @@ const renderInternCell = (intern: typeof mockInterns[0], headerId: string) => {
       );
     case 'status':
       return <StyledBadge label={intern.status} badgeType={intern.status} />;
+    default:
+      return null;
+  }
+};
+
+const renderAppointmentCell = (appointment: UIAppointment, headerId: string) => {
+  switch (headerId) {
+    case 'patient':
+      return <Typography fontWeight={500}>{appointment.patientName}</Typography>;
+    case 'intern':
+      return appointment.intern;
+    case 'specialty':
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <IconContainer sx={{ color: "primary.main" }}>{appointment.icon}</IconContainer>
+          {appointment.specialty}
+        </Box>
+      );
+    case "location":
+      return appointment.location
+    case "room":
+      return appointment.room  
+    case 'dateTime':
+      return `${appointment.date} às ${appointment.time}`;
+    case 'status':
+      return <StyledBadge label={appointment.status} badgeType={appointment.status} />;
     default:
       return null;
   }
@@ -265,8 +192,13 @@ function TabPanel(props: TabPanelProps) {
 export default function ManagerDashboard() {
   const theme = useTheme()
 
+  const [appointments, setAppointments]   = useState<UIAppointment[]>([])
+  const [loadingAppts, setLoadingAppts]   = useState(true)
   const [stats, setStats]   = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [interns, setInterns]         = useState<Intern[]>([])
+  const [loadingInterns, setLoadingInterns] = useState(true)
+  const [fetchedInterns, setFetchedInterns] = useState(false)
 
   const [tabValue, setTabValue] = useState(0)
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -300,7 +232,7 @@ export default function ManagerDashboard() {
     // setSelectedRow(null)
   }
 
-    useEffect(() => {
+  useEffect(() => {
     let ignore = false
 
     ;(async () => {
@@ -334,7 +266,85 @@ export default function ManagerDashboard() {
     return () => { ignore = true }
   }, [])
 
-  // Enquanto carrega, você pode exibir um skeleton/loader simples
+  useEffect(() => {
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const res = await apiFetch<AppointmentsResponse>("/api/appointments/next?page[number]=1&page[size]=5")
+        const raw = res.data ?? res.appointments ?? []
+
+        const mapped: UIAppointment[] = raw.map((a) => {
+          const specialty = a.timeSlot?.specialtyName ?? "-"
+          const statusTxt = STATUS_LABEL[a.status] ?? a.status
+
+          const location =      // pega primeiro da room (caso difira do slot)
+            a.consultationRoom?.collegeLocationName ??
+            a.timeSlot?.collegeLocationName ??
+            "-"
+
+          return {
+            id: a.id,
+            patientName: a.user?.name ?? "-",
+            intern: "", // preencha quando API trouxer
+            internName: "",
+            patientAvatar: "",
+            specialty,
+            location,                               // ← novo
+            room: a.consultationRoom?.name ?? "-",  // ← novo
+            date: humanDate(a.date),
+            time: format(parseISO(a.startTime), "HH:mm"),
+            status: statusTxt,
+            icon: specialtyIcon(specialty),
+            priority: statusPriority(a.status),
+          }
+        })
+
+        if (!cancelled) setAppointments(mapped)
+      } catch (err) {
+        console.error("Falha ao carregar próximas consultas", err)
+      } finally {
+        if (!cancelled) setLoadingAppts(false)
+      }
+    })()
+
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    if (tabValue !== 1 || fetchedInterns) return
+
+    setLoadingInterns(true)
+
+    ;(async () => {
+      try {
+        const res = await apiFetch<ApiResponse<ApiIntern[]>>(
+          "/api/interns?page[size]=8"
+        )
+        const raw = res.data ?? []
+
+        const mapped: Intern[] = raw.map((i) => ({
+          id: i.id,
+          name: i.name,
+          specialty: i.specialty ?? "-",
+          avatar: i.avatarUrl ?? "",
+          appointmentsCompleted: i.appointmentsCompleted,
+          appointmentsScheduled:  i.appointmentsScheduled,
+          status: i.status,
+          icon: specialtyIcon(i.specialty ?? undefined),
+          performance: i.performance,
+        }))
+
+        setInterns(mapped)
+        setFetchedInterns(true)          // marca como já buscado
+      } catch (e) {
+        console.error("Falha ao carregar estagiários", e)
+      } finally {
+        setLoadingInterns(false)
+      }
+    })()
+  }, [tabValue, fetchedInterns])
+
   if (loading) {
     return (
       <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
@@ -535,38 +545,48 @@ export default function ManagerDashboard() {
 
             {/* Appointments Tab */}
             <TabPanel value={tabValue} index={0}>
-              <DataTable
-                title="Consultas Agendadas"
-                subtitle="Próximas consultas e seus status"
-                headers={appointmentHeaders}
-                data={mockUpcomingAppointments}
-                renderCell={renderAppointmentCell}
-                onAddClick={() => console.log('Adicionar nova consulta')} // Implemente a lógica
-                onViewAllClick={() => pushWithProgress('/gestor/consultas')} // Implemente a lógica
-                rowKeyExtractor={(appointment) => appointment.id}
-                getPriorityBorderColor={(appointment) => {
-                    switch (appointment.priority) {
-                        case "high": return `4px solid ${theme.palette.error.main}`;
-                        case "normal": return `4px solid ${theme.palette.info.main}`;
-                        case "low": return `4px solid ${theme.palette.success.main}`;
-                        default: return `4px solid ${theme.palette.grey[300]}`;
+              {loadingAppts ? (
+                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <DataTable
+                  title="Consultas Agendadas"
+                  subtitle="Próximas consultas e seus status"
+                  headers={appointmentHeaders}
+                  data={appointments}
+                  renderCell={renderAppointmentCell}
+                  onViewAllClick={() => pushWithProgress("/gestor/consultas")}
+                  rowKeyExtractor={(a) => a.id}
+                  getPriorityBorderColor={(a) => {
+                    switch (a.priority) {
+                      case "high":   return `4px solid ${theme.palette.error.main}`
+                      case "normal": return `4px solid ${theme.palette.info.main}`
+                      case "low":    return `4px solid ${theme.palette.success.main}`
+                      default:       return `4px solid ${theme.palette.grey[300]}`
                     }
-                }}
-              />
+                  }}
+                />
+              )}
             </TabPanel>
 
             {/* Interns Tab */}
             <TabPanel value={tabValue} index={1}>
-              <DataTable
-                title="Gestão de Estagiários"
-                subtitle="Acompanhe o desempenho e atividades dos estagiários"
-                headers={internHeaders}
-                data={mockInterns}
-                renderCell={renderInternCell}
-                onAddClick={() => console.log('Adicionar estagiário')} // Implemente a lógica
-                onViewAllClick={() => console.log('Ver todos os estagiários')} // Implemente a lógica
-                rowKeyExtractor={(intern) => intern.id}
-              />
+              {loadingInterns ? (
+                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+                  <CircularProgress />
+                </Box>
+              ) : (
+                <DataTable
+                  title="Gestão de Estagiários"
+                  subtitle="Acompanhe o desempenho e atividades dos estagiários"
+                  headers={internHeaders}
+                  data={interns}
+                  renderCell={renderInternCell}
+                  onViewAllClick={() => pushWithProgress("/gestor/consultas")}
+                  rowKeyExtractor={(i) => i.id}
+                />
+              )}
             </TabPanel>
           </Box>
 

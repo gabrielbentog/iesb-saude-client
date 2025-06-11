@@ -1,11 +1,10 @@
 import React from "react";
 import { Box, IconButton, MenuItem, Paper, TextField } from "@mui/material";
-import { Controller, useFieldArray, Control } from "react-hook-form";
+import { Controller, useFieldArray } from "react-hook-form";
 import { TimePicker, DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import { FormValues } from "./schemas";
 import type { ScheduleItemProps } from '@/app/types';
 
 const GRID_SM = "240px 1fr 1fr auto auto";   // Data | Início | Fim | + | 🗑️
@@ -20,7 +19,6 @@ const weekDays = [
   { value: 5, label: "Sexta" },
   { value: 6, label: "Sábado" },
 ] as const;
-
 
 export const ScheduleItem: React.FC<ScheduleItemProps> = ({
   control,
@@ -39,8 +37,16 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
     end_time?: { message?: string };
   };
 
-  const err = (t: number, k: "start_time" | "end_time") =>
-    (control._formState.errors.schedules?.[sIdx]?.times?.[t] as TimeError | undefined)?.[k];
+  const err = (t: number, k: "start_time" | "end_time") => {
+    const scheduleErrors = control._formState.errors.schedules;
+    if (Array.isArray(scheduleErrors)) {
+      const timesErrors = scheduleErrors[sIdx]?.times;
+      if (Array.isArray(timesErrors)) {
+        return (timesErrors[t] as TimeError | undefined)?.[k];
+      }
+    }
+    return undefined;
+  };
 
   return (
     <Paper variant="outlined" sx={{ p: 3 }}>

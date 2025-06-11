@@ -122,7 +122,7 @@ export default function InternManagementScreen() {
     try {
       const { data, meta } = await fetchInterns(currentUserId, page + 1, rowsPerPage);
       setInterns(data);
-      setTotalCount(meta.pagination.total);
+      setTotalCount(meta.pagination.totalCount);
     } catch (e) {
       setError((e as Error).message);
     } finally {

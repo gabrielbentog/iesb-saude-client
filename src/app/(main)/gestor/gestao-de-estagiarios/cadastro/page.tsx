@@ -15,12 +15,10 @@ import {
   MenuItem,
   Paper,
   Select,
-  Snackbar,
   Tab,
   Tabs,
   TextField,
   Typography,
-  Alert,
   CircularProgress,
   Stack,
   LinearProgress,
@@ -44,14 +42,13 @@ import EmailIcon from "@mui/icons-material/Email";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { apiFetch } from "@/app/lib/api";
 import { useApi } from "@/app/hooks/useApi";
+import { useToast } from "@/app/contexts/ToastContext";
 
 /* ------------------------------------------------------------------
  * Tipos
  * ------------------------------------------------------------------*/
 
 type CollegeLocation = { id: number; name: string };
-type Specialty = { id: number; name: string };
-
 type ApiResponse<T> = { data: T };
 
 /* ------------------------------------------------------------------
@@ -67,10 +64,6 @@ export const formSchema = z.object({
   college_location_id: z.coerce.number({
     invalid_type_error: "Selecione o campus",
   }),
-  specialty_id: z.coerce.number({
-    invalid_type_error: "Selecione a especialidade",
-  }),
-
   periodo: z.string().min(1, "Informe o período"),
   observacoes: z.string().optional(),
   avatarUrl: z.string().optional(),
@@ -105,7 +98,6 @@ async function createIntern(data: FormValues) {
         name: data.nome,
         email: data.email,
         collegeLocationId: data.college_location_id,
-        specialtyId: data.specialty_id,
         profileName: "Estagiário",
         semester: data.periodo,
       },
@@ -169,39 +161,20 @@ export default function RegisterInternPage() {
       email: "",
       telefone: "",
       college_location_id: 0, // coerção
-      specialty_id: 0,
       periodo: "",
       observacoes: "",
       avatarUrl: "",
     },
   });
 
-  /* specialties depend on campus ---------------------------------- */
-  const selectedCampusId = watch("college_location_id");
-  const { data: specResp, loading: loadingSpecs } = useApi<
-    ApiResponse<Specialty[] | { specialties: { data: Specialty[] } }>
-  >(selectedCampusId ? `/api/college_locations/${selectedCampusId}/specialties` : "");
-
-  const specialties: Specialty[] = React.useMemo(() => {
-    const raw = specResp?.data;
-    if (!raw) return [];
-    if (Array.isArray(raw)) return raw;
-    return raw.specialties?.data ?? [];
-  }, [specResp]);
-
   /* ----- miscellaneous UI state ----- */
   const [tabIndex, setTabIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [completedTabs, setCompletedTabs] = useState<number[]>([]);
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    severity: "success" as "success" | "error" | "info" | "warning",
-  });
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const firstInputRef = useRef<HTMLInputElement | null>(null);
+  const { showToast } = useToast();
 
   /* ----- progress bar ----- */
   const watchedValues = watch();
@@ -210,7 +183,6 @@ export default function RegisterInternPage() {
     "email",
     "telefone",
     "college_location_id",
-    "specialty_id",
     "periodo",
   ];
 
@@ -223,17 +195,15 @@ export default function RegisterInternPage() {
     firstInputRef.current?.focus();
   }, []);
 
-  // limpa a especialidade ao trocar o campus
-  useEffect(() => {
-    setValue("specialty_id", undefined as unknown as number);
-  }, [selectedCampusId, setValue]);
-
   /* ----- handlers ----- */
   const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 5 * 1024 * 1024) {
-      setSnackbar({ open: true, message: "Arquivo muito grande. Máximo 5MB.", severity: "warning" });
+      showToast({
+        message: "A foto deve ter no máximo 5MB",
+        severity: "error",
+      });
       return;
     }
     const url = URL.createObjectURL(file);
@@ -247,7 +217,10 @@ export default function RegisterInternPage() {
       if (fieldsToValidate.length) {
         const ok = await trigger(fieldsToValidate);
         if (!ok) {
-          setSnackbar({ open: true, message: "Complete os campos obrigatórios antes de continuar", severity: "warning" });
+          showToast({
+            message: "Complete os campos obrigatórios antes de continuar",
+            severity: "warning",
+          });
           return;
         }
         setCompletedTabs((prev) => [...prev, tabIndex]);
@@ -256,17 +229,37 @@ export default function RegisterInternPage() {
     setTabIndex(newValue);
   };
 
+  const goToNext = async () => {
+    // Campos obrigatórios da etapa 1
+    const ok = await trigger(["nome", "email", "telefone"]);
+    if (!ok) {
+      showToast({
+        message: "Complete os campos obrigatórios antes de continuar",
+        severity: "warning",
+      });
+      return;
+    }
+    setCompletedTabs((prev) => [...prev, 0]); // marca etapa concluída
+    setTabIndex(1);                           // vai para aba 2
+  };
+
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
       await createIntern(data);
-      setSnackbar({ open: true, message: "Estagiário cadastrado com sucesso!", severity: "success" });
+      showToast({
+        message: "Estagiário cadastrado com sucesso!",
+        severity: "success",
+      });
       reset();
       setAvatarPreview(null);
       setCompletedTabs([]);
       setTimeout(() => router.push("/gestor/gestao-de-estagiarios"), 1500);
-    } catch (err: any) {
-      setSnackbar({ open: true, message: err?.message ?? "Erro ao cadastrar.", severity: "error" });
+    } catch (err: unknown) {
+      showToast({
+        message: (err instanceof Error ? err.message : "Erro ao cadastrar estagiário"),
+        severity: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -362,22 +355,6 @@ export default function RegisterInternPage() {
                   <FormHelperText>{errors.college_location_id?.message}</FormHelperText>
                 </FormControl>
               </Grid>
-
-              {/* Especialidade */}
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth error={!!errors.specialty_id} disabled={!selectedCampusId || loadingSpecs}>
-                  <InputLabel id="esp-label">Especialidade</InputLabel>
-                  <Controller name="specialty_id" control={control} render={({ field }) => (
-                    <Select {...field} labelId="esp-label" label="Especialidade">
-                      {specialties.map((s) => (
-                        <MenuItem key={s.id} value={s.id}>{s.name}</MenuItem>
-                      ))}
-                    </Select>
-                  )} />
-                  <FormHelperText>{errors.specialty_id?.message}</FormHelperText>
-                </FormControl>
-              </Grid>
-
               {/* Período */}
               <Grid item xs={12} md={6}>
                 <Controller name="periodo" control={control} render={({ field }) => (
@@ -398,12 +375,35 @@ export default function RegisterInternPage() {
 
           {/* Action buttons */}
           <Stack direction="row" spacing={2} justifyContent="flex-end">
-            <Button variant="outlined" onClick={() => router.push("/gestor/gestao-de-estagiarios")}
-              sx={{ textTransform: "none", px: 3 }}>Cancelar</Button>
-            <Button type="submit" variant="contained" disabled={isSubmitting}
-              startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />} sx={{ textTransform: "none", px: 3 }}>
-              {isSubmitting ? "Salvando..." : "Salvar Estagiário"}
+            <Button
+              variant="outlined"
+              onClick={() => router.push("/gestor/gestao-de-estagiarios")}
+              sx={{ textTransform: "none", px: 3 }}
+            >
+              Cancelar
             </Button>
+
+            {tabIndex === 0 ? (
+              // --- PRIMEIRA ETAPA ------------------------------------
+              <Button
+                variant="contained"
+                onClick={goToNext}
+                sx={{ textTransform: "none", px: 3 }}
+              >
+                Próximo
+              </Button>
+            ) : (
+              // --- ÚLTIMA ETAPA --------------------------------------
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={isSubmitting}
+                startIcon={isSubmitting ? <CircularProgress size={20} /> : <SaveIcon />}
+                sx={{ textTransform: "none", px: 3 }}
+              >
+                {isSubmitting ? "Salvando..." : "Salvar Estagiário"}
+              </Button>
+            )}
           </Stack>
         </Box>
       </Paper>
@@ -415,11 +415,6 @@ export default function RegisterInternPage() {
           <Typography>Salvando dados...</Typography>
         </Stack>
       </Backdrop>
-
-      {/* Snackbar */}
-      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>{snackbar.message}</Alert>
-      </Snackbar>
     </Container>
   );
 }

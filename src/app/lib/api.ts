@@ -31,17 +31,29 @@ export async function apiFetch<T = unknown>(
     },
   });
 
-  if (!res.ok) {
-    const error = await res.text(); // corpo de erro (se houver)
-    throw new Error(`Erro ${res.status}: ${error}`);
-  }
+    if (!res.ok) {
+      let errorMsg = `Erro`;
+      try {
+        const errorBody = await res.json();
+        if (errorBody && Array.isArray(errorBody.errors)) {
+          errorMsg += ': ' + errorBody.errors.map((e: any) => e.title).join(', ');
+        } else if (errorBody && errorBody.message) {
+          errorMsg += ': ' + errorBody.message;
+        }
+      } catch {
+        const text = await res.text();
+        if (text) errorMsg += `: ${text}`;
+      }
+      throw new Error(errorMsg);
+    }
 
-  /* --------- NOVO: lida com corpo vazio ---------- */
-  if (res.status === 204) return undefined as unknown as T;             // 204 No Content
-  const ct = res.headers.get("content-type") ?? "";
-  if (!ct.includes("application/json")) {
-    return (await res.text()) as unknown as T;
-  }
+    /* --------- NOVO: lida com corpo vazio ---------- */
+    if (res.status === 204) return undefined as unknown as T;             // 204 No Content
+    const ct = res.headers.get("content-type") ?? "";
+    if (!ct.includes("application/json")) {
+      return (await res.text()) as unknown as T;
+    }
+
 
   return res.json() as Promise<T>;
 }
