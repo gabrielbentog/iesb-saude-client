@@ -9,114 +9,153 @@ import {
   Button,
   Typography,
   Stack,
+  Button as LoadingButton
 } from "@mui/material";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { apiFetch } from "@/app/lib/api";
-import type { EventDetail, EventDetailDialogProps } from '@/app/types';
+import type { EventDetailDialogProps } from "@/app/types";
+import { useToast } from "@/app/contexts/ToastContext";
 
-/* ===== Tipos ===== */
+type DeleteTarget = "onlyThis" | "series" | "singleNoRecurrence" | null;
 
-
-export function EventDetailDialog({ open, event, onClose, onDeleted }: Props) {
+export function EventDetailDialog({
+  open,
+  event,
+  onClose,
+  onDeleted,
+}: EventDetailDialogProps) {
   const [loading, setLoading] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<DeleteTarget>(null);
+  const { showToast } = useToast();
+
   if (!event) return null;
 
-  /* ----- Ações de exclusão ----- */
-  const deleteOnlyThis = async () => {
+  /* ---------- exclusão centralizada ---------- */
+  const handleDelete = async () => {
+    if (!confirmTarget) return;
     try {
       setLoading(true);
-      await apiFetch("/api/time_slot_exceptions", {
-        method: "POST",
-        body: JSON.stringify({
-          timeSlotException: {
-            timeSlotId: event.timeSlotId,
-            date: format(event.date, "yyyy-MM-dd"),
-          },
-        }),
+
+      switch (confirmTarget) {
+        case "onlyThis":
+          await apiFetch("/api/time_slot_exceptions", {
+            method: "POST",
+            body: JSON.stringify({
+              timeSlotException: {
+                timeSlotId: event.timeSlotId,
+                date: format(event.date, "yyyy-MM-dd"),
+              },
+            }),
+          });
+          onDeleted({ type: "single", id: event.id });
+          showToast({ message: "Evento removido", severity: "success" });
+          break;
+
+        case "series":
+          await apiFetch(`/api/time_slots/${event.timeSlotId}`, {
+            method: "DELETE",
+          });
+          onDeleted({ type: "series", timeSlotId: event.timeSlotId! });
+          showToast({ message: "Série removida", severity: "success" });
+          break;
+
+        case "singleNoRecurrence":
+          await apiFetch(`/api/time_slots/${event.timeSlotId}`, {
+            method: "DELETE",
+          });
+          onDeleted({ type: "single", id: event.id });
+          showToast({ message: "Horário removido", severity: "success" });
+          break;
+      }
+
+      handleClose();
+    } catch (err: unknown) {
+      showToast({
+        message: err instanceof Error ? err.message : "Erro ao excluir",
+        severity: "error",
       });
-      onDeleted({ type: "single", id: event.id });
-      onClose();
-    } finally {
       setLoading(false);
     }
   };
 
-  const deleteSeries = async () => {
-    if (!event.timeSlotId) return;
-    if (!confirm("Remover TODOS os eventos desta série?")) return;
-    try {
-      setLoading(true);
-      await apiFetch(`/api/time_slots/${event.timeSlotId}`, { method: "DELETE" });
-      onDeleted({ type: "series", timeSlotId: event.timeSlotId });
-      onClose();
-    } finally {
-      setLoading(false);
-    }
+  const handleClose = () => {
+    setLoading(false);
+    setConfirmTarget(null);
+    onClose();
   };
 
-  const deleteSingleNoRecurrence = async () => {
-    if (!event.timeSlotId) return;
-    if (!confirm("Remover este horário?")) return;
-    try {
-      setLoading(true);
-      await apiFetch(`/api/time_slots/${event.timeSlotId}`, { method: "DELETE" });
-      onDeleted({ type: "single", id: event.id });
-      onClose();
-    } finally {
-      setLoading(false);
-    }
-  };
+  /* ---------- helpers ---------- */
+  const askDelete = (target: DeleteTarget) => () => setConfirmTarget(target);
 
-  /* ----- Render ----- */
-  return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>{event.title}</DialogTitle>
+  /* ---------- layout dinâmico ---------- */
+  const dialogTitle = confirmTarget ? "Confirmar exclusão" : event.title;
 
-      <DialogContent dividers>
-        <Stack spacing={1}>
-          <Typography variant="body2" color="text.secondary">
-            {event.allDay
-              ? "Dia todo"
-              : format(event.date, "dd/MM/yyyy · HH:mm", { locale: ptBR })}
-          </Typography>
+  const dialogContent = confirmTarget ? (
+    <Typography variant="body2">
+      {confirmTarget === "onlyThis" && "Excluir apenas este evento?"}
+      {confirmTarget === "series" && "Excluir TODA a série de eventos?"}
+      {confirmTarget === "singleNoRecurrence" && "Excluir este horário?"}
+    </Typography>
+  ) : (
+    <Stack spacing={1}>
+      <Typography variant="body2" color="text.secondary">
+        {event.allDay
+          ? "Dia todo"
+          : format(event.date, "dd/MM/yyyy · HH:mm", { locale: ptBR })}
+      </Typography>
 
-          {event.description && (
-            <Typography variant="body2">{event.description}</Typography>
-          )}
+      {event.description && (
+        <Typography variant="body2">{event.description}</Typography>
+      )}
 
-          {event.location && (
-            <Typography variant="body2" color="text.secondary">
-              Local: {event.location}
-            </Typography>
-          )}
-        </Stack>
-      </DialogContent>
+      {event.location && (
+        <Typography variant="body2" color="text.secondary">
+          Local: {event.location}
+        </Typography>
+      )}
+    </Stack>
+  );
 
-      <DialogActions>
-        {event.isRecurring ? (
-          <>
-            <Button color="error" onClick={deleteOnlyThis} disabled={loading}>
-              Excluir só este
-            </Button>
-            <Button color="error" onClick={deleteSeries} disabled={loading}>
-              Excluir toda série
-            </Button>
-          </>
-        ) : (
-          <Button
-            color="error"
-            onClick={deleteSingleNoRecurrence}
-            disabled={loading}
-          >
-            Excluir
+  const dialogActions = confirmTarget ? (
+    <>
+      <LoadingButton
+        color="error"
+        loading={loading}
+        onClick={handleDelete}
+      >
+        Excluir
+      </LoadingButton>
+      <Button onClick={() => setConfirmTarget(null)} disabled={loading}>
+        Cancelar
+      </Button>
+    </>
+  ) : (
+    <>
+      {event.isRecurring ? (
+        <>
+          <Button color="error" onClick={askDelete("onlyThis")}>
+            Excluir só este
           </Button>
-        )}
-
-        <Button onClick={onClose} disabled={loading}>
-          Fechar
+          <Button color="error" onClick={askDelete("series")}>
+            Excluir toda série
+          </Button>
+        </>
+      ) : (
+        <Button color="error" onClick={askDelete("singleNoRecurrence")}>
+          Excluir
         </Button>
-      </DialogActions>
+      )}
+      <Button onClick={onClose}>Fechar</Button>
+    </>
+  );
+
+  /* ---------- render ---------- */
+  return (
+    <Dialog open={open} onClose={handleClose} maxWidth="xs" fullWidth>
+      <DialogTitle>{dialogTitle}</DialogTitle>
+      <DialogContent dividers>{dialogContent}</DialogContent>
+      <DialogActions>{dialogActions}</DialogActions>
     </Dialog>
   );
 }

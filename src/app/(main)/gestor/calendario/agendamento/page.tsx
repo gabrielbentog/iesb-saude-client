@@ -131,7 +131,7 @@ export default function ScheduleFormPage() {
         message: "Horários salvos com sucesso!",
         severity: "success",
       });
-      router.back();
+      router.push("/gestor/calendario");
     } catch (err) {
       console.error(err);
       showToast({
@@ -233,6 +233,7 @@ export default function ScheduleFormPage() {
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
                     format="DD/MM/YYYY"
+                    minDate={dayjs()} // <-- ADICIONE ESTA LINHA
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -253,6 +254,7 @@ export default function ScheduleFormPage() {
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
                     format="DD/MM/YYYY"
+                    minDate={dayjs()} // <-- ADICIONE ESTA LINHA
                     slotProps={{
                       textField: {
                         fullWidth: true,

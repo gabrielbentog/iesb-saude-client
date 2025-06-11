@@ -70,7 +70,7 @@ export default function PerfilPage() {
         }),
       });
 
-      const updated = await res;
+      const updated = await res as User;
 
       const session = localStorage.getItem("session");
       if (session) {

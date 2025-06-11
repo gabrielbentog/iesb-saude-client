@@ -84,6 +84,7 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
                 label="Data"
                 value={field.value ? dayjs(field.value) : null}
                 onChange={(d) => field.onChange(d?.toDate() || undefined)}
+                minDate={dayjs()} 
                 slotProps={{ textField: { fullWidth: true, error: !!fieldState.error, helperText: fieldState.error?.message } }}
               />
             )}
