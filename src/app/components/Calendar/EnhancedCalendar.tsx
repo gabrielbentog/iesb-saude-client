@@ -153,7 +153,7 @@ export default function EnhancedCalendar({
         : addDays(currentDate, view === "week" ? 7 : 1)
     );
 
-  const handleDeleted = (info: { type: "single" | "series"; id?: string; timeSlotId?: number }) => {
+  const handleDeleted = (info: { type: "single" | "series"; id?: string; timeSlotId?: string }) => {
     setEvents((prevEvents) =>
       info.type === "single"
         ? prevEvents.filter((ev) => ev.id !== info.id)

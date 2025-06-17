@@ -48,7 +48,7 @@ import { useToast } from "@/app/contexts/ToastContext";
  * Tipos
  * ------------------------------------------------------------------*/
 
-type CollegeLocation = { id: number; name: string };
+type CollegeLocation = { id: string; name: string };
 type ApiResponse<T> = { data: T };
 
 /* ------------------------------------------------------------------
@@ -61,7 +61,7 @@ export const formSchema = z.object({
   email: z.string().email("Email inválido"),
   telefone: z.string().regex(phoneRegex, "Telefone inválido"),
 
-  college_location_id: z.coerce.number({
+  college_location_id: z.string({
     invalid_type_error: "Selecione o campus",
   }),
   periodo: z.string().min(1, "Informe o período"),
@@ -160,7 +160,7 @@ export default function RegisterInternPage() {
       nome: "",
       email: "",
       telefone: "",
-      college_location_id: 0, // coerção
+      college_location_id: "", // coerção
       periodo: "",
       observacoes: "",
       avatarUrl: "",

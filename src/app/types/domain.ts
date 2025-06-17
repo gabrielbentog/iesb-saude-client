@@ -6,23 +6,23 @@ export interface ApiResponse<T> {
 }
 
 export interface Campus {
-  id: number | string;
+  id: string;
   name: string;
 }
 
 export interface Especialidade {
-  id: number | string;
+  id: string;
   name: string;
 }
 
 export interface Slot {
-  id: number | string;
+  id: string;
   startAt: string;
   endAt: string;
 }
 
 export interface ConsultaPaciente {
-  id: number;
+  id: string;
   internName: string;
   internAvatar?: string;
   specialty: string;
@@ -35,25 +35,25 @@ export interface ConsultaPaciente {
 }
 
 export interface ApiAppointment {
-  id: number;
+  id: string;
   date: string;
   startTime: string;
   endTime: string;
   status: string;
   notes?: string;
   timeSlot: {
-    id: number;
+    id: string;
     collegeLocationName: string;
     specialtyName: string;
   };
   user: {
-    id: number;
+    id: string;
     name: string;
     email: string;
     createdAt: string;
     updatedAt: string;
     profile: {
-      id: number;
+      id: string;
       name: string;
       usersCount: number;
     };
@@ -66,7 +66,7 @@ export interface PaginatedAppointmentsResponse {
 }
 
 export interface User {
-  id: number;
+  id: string;
   name: string | null;
   email: string;
   profileId: number;
@@ -75,7 +75,7 @@ export interface User {
 }
 
 export interface Intern {
-  id: number;
+  id: string;
   name: string;
   specialty: string;
   avatar: string;
@@ -87,7 +87,7 @@ export interface Intern {
 }
 
 export interface ApiIntern {
-  id: number
+  id: string
   name: string
   specialty: string | null
   avatarUrl: string | null

@@ -3,7 +3,7 @@ import { apiFetch } from "@/app/lib/api";
 import type { Intern, PaginatedResponse, MetaWithPagination } from "@/app/types";
 
 export async function fetchInterns(
-  userId: number,
+  userId: string,
   page: number,
   size: number,
   extraParams = ""

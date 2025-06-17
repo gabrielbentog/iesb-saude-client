@@ -304,7 +304,7 @@ const AppointmentDetailScreen: React.FC = () => {
 
   const loadInterns = useCallback(async () => {
     try {
-      const { data } = await fetchInterns(0, 1, 50); // ajuste userId se necessário
+      const { data } = await fetchInterns("0", 1, 50); // ajuste userId se necessário
       setInterns(data);
     } catch (err) {
       console.error(err);

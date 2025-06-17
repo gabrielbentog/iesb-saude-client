@@ -115,7 +115,7 @@ export default function InternManagementScreen() {
   const [selectedIntern,  setSelectedIntern] = useState<Intern | null>(null)
 
   // userId → disponível no contexto/Redux/etc.
-  const currentUserId = 1  // ajuste
+  const currentUserId = "1"  // ajuste
 
   const loadInterns = useCallback(async () => {
     setLoading(true);

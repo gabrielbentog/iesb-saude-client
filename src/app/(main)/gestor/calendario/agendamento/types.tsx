@@ -1,2 +1,2 @@
-export type CollegeLocation = { id: number; name: string };
-export type Specialty = { id: number; name: string };
+export type CollegeLocation = { id: string; name: string };
+export type Specialty = { id: string; name: string };

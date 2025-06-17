@@ -2,27 +2,27 @@ import { parseISO, isToday, isTomorrow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 export interface RawAppointment {
-  id: number
+  id: string
   date: string
   startTime: string
   endTime: string
   status: string
   notes?: string
   user: {
-    id: number
+    id: string
     name: string
   }
   intern?: {
-    id: number
+    id: string
     name: string
   }
   timeSlot?: {
-    id: number
+    id: string
     collegeLocationName?: string
     specialtyName?: string
   }
   consultationRoom?: {
-    id: number
+    id: string
     name: string
     collegeLocationName?: string
     specialtyName?: string
@@ -43,7 +43,7 @@ export interface AppointmentsResponse {
 
 /* Objeto usado pela tabela já no formato esperado pelo render */
 export interface UIAppointment {
-  id: number
+  id: string
   patientName: string
   patientAvatar: string
   intern: string

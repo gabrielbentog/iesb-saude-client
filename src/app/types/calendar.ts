@@ -10,7 +10,7 @@ export interface CalendarEvent {
   allDay?: boolean;
   participants?: string[];
   isRecurring?: boolean;
-  timeSlotId?: number;
+  timeSlotId?: string;
   type: 'free' | 'busy';
 }
 
@@ -74,24 +74,24 @@ export interface EventDetail {
   location?: string;
   allDay?: boolean;
   isRecurring?: boolean;
-  timeSlotId?: number;
+  timeSlotId?: string;
 }
 
 export interface EventDetailDialogProps {
   open: boolean;
   event: EventDetail | null;
   onClose: () => void;
-  onDeleted: (info: { type: 'single' | 'series'; id?: string; timeSlotId?: number }) => void;
+  onDeleted: (info: { type: 'single' | 'series'; id?: string; timeSlotId?: string }) => void;
 }
 
-export type CollegeLocation = { id: number; name: string };
-export type SimpleSpec = { id: number; name: string };
+export type CollegeLocation = { id: string; name: string };
+export type SimpleSpec = { id: string; name: string };
 export type ApiSlot = {
-  id: number;
+  id: string;
   startAt: string;
   campusName: string;
   specialtyName: string;
-  timeSlotId?: number;
+  timeSlotId?: string;
   patientName?: string;
   isRecurring?: boolean;
 };

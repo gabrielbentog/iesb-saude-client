@@ -19,7 +19,7 @@ export const scheduleSchema = z.object({
 
 export const formSchema = z
   .object({
-    college_location_id: z.coerce.number().optional(),
+    college_location_id: z.string().optional(),
     repeat_type: z.coerce.number(), // 0 data | 1 semanal
     period_start: z.date().nullable().optional(),   // ← nullable()
     period_end:   z.date().nullable().optional(),
