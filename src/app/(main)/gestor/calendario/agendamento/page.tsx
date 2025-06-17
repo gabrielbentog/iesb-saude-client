@@ -182,18 +182,18 @@ export default function ScheduleFormPage() {
                     {...field}
                     value={field.value ?? ""}
                     onChange={(e) => {
-                      field.onChange(+e.target.value);
+                      field.onChange(e.target.value); // Não converte mais para número
                     }}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
                   >
-                    {locations.map((l) => (
-                      <MenuItem key={l.id} value={l.id}>
-                        {l.name}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
+                  {locations.map((l) => (
+                    <MenuItem key={l.id} value={l.id}>
+                    {l.name}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
               />
             )}
             {/* repetição */}

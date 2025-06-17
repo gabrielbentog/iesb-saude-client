@@ -112,8 +112,6 @@ export default function AppointmentManagementScreen() {
   const [page, setPage]           = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [metaInfo, setMetaInfo] = useState<MetaWithPagination | null>(null);
-  const [sortField, setSortField] = useState("date"); // Campo padrão de ordenação
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc"); // Direção padrão
   // dados
   const [appointments, setAppointments] = useState<UIAppointment[]>([])
   const [loading, setLoading]           = useState(true)
@@ -122,7 +120,7 @@ export default function AppointmentManagementScreen() {
   const [anchorEl, setAnchorEl]                 = useState<null | HTMLElement>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<UIAppointment | null>(null)
 
-    const handlePageChange = (event: unknown, newPage: number) => {
+  const handlePageChange = (event: unknown, newPage: number) => {
     setPage(newPage)
   }
 

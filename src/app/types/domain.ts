@@ -65,19 +65,6 @@ export interface PaginatedAppointmentsResponse {
   meta: MetaWithPagination;
 }
 
-export interface Appointment {
-  id: number;
-  patientName: string;
-  patientAvatar: string;
-  internName: string;
-  specialty: string;
-  date: string;
-  time: string;
-  status: 'Confirmada' | 'Pendente' | 'Reagendada' | 'Cancelada' | 'Concluída';
-  priority: 'low' | 'normal' | 'high';
-  specialtyIcon: React.ReactNode;
-}
-
 export interface User {
   id: number;
   name: string | null;

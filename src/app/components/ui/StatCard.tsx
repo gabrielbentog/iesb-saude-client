@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
+import { Box, Card, Typography, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import type { StatCardProps } from '@/app/types';
 

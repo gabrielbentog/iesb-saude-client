@@ -31,7 +31,6 @@ export interface RawAppointment {
 
 export interface AppointmentsResponse {
   data?: RawAppointment[]          // se usa adapter :json_api
-  appointments?: RawAppointment[]  // se usa adapter :attributes
   meta: {
     pagination: {
       total_count: number
