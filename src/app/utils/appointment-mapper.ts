@@ -45,8 +45,11 @@ export const mapRaw = (a: RawAppointment): UIAppointment => {
     id: a.id,
     patientName: a.user.name,
     patientAvatar: "",
-    intern: a.intern?.name ?? "-", // preencha quando API trouxer
-    internName: "", // preencha quando API trouxer
+    intern: {
+      id: a.intern?.id ?? "-",
+      name: a.intern?.name ?? "-",
+      avatarUrl: a.intern?.avatarUrl ?? "-",
+    },
     specialty,
     location,
     room: a.consultationRoom?.name ?? "-",

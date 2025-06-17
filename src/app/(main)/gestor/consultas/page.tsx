@@ -72,7 +72,7 @@ const renderAppointmentCell = (a: UIAppointment, id: string) => {
       )
 
     case "intern":
-      return a.internName || "—"
+      return a.intern?.name || "—"
 
     case "specialty":
       return (
@@ -109,15 +109,15 @@ export default function AppointmentManagementScreen() {
   const pushWithProgress = usePushWithProgress()
 
   // paginação
-  const [page, setPage]           = useState(0)
+  const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [metaInfo, setMetaInfo] = useState<MetaWithPagination | null>(null);
   // dados
   const [appointments, setAppointments] = useState<UIAppointment[]>([])
-  const [loading, setLoading]           = useState(true)
+  const [loading, setLoading] = useState(true)
 
   // menu de ações
-  const [anchorEl, setAnchorEl]                 = useState<null | HTMLElement>(null)
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [selectedAppointment, setSelectedAppointment] = useState<UIAppointment | null>(null)
 
   const handlePageChange = (event: unknown, newPage: number) => {

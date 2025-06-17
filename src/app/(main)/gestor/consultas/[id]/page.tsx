@@ -66,7 +66,7 @@ import type { Intern } from "@/app/types";
 // LOCAL TYPES — adaptados para o UI detalhado
 // --------------------------------------------------
 
-type AppointmentStatus = "Pendente" | "Aprovada" | "Rejeitada" | "Concluída";
+type AppointmentStatus = "Pendente" | "Confirmada" | "Cancelada" | "Rejeitada" | "Concluída";
 
 type Priority = "high" | "normal" | "low";
 
@@ -74,7 +74,6 @@ interface Appointment {
   id: string;
   patientName: string;
   patientAvatar: string;
-  patientAge?: number;
   patientPhone?: string;
   patientEmail?: string;
   patientCpf?: string;
@@ -159,28 +158,13 @@ interface StatusChipProps {
 const StatusChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "status",
 })<StatusChipProps>(({ theme, status }) => {
-  const colorMap = {
-    Aprovada: {
-      bg: alpha(theme.palette.success.main, 0.1),
-      color: theme.palette.success.main,
-      border: alpha(theme.palette.success.main, 0.3),
-    },
-    Rejeitada: {
-      bg: alpha(theme.palette.error.main, 0.1),
-      color: theme.palette.error.main,
-      border: alpha(theme.palette.error.main, 0.3),
-    },
-    Concluída: {
-      bg: alpha(theme.palette.info.main, 0.1),
-      color: theme.palette.info.main,
-      border: alpha(theme.palette.info.main, 0.3),
-    },
-    Pendente: {
-      bg: alpha(theme.palette.warning.main, 0.1),
-      color: theme.palette.warning.main,
-      border: alpha(theme.palette.warning.main, 0.3),
-    },
-  } as const;
+const colorMap = {
+  Confirmada: { bg: alpha(theme.palette.success.main, 0.1), color: theme.palette.success.main, border: alpha(theme.palette.success.main, 0.3) },
+  Cancelada:  { bg: alpha(theme.palette.warning.main, 0.1), color: theme.palette.warning.main, border: alpha(theme.palette.warning.main, 0.3) },
+  Rejeitada:  { bg: alpha(theme.palette.error.main,   0.1), color: theme.palette.error.main,   border: alpha(theme.palette.error.main,   0.3) },
+  Concluída:  { bg: alpha(theme.palette.info.main,    0.1), color: theme.palette.info.main,    border: alpha(theme.palette.info.main,    0.3) },
+  Pendente:   { bg: alpha(theme.palette.grey[500],    0.1), color: theme.palette.text.secondary, border: alpha(theme.palette.grey[500],   0.3) },
+} as const;
 
   const colors = colorMap[status];
 
@@ -225,7 +209,7 @@ const adaptAppointment = (raw: RawAppointment): Appointment => {
   return {
     id: String(raw.id),
     patientName: raw.user.name,
-    patientAvatar: "", // ajustar quando backend fornecer
+    patientAvatar: raw.user.avatarUrl || "",
     specialty,
     location,
     room,
@@ -241,11 +225,9 @@ const adaptAppointment = (raw: RawAppointment): Appointment => {
     medications: [], // idem
     createdAt: raw.date, // substitua quando houver created_at
     requestedBy: "" /* backend não fornece no payload atual */,
-    // Dados de contato são opcionais até o backend disponibilizar
-    patientAge: undefined,
-    patientPhone: undefined,
-    patientEmail: undefined,
-    patientCpf: undefined,
+    patientPhone: raw.user.phone || undefined,
+    patientEmail: raw.user.email || undefined,
+    patientCpf: raw.user.cpf || undefined,
   };
 };
 
@@ -275,6 +257,7 @@ const AppointmentDetailScreen: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [tabValue, setTabValue] = useState<number>(0);
+  const [cancelDialog, setCancelDialog] = useState(false);
 
   // interns list
   const [interns, setInterns] = useState<Intern[]>([]);
@@ -294,7 +277,7 @@ const AppointmentDetailScreen: React.FC = () => {
       } else {
         setApiError("Consulta não encontrada");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
       setApiError("Erro ao carregar consulta");
     } finally {
@@ -304,7 +287,7 @@ const AppointmentDetailScreen: React.FC = () => {
 
   const loadInterns = useCallback(async () => {
     try {
-      const { data } = await fetchInterns("0", 1, 50); // ajuste userId se necessário
+      const { data } = await fetchInterns(1, 5); // ajuste userId se necessário
       setInterns(data);
     } catch (err) {
       console.error(err);
@@ -354,9 +337,24 @@ const AppointmentDetailScreen: React.FC = () => {
         body: JSON.stringify({ appointment: { status: "confirmed", notes } }),
       });
       setAppointment((prev) =>
-        prev ? { ...prev, status: "Aprovada" } : prev,
+        prev ? { ...prev, status: "Confirmada" } : prev,
       );
       setApprovalDialog(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  const handleCancel = async () => {
+    try {
+      setLoading(true);
+      await apiFetch(`/api/appointments/${appointmentId}`, {
+        method: "PATCH",
+        body: JSON.stringify({ appointment: { status: "cancelled" } }),
+      });
+      setAppointment((prev) => (prev ? { ...prev, status: "Cancelada" } : prev));
+      setCancelDialog(false);
     } finally {
       setLoading(false);
     }
@@ -386,9 +384,9 @@ const AppointmentDetailScreen: React.FC = () => {
       setLoading(true);
       await apiFetch(`/api/appointments/${appointmentId}`, {
         method: "PATCH",
-        body: JSON.stringify({ appointment: { intern_id: Number(selectedIntern) } }),
+        body: JSON.stringify({ appointment: { intern_id: String(selectedIntern) } }),
       });
-      const intern = interns.find((i) => i.id === Number(selectedIntern));
+      const intern = interns.find((i) => String(i.id) === selectedIntern);
       setAppointment((prev) =>
         prev ? { ...prev, internName: intern?.name || "", internId: selectedIntern } : prev,
       );
@@ -399,45 +397,123 @@ const AppointmentDetailScreen: React.FC = () => {
     }
   };
 
+  const handleEdit = () => {
+    router.push(`/consultas/${appointment.id}/editar`);
+  };
+
   // ---------- Primary action buttons ----------
-  const PrimaryActions = ({ dense = false }: { dense?: boolean }) => (
-    <>
-      {appointment.status === "Pendente" && (
-        <>
-          <Button
-            variant="outlined"
-            color="success"
-            size={dense ? "medium" : "large"}
-            onClick={() => setApprovalDialog(true)}
-            disabled={loading}
-            startIcon={<CheckCircleIcon />}
-            sx={{ borderRadius: 2, px: dense ? 2 : 3, fontWeight: 600, textTransform: "none" }}
-          >
-            Aprovar
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            size={dense ? "medium" : "large"}
-            onClick={() => setRejectionDialog(true)}
-            disabled={loading}
-            startIcon={<CancelIcon />}
-            sx={{ borderRadius: 2, px: dense ? 2 : 3, fontWeight: 600, textTransform: "none" }}
-          >
-            Rejeitar
-          </Button>
-        </>
-      )}
+const PrimaryActions = ({ dense = false }: { dense?: boolean }) => {
+    const commonSx = {
+      borderRadius: 2,
+      px: dense ? 2 : 3,
+      fontWeight: 600,
+      textTransform: "none",
+    };
+
+    const EditButton = (
       <Button
         variant="outlined"
+        color="primary"
         size={dense ? "medium" : "large"}
+        onClick={handleEdit}
+        disabled={loading}
         startIcon={<EditIcon />}
-        sx={{ borderRadius: 2, px: dense ? 2 : 3, fontWeight: 600, textTransform: "none" }}
+        sx={commonSx}
       >
         Editar
       </Button>
-    </>
-  );
+    );
+
+    switch (appointment.status) {
+      case "Pendente":
+        return (
+          <>
+            {EditButton}
+            <Button
+              variant="contained"
+              color="success"
+              size={dense ? "medium" : "large"}
+              onClick={() => setApprovalDialog(true)}
+              disabled={loading}
+              startIcon={<CheckCircleIcon />}
+              sx={commonSx}
+            >
+              Confirmar
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size={dense ? "medium" : "large"}
+              onClick={() => setRejectionDialog(true)}
+              disabled={loading}
+              startIcon={<CancelIcon />}
+              sx={commonSx}
+            >
+              Rejeitar
+            </Button>
+          </>
+        );
+
+      case "Confirmada":
+        return (
+          <>
+            {EditButton}
+            <Button
+              variant="contained"
+              color="warning"
+              size={dense ? "medium" : "large"}
+              onClick={() => setCancelDialog(true)}
+              disabled={loading}
+              startIcon={<CancelIcon />}
+              sx={commonSx}
+            >
+              Cancelar
+            </Button>
+          </>
+        );
+
+      case "Cancelada":
+        return (
+          <>
+            {EditButton}
+            <Button
+              variant="contained"
+              color="primary"
+              size={dense ? "medium" : "large"}
+              onClick={() => {
+                /* abrir modal de reagendamento */
+              }}
+              startIcon={<CalendarMonthIcon />}
+              sx={commonSx}
+            >
+              Reagendar
+            </Button>
+          </>
+        );
+
+      case "Rejeitada":
+        return (
+          <>
+            {EditButton}
+            <Button
+              variant="outlined"
+              color="info"
+              size={dense ? "medium" : "large"}
+              onClick={() => {
+                /* opcional: reabrir */
+              }}
+              startIcon={<InfoIcon />}
+              sx={commonSx}
+            >
+              Reabrir
+            </Button>
+          </>
+        );
+
+      default:
+        return EditButton;
+    }
+  };
 
   // --------------------------------------------------
   // RENDER PRINCIPAL
@@ -478,9 +554,9 @@ const AppointmentDetailScreen: React.FC = () => {
                   label={appointment.status}
                   status={appointment.status}
                   icon={
-                    appointment.status === "Aprovada" ? (
+                    appointment.status === "Confirmada" ? (
                       <CheckCircleIcon />
-                    ) : appointment.status === "Rejeitada" ? (
+                    ) : appointment.status === "Cancelada" || appointment.status === "Rejeitada" ? (
                       <CancelIcon />
                     ) : (
                       <InfoIcon />
@@ -692,11 +768,11 @@ const AppointmentDetailScreen: React.FC = () => {
         {/* ---------------- Dialogs ---------------- */}
         {/* Approve Dialog */}
         <Dialog open={approvalDialog} onClose={() => setApprovalDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography variant="h5" fontWeight={600}>Aprovar Consulta</Typography>
+          <DialogTitle variant="h5" sx={{ pb: 1, fontWeight: 600 }}>
+            Confirmar Consulta
           </DialogTitle>
           <DialogContent>
-            <Typography mb={3} color="text.secondary">Tem certeza que deseja aprovar esta consulta para {appointment.patientName}?</Typography>
+            <Typography mb={3} color="text.secondary">Tem certeza que deseja confirmar esta consulta para {appointment.patientName}?</Typography>
             <TextField
               fullWidth
               multiline
@@ -718,8 +794,8 @@ const AppointmentDetailScreen: React.FC = () => {
 
         {/* Reject Dialog */}
         <Dialog open={rejectionDialog} onClose={() => setRejectionDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography variant="h5" fontWeight={600}>Rejeitar Consulta</Typography>
+          <DialogTitle variant="h5" sx={{ pb: 1, fontWeight: 600 }}>
+            Rejeitar Consulta
           </DialogTitle>
           <DialogContent>
             <Typography mb={3} color="text.secondary">Por favor, informe o motivo da rejeição desta consulta:</Typography>
@@ -745,8 +821,8 @@ const AppointmentDetailScreen: React.FC = () => {
 
         {/* Assign Intern Dialog */}
         <Dialog open={assignDialog} onClose={() => setAssignDialog(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: 3 } }}>
-          <DialogTitle sx={{ pb: 1 }}>
-            <Typography variant="h5" fontWeight={600}>Designar Estagiário</Typography>
+          <DialogTitle variant="h5" sx={{ pb: 1, fontWeight: 600 }}>
+            Designar Estagiário
           </DialogTitle>
           <DialogContent>
             <Typography mb={3} color="text.secondary">Selecione um estagiário para esta consulta de {appointment.specialty}:</Typography>
@@ -777,6 +853,47 @@ const AppointmentDetailScreen: React.FC = () => {
               Designar
             </Button>
           </DialogActions>
+          {loading && <LinearProgress />}
+        </Dialog>
+
+        {/* Cancel Dialog */}
+        <Dialog
+          open={cancelDialog}
+          onClose={() => setCancelDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{ sx: { borderRadius: 3 } }}
+        >
+          <DialogTitle variant="h5" sx={{ pb: 1, fontWeight: 600 }}>
+            Cancelar Consulta
+          </DialogTitle>
+
+          <DialogContent>
+            <Typography mb={3} color="text.secondary">
+              Tem certeza de que deseja cancelar esta consulta?
+            </Typography>
+          </DialogContent>
+
+          <DialogActions sx={{ p: 3, pt: 1 }}>
+            <Button
+              onClick={() => setCancelDialog(false)}
+              variant="outlined"
+              sx={{ borderRadius: 2 }}
+            >
+              Voltar
+            </Button>
+            <Button
+              onClick={handleCancel}
+              variant="contained"
+              color="warning"
+              disabled={loading}
+              startIcon={loading ? <CircularProgress size={16} /> : <CancelIcon />}
+              sx={{ borderRadius: 2, px: 3 }}
+            >
+              Cancelar
+            </Button>
+          </DialogActions>
+
           {loading && <LinearProgress />}
         </Dialog>
       </Container>

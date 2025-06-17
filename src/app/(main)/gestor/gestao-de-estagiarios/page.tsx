@@ -114,13 +114,10 @@ export default function InternManagementScreen() {
   const [anchorEl,        setAnchorEl]   = useState<null | HTMLElement>(null)
   const [selectedIntern,  setSelectedIntern] = useState<Intern | null>(null)
 
-  // userId → disponível no contexto/Redux/etc.
-  const currentUserId = "1"  // ajuste
-
   const loadInterns = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, meta } = await fetchInterns(currentUserId, page + 1, rowsPerPage);
+      const { data, meta } = await fetchInterns(page + 1, rowsPerPage);
       setInterns(data);
       setTotalCount(meta.pagination.totalCount);
     } catch (e) {
@@ -128,7 +125,7 @@ export default function InternManagementScreen() {
     } finally {
       setLoading(false);
     }
-  }, [currentUserId, page, rowsPerPage]);
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     loadInterns()

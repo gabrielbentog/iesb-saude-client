@@ -1,6 +1,5 @@
 import { parseISO, isToday, isTomorrow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-
 export interface RawAppointment {
   id: string
   date: string
@@ -11,10 +10,15 @@ export interface RawAppointment {
   user: {
     id: string
     name: string
+    avatarUrl?: string
+    email?: string
+    phone?: string
+    cpf?: string
   }
   intern?: {
     id: string
     name: string
+    avatarUrl?: string
   }
   timeSlot?: {
     id: string
@@ -46,8 +50,11 @@ export interface UIAppointment {
   id: string
   patientName: string
   patientAvatar: string
-  intern: string
-  internName: string
+  intern?: {
+    id: string
+    name: string
+    avatarUrl?: string
+  }
   specialty: string
   location: string      // ← novo
   room: string          // ← novo
