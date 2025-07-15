@@ -10,8 +10,8 @@ import { RawAppointment, UIAppointment } from "../types/appointments"
 const STATUS_LABEL: Record<string, UIAppointment["status"]> = {
   confirmed:  "Confirmada",
   pending:    "Pendente",
-  rescheduled:"Reagendada",
-  canceled:   "Cancelada",
+  rejected:  "Rejeitada",
+  cancelled:   "Cancelada",
   completed:  "Concluída",
 }
 

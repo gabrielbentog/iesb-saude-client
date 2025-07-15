@@ -68,9 +68,10 @@ export interface UIAppointment {
 /* Mapeia status enum->texto */
 export const STATUS_LABEL: Record<string, string> = {
   pending: "Pendente",
-  scheduled: "Agendada",
   confirmed: "Confirmada",
-  rescheduled: "Reagendada",
+  rejected: "Rejeitada",
+  cancelled: "Cancelada",
+  completed: "Concluída",
 }
 
 /* Decide prioridade visual pela situação */

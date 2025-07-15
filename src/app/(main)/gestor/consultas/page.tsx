@@ -185,8 +185,27 @@ export default function AppointmentManagementScreen() {
     }
     handleMenuClose()
   }
-  const handleCancelAppointment = () => {
-    // chamar API de cancelamento aqui
+  const handleCancelAppointment = async () => {
+    if (!selectedAppointment) return
+    setLoading(true)
+    try {
+      await apiFetch(
+      `/api/appointments/${selectedAppointment.id}/cancel`,
+      { method: "PATCH" }
+      )
+      // Atualiza a lista removendo/cancelando a consulta localmente
+      setAppointments((prev) =>
+      prev.map((a) =>
+        a.id === selectedAppointment.id
+        ? { ...a, status: "Cancelada" }
+        : a
+      )
+      )
+    } catch (err) {
+      console.error("Falha ao cancelar consulta", err)
+    } finally {
+      setLoading(false)
+    }
     handleMenuClose()
   }
 
@@ -301,10 +320,12 @@ export default function AppointmentManagementScreen() {
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           Editar
         </MenuItem>
-        <MenuItem onClick={handleCancelAppointment} sx={{ color: theme.palette.error.main }}>
-          <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
-          Cancelar Consulta
-        </MenuItem>
+        {selectedAppointment && selectedAppointment.status !== "Rejeitada" && selectedAppointment.status !== "Cancelada" && (
+          <MenuItem onClick={handleCancelAppointment} sx={{ color: theme.palette.error.main }}>
+            <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
+            Cancelar Consulta
+          </MenuItem>
+        )}
       </Menu>
 
       {loading && (

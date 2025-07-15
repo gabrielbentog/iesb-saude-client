@@ -33,9 +33,15 @@ export const StyledBadge = styled(Chip, {
   } else if (badgeType === "Pendente") {
     backgroundColor = alpha(theme.palette.warning.main, 0.1);
     textColor = theme.palette.warning.dark;
-  } else if (badgeType === "Reagendada" || badgeType === "Inativo") {
+  } else if (badgeType === "Cancelada" || badgeType === "Inativo") {
+    backgroundColor = alpha(theme.palette.error.main, 0.1);
+    textColor = theme.palette.error.dark;
+  } else if (badgeType === "Concluída") {
     backgroundColor = alpha(theme.palette.info.main, 0.1);
     textColor = theme.palette.info.dark;
+  } else if (badgeType === "Rejeitada") {
+    backgroundColor = alpha(theme.palette.error.main, 0.1);
+    textColor = theme.palette.error.dark;
   }
 
   return {
