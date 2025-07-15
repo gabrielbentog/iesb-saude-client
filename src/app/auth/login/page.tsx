@@ -181,7 +181,7 @@ export default function LoginPage() {
                 }}
               />
               <Box sx={{ textAlign: "right", mb: 2 }}>
-                <Link href="#" variant="body2" sx={{ color: theme.palette.primary.main }}>
+                <Link href="/auth/esqueci-a-senha" variant="body2" sx={{ color: theme.palette.primary.main }}>
                   Esqueceu sua senha?
                 </Link>
               </Box>

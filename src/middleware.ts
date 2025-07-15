@@ -4,7 +4,7 @@ export function middleware(req: NextRequest) {
   const session = req.cookies.get('session')?.value;
   const pathname = req.nextUrl.pathname;
 
-  const validAuthRoutes = ['/auth', '/auth/login', '/auth/cadastro'];
+  const validAuthRoutes = ['/auth', '/auth/login', '/auth/cadastro', '/auth/esqueci-a-senha'];
   const isExactAuthPage = validAuthRoutes.includes(pathname);
 
   const isStaticFile =

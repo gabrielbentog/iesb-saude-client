@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { ToastProvider } from "@/app/contexts/ToastContext";
 import { ThemeProvider } from "@mui/material/styles";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
@@ -40,44 +39,42 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   return (
     <ThemeProvider theme={theme}>
-      <ToastProvider>
-        <Box sx={{ display: "flex" }}>
-          <Header
-            open={open}
-            drawerWidth={drawerWidth}
-            onToggleSidebar={handleDrawerToggle}
-            isMobile={isMobile}
-          />
+      <Box sx={{ display: "flex" }}>
+        <Header
+          open={open}
+          drawerWidth={drawerWidth}
+          onToggleSidebar={handleDrawerToggle}
+          isMobile={isMobile}
+        />
 
-          {/* Sidebar - em mobile vira overlay */}
-          <Sidebar
-            open={open}
-            drawerWidth={drawerWidth}
-            onToggleSidebar={handleDrawerToggle}
-            darkMode={darkMode}
-            onToggleDarkMode={handleDarkModeToggle}
-            isMobile={isMobile}
-          />
+        {/* Sidebar - em mobile vira overlay */}
+        <Sidebar
+          open={open}
+          drawerWidth={drawerWidth}
+          onToggleSidebar={handleDrawerToggle}
+          darkMode={darkMode}
+          onToggleDarkMode={handleDarkModeToggle}
+          isMobile={isMobile}
+        />
 
-          {/* Área principal */}
-          <Box
-            component="main"
-            sx={{
-              flexGrow: 1,
-              transition: defaultTheme.transitions.create(["margin", "width"], {
-                easing: defaultTheme.transitions.easing.easeOut,
-                duration: defaultTheme.transitions.duration.enteringScreen,
-              }),
-              pt: "64px",
-              minHeight: "100vh",
-              bgcolor: theme.palette.background.default,
-              color: theme.palette.text.primary,
-            }}
-          >
-            {children}
-          </Box>
+        {/* Área principal */}
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            transition: defaultTheme.transitions.create(["margin", "width"], {
+              easing: defaultTheme.transitions.easing.easeOut,
+              duration: defaultTheme.transitions.duration.enteringScreen,
+            }),
+            pt: "64px",
+            minHeight: "100vh",
+            bgcolor: theme.palette.background.default,
+            color: theme.palette.text.primary,
+          }}
+        >
+          {children}
         </Box>
-      </ToastProvider>
+      </Box>
     </ThemeProvider>
   );
 };

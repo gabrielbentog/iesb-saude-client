@@ -30,7 +30,6 @@ import {
   useMediaQuery,
   Tooltip,
   LinearProgress,
-  Skeleton,
   useTheme,
 } from "@mui/material";
 import PersonIcon from "@mui/icons-material/Person";

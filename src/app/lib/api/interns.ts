@@ -11,7 +11,7 @@ export async function fetchInterns(
   const raw   = await apiFetch<{
     data: Intern[];
     meta: Record<string, unknown>;
-  }>(`/api/interns?${query}`);
+  }>(`/api/users/interns?${query}`);
 
   // ---------------- normalização do meta ----------------
   const meta = raw.meta as MetaWithPagination;

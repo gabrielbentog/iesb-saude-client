@@ -292,7 +292,7 @@ export default function ManagerDashboard() {
     setLoadingInterns(true);
     (async () => {
       try {
-        const res = await apiFetch<ApiResponse<ApiIntern[]>>("/api/interns?page[size]=8");
+        const res = await apiFetch<ApiResponse<ApiIntern[]>>("/api/users/interns?page[size]=8");
         const raw = res.data ?? [];
         const mapped: Intern[] = raw.map((i) => ({
           id: i.id,
