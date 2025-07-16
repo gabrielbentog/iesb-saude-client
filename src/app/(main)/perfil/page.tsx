@@ -1,616 +1,431 @@
 "use client";
 
+import React, { useCallback, useEffect, useRef, useState, FC } from "react";
 import {
-  Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Chip,
-  Divider,
-  IconButton,
-  InputAdornment,
-  Switch,
-  TextField,
-  Typography,
-  useTheme,
-  styled,
-  CircularProgress,
-  Fade,
-  Collapse,
-  Alert,
+  Box, Typography, Button, Card, CardContent, CardHeader, Grid, Container, Avatar, TextField,
+  CircularProgress, IconButton, Stack, Divider, Tooltip, Dialog,
+  DialogTitle, DialogContent, DialogActions
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
 import {
-  Edit as EditIcon,
-  Save as SaveIcon,
-  Cancel as CancelIcon,
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Language as LanguageIcon,
-  Security as SecurityIcon,
-  Palette as PaletteIcon,
-  Schedule as ScheduleIcon,
-  Shield as ShieldIcon,
-  DeleteOutline as DeleteIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon,
-  Check as CheckIcon,
-  Close as CloseIcon,
-  Warning as WarningIcon,
-  Notifications as NotificationsIcon,
-  Lock as LockIcon,
+  Edit, Save, Cancel, PhotoCamera, DeleteOutline, Security, Password, Person, Email
 } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { z } from "zod";
+import { useForm, Controller, type UseFormReturn } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import { apiFetch } from "@/app/lib/api";
-import { useToast } from '@/app/contexts/ToastContext';
+import { useToast } from "@/app/contexts/ToastContext";
+import { useApi } from "@/app/hooks/useApi";
 import type { User } from '@/app/types';
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Styled Components
-// ────────────────────────────────────────────────────────────────────────────────
-const StyledCard = styled(Card)(({ theme }) => ({
-  borderRadius: 16,
-  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-  boxShadow: theme.shadows[1],
-  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-}));
+// --- Schemas e Tipos ---
+const profileSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(2, "Informe o nome completo."),
+  email: z.string().trim().email("Email inválido."),
+  image: z.string().url().optional().or(z.literal("")).nullable(),
+});
 
-const EditableField = styled(Box)(({ theme }) => ({
-  position: "relative",
-  borderRadius: 8,
-  padding: theme.spacing(2),
-  transition: "all 0.2s ease",
-  "&:hover": {
-    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-  },
-}));
+type ProfileFormValues = z.infer<typeof profileSchema>;
 
-const SectionHeader = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  gap: theme.spacing(1.5),
-  padding: theme.spacing(3, 3, 2, 3),
-  "& .section-title": {
-    fontWeight: 600,
-    fontSize: "1.125rem",
-    color: theme.palette.text.primary,
-  },
-  "& .section-icon": {
-    color: theme.palette.primary.main,
-  },
-}));
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória."),
+  newPassword: z.string().min(8, "Mínimo de 8 caracteres."),
+  confirmPassword: z.string(),
+}).refine((d) => d.newPassword === d.confirmPassword, {
+  path: ["confirmPassword"], message: "As senhas não coincidem.",
+});
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
 
-const SectionDivider = styled(Box)(({ theme }) => ({
-  height: 32,
-  display: "flex",
-  alignItems: "center",
-  margin: theme.spacing(1, 0),
-  "& .MuiDivider-root": {
-    flex: 1,
-  },
-}));
+const emailChangeSchema = z.object({
+  newEmail: z.string().trim().email("Email inválido."),
+  currentPassword: z.string().min(1, "Senha atual é obrigatória."),
+  verificationCode: z.string().min(6, "Código deve ter 6 dígitos.").max(6, "Código deve ter 6 dígitos."),
+});
+type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Editable Field Component
-// ────────────────────────────────────────────────────────────────────────────────
-interface EditableFieldProps {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  isEditing: boolean;
-  onChange: (value: string) => void;
-  onEdit: () => void;
-  onSave: () => void;
-  onCancel: () => void;
-  type?: "text" | "email" | "password";
-  required?: boolean;
-  disabled?: boolean;
-  description?: string;
+
+interface UserApiResponse {
+    data: User;
 }
 
-function EditableFieldComponent({
-  label,
-  value,
-  icon,
-  isEditing,
-  onChange,
-  onEdit,
-  onSave,
-  onCancel,
-  type = "text",
-  required = false,
-  disabled = false,
-  description,
-}: EditableFieldProps) {
-  const theme = useTheme();
-  const [showPassword, setShowPassword] = useState(false);
-  const [localValue, setLocalValue] = useState(value);
+// --- Helpers ---
+const initialsFromName = (name?: string): string => !name ? "?" : name.trim().split(/\s+/).slice(0, 2).map((n) => n[0]?.toUpperCase() ?? "").join("");
 
-  useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+const mapUserToForm = (user: User): Omit<ProfileFormValues, 'currentPassword'> => ({
+  id: user.id, 
+  name: user.name ?? "", 
+  email: user.email ?? "",
+  image: user.image ?? null,
+});
 
-  const handleSave = () => {
-    onChange(localValue);
-    onSave();
-  };
+const saveUserToLocalStorage = (user: User) => {
+  try {
+    const sessionString = localStorage.getItem("session");
+    if (sessionString) {
+      const session = JSON.parse(sessionString);
+      session.user = { ...session.user, ...user };
+      localStorage.setItem("session", JSON.stringify(session));
+    }
+  } catch (e) {
+    console.error("Failed to save user to localStorage", e);
+  }
+};
 
-  const handleCancel = () => {
-    setLocalValue(value);
-    onCancel();
-  };
+const applyBackendErrorsToForm = (err: unknown, setError: UseFormReturn<any>['setError']) => {
+    const apiError = err as { status?: number; data?: { errors?: Record<string, string[]> } };
+    if (apiError?.status === 422 && apiError?.data?.errors) {
+        Object.entries(apiError.data.errors).forEach(([key, msgs]) => {
+            setError(key, { type: "server", message: msgs.join(", ") });
+        });
+    }
+};
 
-  return (
-    <EditableField>
-      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          {icon}
+// --- Componentes Aninhados ---
+const Section: FC<{ title: React.ReactNode, children: React.ReactNode }> = ({ title, children }) => (
+    <Box>
+        <Stack direction="row" spacing={1} alignItems="center" mb={1.5}>{title}</Stack>
+        <Divider />
+        <Box mt={2}>{children}</Box>
+    </Box>
+);
+
+const ProfileAvatarUploader: FC<{
+  mode: 'view' | 'edit';
+  avatarUrl?: string | null;
+  name?: string;
+  onChangeFile: (file: File | null) => void;
+  onClear: () => void;
+  loading?: boolean;
+}> = ({ mode, avatarUrl, name, onChangeFile, onClear, loading }) => {
+    const inputRef = useRef<HTMLInputElement>(null);
+    const handlePick = useCallback(() => mode === 'edit' && inputRef.current?.click(), [mode]);
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => onChangeFile(e.target.files?.[0] ?? null), [onChangeFile]);
+
+    return (
+        <Box position="relative" sx={{ width: 120, height: 120 }}>
+            <Avatar src={avatarUrl || undefined} sx={{ width: '100%', height: '100%', cursor: mode === 'edit' ? 'pointer' : 'default', opacity: loading ? 0.7 : 1 }} onClick={handlePick}>
+                {initialsFromName(name)}
+            </Avatar>
+            {mode === 'edit' && (
+                <>
+                    <Tooltip title="Alterar foto">
+                        <IconButton size="small" onClick={handlePick} sx={{ position: 'absolute', bottom: 4, right: 4, bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.200' }}}>
+                            <PhotoCamera fontSize="small"/>
+                        </IconButton>
+                    </Tooltip>
+                    {avatarUrl && (
+                        <Tooltip title="Remover foto">
+                            <IconButton size="small" onClick={onClear} sx={{ position: 'absolute', top: 4, right: 4, bgcolor: 'background.paper', '&:hover': { bgcolor: 'grey.200' }}}>
+                                <DeleteOutline fontSize="small" color="error" />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </>
+            )}
+            <input type="file" ref={inputRef} hidden accept="image/*" onChange={handleFileChange} />
+        </Box>
+    );
+};
+
+const ProfileHeader: FC<{
+    user: User;
+    mode: 'view' | 'edit';
+    avatarPreview: string | null;
+    setAvatarFile: (file: File | null) => void;
+    onSave: () => void;
+    onCancel: () => void;
+    onEdit: () => void;
+    isSaving: boolean;
+}> = ({ user, mode, avatarPreview, setAvatarFile, onSave, onCancel, onEdit, isSaving }) => (
+    <CardHeader
+      disableTypography
+      title={
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems="center" justifyContent="space-between">
+          <Stack direction="row" spacing={3} alignItems="center">
+            <ProfileAvatarUploader
+                mode={mode}
+                avatarUrl={avatarPreview || user.image} 
+                name={user.name ?? undefined}
+                onClear={() => setAvatarFile(null)}
+                onChangeFile={setAvatarFile}
+                loading={isSaving}
+            />
+            <Box>
+              <Typography variant="h5" fontWeight={600}>{user.name}</Typography>
+              <Typography color="text.secondary">{user.email}</Typography>
+            </Box>
+          </Stack>
           <Box>
-            <Typography variant="body1" fontWeight={500}>
-              {label}
-              {required && <Typography component="span" color="error" sx={{ ml: 0.5 }}>*</Typography>}
-            </Typography>
-            {description && (
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {description}
-              </Typography>
-            )}
-          </Box>
-        </Box>
-        
-        {!disabled && (
-          <Box sx={{ display: "flex", gap: 1 }}>
-            {isEditing ? (
-              <>
-                <IconButton size="small" onClick={handleSave} color="primary">
-                  <CheckIcon fontSize="small" />
-                </IconButton>
-                <IconButton size="small" onClick={handleCancel} color="secondary">
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </>
+            {mode === 'edit' ? (
+              <Stack direction="row" spacing={1}>
+                <Button onClick={onCancel} startIcon={<Cancel />} disabled={isSaving}>Cancelar</Button>
+                <Button onClick={onSave} variant="contained" startIcon={isSaving ? <CircularProgress size={20} color="inherit"/> : <Save />} disabled={isSaving}>
+                  {isSaving ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </Stack>
             ) : (
-              <IconButton size="small" onClick={onEdit} sx={{ opacity: 0.7, "&:hover": { opacity: 1 } }}>
-                <EditIcon fontSize="small" />
-              </IconButton>
+              <Button onClick={onEdit} variant="contained" startIcon={<Edit />}>Editar</Button>
             )}
           </Box>
-        )}
-      </Box>
+        </Stack>
+      }
+    />
+);
 
-      <Box sx={{ ml: 4 }}>
-        <Collapse in={isEditing}>
-          <TextField
-            fullWidth
-            value={localValue}
-            onChange={(e) => setLocalValue(e.target.value)}
-            variant="outlined"
-            size="small"
-            type={type === "password" && !showPassword ? "password" : "text"}
-            InputProps={{
-              endAdornment: type === "password" && (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPassword(!showPassword)} edge="end" size="small">
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: 2,
-              },
-            }}
-          />
-        </Collapse>
+const ProfileForm: FC<{
+    control: UseFormReturn<ProfileFormValues>['control'];
+    errors: UseFormReturn<ProfileFormValues>['formState']['errors'];
+    isLocked: boolean;
+}> = ({ control, errors, isLocked }) => (
+  <Section title={<><Person /> <Typography variant="h6">Informações Pessoais</Typography></>}>
+    <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+            <Controller name="name" control={control} render={({ field }) => (
+                <TextField {...field} label="Nome Completo" fullWidth variant="outlined" disabled={isLocked} error={!!errors.name} helperText={errors.name?.message} />
+            )} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+            <Controller name="email" control={control} render={({ field }) => (
+                <TextField {...field} label="Email" fullWidth variant="outlined" disabled helperText="Para alterar o email, use a seção de segurança."/>
+            )} />
+        </Grid>
+    </Grid>
+  </Section>
+);
 
-        <Collapse in={!isEditing}>
-          <Typography
-            variant="body1"
-            sx={{
-              minHeight: 24,
-              py: 1,
-              color: value ? "text.primary" : "text.secondary",
-              fontStyle: value ? "normal" : "italic",
-            }}
-          >
-            {type === "password" ? "••••••••" : value || "Não informado"}
-          </Typography>
-        </Collapse>
-      </Box>
-    </EditableField>
-  );
-}
+const SecuritySettings: FC<{ onOpenChangePassword: () => void; onOpenChangeEmail: () => void; }> = ({ onOpenChangePassword, onOpenChangeEmail }) => (
+    <Section title={<><Security /> <Typography variant="h6">Segurança</Typography></>}>
+        <Stack spacing={2} divider={<Divider />}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Alterar seu endereço de e-mail.</Typography>
+                <Button variant="outlined" size="small" onClick={onOpenChangeEmail} startIcon={<Email />}>Alterar Email</Button>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Alterar sua senha de acesso.</Typography>
+                <Button variant="outlined" size="small" onClick={onOpenChangePassword} startIcon={<Password />}>Alterar Senha</Button>
+            </Stack>
+        </Stack>
+    </Section>
+);
 
-// ────────────────────────────────────────────────────────────────────────────────
-// Preference Toggle Component
-// ────────────────────────────────────────────────────────────────────────────────
-interface PreferenceToggleProps {
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}
+const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
+    const { showToast } = useToast();
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting }, setError } = useForm<ChangePasswordFormValues>({
+        resolver: zodResolver(changePasswordSchema),
+        defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
+    });
 
-function PreferenceToggle({ label, description, icon, checked, onChange }: PreferenceToggleProps) {
-  return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-        {icon}
-        <Box>
-          <Typography variant="body1" fontWeight={500}>
-            {label}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
-      </Box>
-      <Switch checked={checked} onChange={(e) => onChange(e.target.checked)} />
-    </Box>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
-// Action Button Component
-// ────────────────────────────────────────────────────────────────────────────────
-interface ActionButtonProps {
-  label: string;
-  description: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-  color?: "primary" | "error";
-  variant?: "contained" | "outlined";
-}
-
-function ActionButton({ label, description, icon, onClick, color = "primary", variant = "outlined" }: ActionButtonProps) {
-  return (
-    <Box sx={{ p: 2 }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
-        {icon}
-        <Box>
-          <Typography variant="body1" fontWeight={500}>
-            {label}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {description}
-          </Typography>
-        </Box>
-      </Box>
-      <Box sx={{ ml: 4 }}>
-        <Button
-          variant={variant}
-          color={color}
-          startIcon={icon}
-          onClick={onClick}
-          sx={{ 
-            textTransform: "none",
-            borderRadius: 2,
-            px: 3,
-            py: 1,
-          }}
-        >
-          {label}
-        </Button>
-      </Box>
-    </Box>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
-// Main Component
-// ────────────────────────────────────────────────────────────────────────────────
-export default function PerfilPage() {
-  const theme = useTheme();
-  const [user, setUser] = useState<User | null>(null);
-  const [loadingUser, setLoadingUser] = useState(true);
-  const [editingFields, setEditingFields] = useState<Record<string, boolean>>({});
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
-  const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    darkMode: false,
-    twoFactorAuth: false,
-  });
-
-  const { showToast } = useToast();
-
-  // ───────────── Fetch User Data ─────────────
-  useEffect(() => {
-    let ignore = false;
-    setLoadingUser(true);
-    const session = localStorage.getItem("session");
-    if (session) {
-      const parsed = JSON.parse(session);
-      if (parsed?.user) {
-        if (!ignore) {
-          setUser(parsed.user);
-          setLoadingUser(false);
+    const onSubmit = handleSubmit(async (values) => {
+        try {
+            await apiFetch(`/api/users/${userId}/change-password`, {
+                method: "PUT",
+                body: JSON.stringify(values),
+            });
+            showToast({ message: "Senha alterada com sucesso!", severity: "success" });
+            onClose();
+        } catch (err) {
+            applyBackendErrorsToForm(err, setError);
+            showToast({ message: "Erro ao alterar senha.", severity: "error" });
         }
-      } else {
-        if (!ignore) setLoadingUser(false);
-      }
-    } else {
-      if (!ignore) setLoadingUser(false);
-    }
-    return () => {
-      ignore = true;
+    });
+
+    return (
+        <Dialog open={open} onClose={onClose} onTransitionExited={reset} fullWidth maxWidth="xs">
+            <DialogTitle>Alterar Senha</DialogTitle>
+            <form onSubmit={onSubmit}>
+                <DialogContent dividers>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <Controller name="currentPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Senha Atual" fullWidth error={!!errors.currentPassword} helperText={errors.currentPassword?.message} />} />
+                        <Controller name="newPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Nova Senha" fullWidth error={!!errors.newPassword} helperText={errors.newPassword?.message} />} />
+                        <Controller name="confirmPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Confirmar Nova Senha" fullWidth error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />} />
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+                    <Button type="submit" variant="contained" disabled={isSubmitting}>
+                        {isSubmitting ? <CircularProgress size={24} /> : "Alterar Senha"}
+                    </Button>
+                </DialogActions>
+            </form>
+        </Dialog>
+    );
+};
+
+const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
+    const { showToast } = useToast();
+    const [isSendingCode, setIsSendingCode] = useState(false);
+    
+    const { control, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<EmailChangeFormValues>({
+        resolver: zodResolver(emailChangeSchema),
+        defaultValues: { newEmail: "", currentPassword: "", verificationCode: "" },
+    });
+
+    const handleRequestCode = async () => {
+        const { newEmail, currentPassword } = getValues();
+        if (!newEmail || !currentPassword) {
+            showToast({ message: "Preencha o novo email e a senha atual para enviar o código.", severity: "warning" });
+            return;
+        }
+        setIsSendingCode(true);
+        try {
+            await apiFetch(`/api/users/${userId}/request-email-change`, {
+                method: "POST",
+                body: JSON.stringify({ newEmail, currentPassword }),
+            });
+            showToast({ message: "Código de verificação enviado!", severity: "success" });
+        } catch (err) {
+            applyBackendErrorsToForm(err, setError);
+            showToast({ message: "Erro ao solicitar código.", severity: "error" });
+        } finally {
+            setIsSendingCode(false);
+        }
     };
-  }, []);
+    
+    const onSubmit = handleSubmit(async (values) => {
+        try {
+            await apiFetch(`/api/users/${userId}/verify-email-change`, {
+                method: "POST",
+                body: JSON.stringify(values),
+            });
+            showToast({ message: "Email alterado com sucesso! A página será recarregada.", severity: "success" });
+            setTimeout(() => window.location.reload(), 2000);
+            onClose();
+        } catch (err) {
+            applyBackendErrorsToForm(err, setError);
+            showToast({ message: "Código de verificação inválido ou expirado.", severity: "error" });
+        }
+    });
 
-  // ───────────── Handlers ─────────────
-  const handleEdit = (field: string) => {
-    setEditingFields(prev => ({ ...prev, [field]: true }));
-  };
+    return (
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+            <DialogTitle>Alterar Email</DialogTitle>
+            <form onSubmit={onSubmit}>
+                <DialogContent dividers>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <Controller name="newEmail" control={control} render={({ field }) => 
+                            <TextField {...field} label="Novo Email" fullWidth type="email" error={!!errors.newEmail} helperText={errors.newEmail?.message} />
+                        } />
+                        <Controller name="currentPassword" control={control} render={({ field }) => 
+                            <TextField {...field} label="Senha Atual" fullWidth type="password" error={!!errors.currentPassword} helperText={errors.currentPassword?.message} />
+                        } />
+                        <Divider>Verificação</Divider>
+                        <Stack direction="row" spacing={1} alignItems="flex-start">
+                            <Controller name="verificationCode" control={control} render={({ field }) => 
+                                <TextField {...field} label="Código de Verificação" fullWidth error={!!errors.verificationCode} helperText={errors.verificationCode?.message} />
+                            } />
+                            <Button onClick={handleRequestCode} disabled={isSendingCode}>
+                                {isSendingCode ? <CircularProgress size={24} /> : "Enviar Código"}
+                            </Button>
+                        </Stack>
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+                    <Button type="submit" variant="contained" disabled={isSubmitting}>
+                        {isSubmitting ? <CircularProgress size={24} /> : "Verificar e Alterar"}
+                    </Button>
+                </DialogActions>
+            </form>
+        </Dialog>
+    );
+};
 
-  const handleSave = async (field: string) => {
-    if (!user) return;
 
-    try {
-      const res = await apiFetch<User>(`/api/users/${user.id}`, {
-        method: "PUT",
-        body: JSON.stringify({
-          user: {
-            [field]: user[field as keyof User],
-          },
-        }),
-      });
+export default function ProfilePage() {
+    const { data: apiResponse, loading } = useApi<UserApiResponse>('/api/users/me');    
+    const { showToast } = useToast();
+    const [mode, setMode] = useState<'view' | 'edit'>('view');
+    const [isSaving, setIsSaving] = useState(false);
+    const [pwDialogOpen, setPwDialogOpen] = useState(false);
+    const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+    const [avatarFile, setAvatarFile] = useState<File | null>(null);
+    const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [user, setUser] = useState<User | null>(null);
 
-      const updatedUser = (res as any).data ? (res as any).data : res;
-      
-      const session = localStorage.getItem("session");
-      if (session) {
-        const parsed = JSON.parse(session);
-        parsed.user = { ...parsed.user, ...updatedUser };
-        localStorage.setItem("session", JSON.stringify(parsed));
+    const form = useForm<ProfileFormValues>({
+      resolver: zodResolver(profileSchema),
+      defaultValues: { id: "", name: "", email: "", image: "" }
+    });
+
+    useEffect(() => {
+      if (user) form.reset(mapUserToForm(user));
+    }, [user, form]);
+    
+    useEffect(() => {
+      if (!avatarFile) { setAvatarPreview(null); return; }
+      const url = URL.createObjectURL(avatarFile);
+      setAvatarPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }, [avatarFile]);
+
+    useEffect(() => {
+      if (apiResponse?.data) {
+        const userData = apiResponse.data;
+        setUser(userData); // <-- Aqui eu guardo os dados do usuário no estado
+        form.reset(mapUserToForm(userData));
       }
+    }, [apiResponse, form]);
 
-      setEditingFields(prev => ({ ...prev, [field]: false }));
-      setUnsavedChanges(false);
-      showToast({ message: "Perfil atualizado com sucesso!", severity: "success" });
-    } catch (err: any) {
-      console.error("Falha ao atualizar perfil:", err);
-      showToast({ message: `Erro ao atualizar perfil: ${err.message || 'Erro desconhecido'}`, severity: "error" });
+    const handleSave = form.handleSubmit(async (values) => {
+      if (!user) return;
+      setIsSaving(true);
+      try {
+          const body = { user: { name: values.name } };
+          const response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
+          const updatedUser = response.data;
+          saveUserToLocalStorage(updatedUser);
+          setMode('view');
+          showToast({ message: "Perfil atualizado!", severity: "success" });
+          setUser(updatedUser);
+          window.dispatchEvent(new CustomEvent("profileUpdated"));
+          
+      } catch (err: unknown) {
+          applyBackendErrorsToForm(err, form.setError);
+          showToast({ message: "Erro ao salvar.", severity: "error" });
+      } finally {
+          setIsSaving(false);
+      }
+    });
+
+    const handleCancel = () => {
+        if (user) form.reset(mapUserToForm(user));
+        setAvatarFile(null);
+        setMode('view');
     }
-  };
+    
+    if (loading) return <Container sx={{py: 4, textAlign: 'center'}}><CircularProgress /></Container>;
+    if (!user) return <Container sx={{py: 4}}><Typography color="error">Falha ao carregar perfil.</Typography></Container>;
 
-  const handleCancel = (field: string) => {
-    setEditingFields(prev => ({ ...prev, [field]: false }));
-    setUnsavedChanges(false);
-  };
-
-  const handleFieldChange = (field: string, value: string) => {
-    if (!user) return;
-    setUser(prev => prev ? { ...prev, [field]: value } : null);
-    setUnsavedChanges(true);
-  };
-
-  const handlePreferenceChange = (key: string, value: boolean) => {
-    setPreferences(prev => ({ ...prev, [key]: value }));
-    showToast({ message: "Preferência atualizada!", severity: "success" });
-  };
-
-  // ───────────── Loading State Render ─────────────
-  if (loadingUser) {
     return (
-      <Box sx={{ p: 4, display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
-        <CircularProgress />
-      </Box>
+        <Box sx={{ py: 6, bgcolor: 'grey.50', minHeight: '100vh' }}>
+            <Container maxWidth="xl">
+                <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
+                <Card>
+                    <ProfileHeader 
+                        user={user} 
+                        mode={mode}
+                        avatarPreview={avatarPreview}
+                        setAvatarFile={setAvatarFile}
+                        onSave={handleSave} 
+                        onCancel={handleCancel} 
+                        onEdit={() => setMode('edit')}
+                        isSaving={isSaving}
+                    />
+                    <CardContent>
+                        <Stack spacing={4}>
+                            <ProfileForm control={form.control} errors={form.formState.errors} isLocked={mode === 'view' || isSaving} />
+                            <SecuritySettings 
+                                onOpenChangePassword={() => setPwDialogOpen(true)} 
+                                onOpenChangeEmail={() => setEmailDialogOpen(true)}
+                            />
+                        </Stack>
+                    </CardContent>
+                </Card>
+            </Container>
+            
+            <ChangePasswordDialog open={pwDialogOpen} onClose={() => setPwDialogOpen(false)} userId={user.id} />
+            <EmailChangeDialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} userId={user.id} />
+        </Box>
     );
-  }
-
-  if (!user) {
-    return (
-      <Box sx={{ p: 4, textAlign: "center", display: "flex", justifyContent: "center", alignItems: "center", minHeight: "80vh" }}>
-        <Typography variant="h6" color="text.secondary">Não foi possível carregar as informações do perfil.</Typography>
-      </Box>
-    );
-  }
-
-  return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.default", py: 4 }}>
-      <Box sx={{ maxWidth: 800, mx: "auto", px: 3 }}>
-        
-        {/* Header com Avatar e Informações Básicas */}
-        <StyledCard sx={{ mb: 4, overflow: "visible" }}>
-          <Box
-            sx={{
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-              color: "white",
-              p: 4,
-              borderRadius: "16px 16px 0 0",
-              position: "relative",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap" }}>
-              <Avatar
-                src={user.image || undefined}
-                alt={user.name || "Usuário"}
-                sx={{
-                  width: 80,
-                  height: 80,
-                  border: `3px solid ${alpha(theme.palette.common.white, 0.3)}`,
-                  bgcolor: !user.image ? theme.palette.secondary.main : undefined,
-                  fontSize: 28,
-                  fontWeight: 600,
-                  boxShadow: theme.shadows[4],
-                }}
-              >
-                {!user.image && user.name
-                  ? user.name
-                      .trim()
-                      .split(" ")
-                      .map((word) => word[0]?.toUpperCase())
-                      .slice(0, 2)
-                      .join("")
-                  : null}
-              </Avatar>
-              
-              <Box sx={{ flex: 1 }}>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
-                  Meu Perfil
-                </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-                  Gerencie suas informações pessoais e configurações
-                </Typography>
-                <Chip
-                  label={`Membro desde ${new Date(user.createdAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })}`}
-                  size="small"
-                  sx={{ 
-                    bgcolor: alpha(theme.palette.common.white, 0.2),
-                    color: "white",
-                    fontWeight: 500,
-                  }}
-                />
-              </Box>
-            </Box>
-          </Box>
-        </StyledCard>
-
-        {/* Alerta de Mudanças Não Salvas */}
-        <Fade in={unsavedChanges}>
-          <Alert
-            severity="warning"
-            sx={{ mb: 3, borderRadius: 2 }}
-            icon={<WarningIcon />}
-          >
-            Você tem alterações não salvas. Certifique-se de salvar antes de sair.
-          </Alert>
-        </Fade>
-
-        {/* Card Principal com Todas as Seções */}
-        <StyledCard>
-          
-          {/* Seção: Informações Pessoais */}
-          <SectionHeader>
-            <PersonIcon className="section-icon" />
-            <Typography className="section-title">Informações Pessoais</Typography>
-          </SectionHeader>
-          
-          <EditableFieldComponent
-            label="Nome completo"
-            value={user.name || ""}
-            icon={<PersonIcon fontSize="small" color="primary" />}
-            isEditing={editingFields.name || false}
-            onChange={(value) => handleFieldChange("name", value)}
-            onEdit={() => handleEdit("name")}
-            onSave={() => handleSave("name")}
-            onCancel={() => handleCancel("name")}
-            required
-            description="Como você gostaria de ser chamado"
-          />
-
-          <EditableFieldComponent
-            label="E-mail"
-            value={user.email || ""}
-            icon={<EmailIcon fontSize="small" color="primary" />}
-            isEditing={editingFields.email || false}
-            onChange={(value) => handleFieldChange("email", value)}
-            onEdit={() => handleEdit("email")}
-            onSave={() => handleSave("email")}
-            onCancel={() => handleCancel("email")}
-            type="email"
-            required
-            description="E-mail para login e notificações"
-          />
-
-          <Box sx={{ p: 2 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-              <ScheduleIcon fontSize="small" color="primary" />
-              <Typography variant="body1" fontWeight={500}>
-                Data de cadastro
-              </Typography>
-            </Box>
-            <Box sx={{ ml: 4 }}>
-              <Typography variant="body1" sx={{ py: 1 }}>
-                {new Date(user.createdAt).toLocaleDateString("pt-BR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                ID do usuário: {user.id}
-              </Typography>
-            </Box>
-          </Box>
-
-          <SectionDivider>
-            <Divider />
-          </SectionDivider>
-
-          {/* Seção: Preferências */}
-          <SectionHeader>
-            <PaletteIcon className="section-icon" />
-            <Typography className="section-title">Preferências</Typography>
-          </SectionHeader>
-          
-          <PreferenceToggle
-            label="Notificações por E-mail"
-            description="Receba atualizações importantes por e-mail"
-            icon={<NotificationsIcon fontSize="small" color="primary" />}
-            checked={preferences.emailNotifications}
-            onChange={(checked) => handlePreferenceChange("emailNotifications", checked)}
-          />
-
-          <PreferenceToggle
-            label="Modo Escuro"
-            description="Alterar aparência da interface"
-            icon={<PaletteIcon fontSize="small" color="primary" />}
-            checked={preferences.darkMode}
-            onChange={(checked) => handlePreferenceChange("darkMode", checked)}
-          />
-
-          <SectionDivider>
-            <Divider />
-          </SectionDivider>
-
-          {/* Seção: Segurança */}
-          <SectionHeader>
-            <SecurityIcon className="section-icon" />
-            <Typography className="section-title">Segurança</Typography>
-          </SectionHeader>
-          
-          <PreferenceToggle
-            label="Autenticação de dois fatores"
-            description="Adicione uma camada extra de segurança à sua conta"
-            icon={<ShieldIcon fontSize="small" color="primary" />}
-            checked={preferences.twoFactorAuth}
-            onChange={(checked) => handlePreferenceChange("twoFactorAuth", checked)}
-          />
-
-          <ActionButton
-            label="Alterar Senha"
-            description="Mantenha sua conta segura com uma senha forte"
-            icon={<LockIcon fontSize="small" />}
-            onClick={() => showToast({ message: "Funcionalidade em desenvolvimento", severity: "info" })}
-          />
-
-          <SectionDivider>
-            <Divider />
-          </SectionDivider>
-
-          {/* Seção: Zona de Perigo */}
-          <SectionHeader>
-            <WarningIcon className="section-icon" sx={{ color: "error.main !important" }} />
-            <Typography className="section-title" sx={{ color: "error.main !important" }}>
-              Zona de Perigo
-            </Typography>
-          </SectionHeader>
-          
-          <ActionButton
-            label="Excluir Conta"
-            description="Esta ação apagará permanentemente sua conta e não poderá ser desfeita"
-            icon={<DeleteIcon fontSize="small" />}
-            onClick={() => showToast({ message: "Funcionalidade em desenvolvimento", severity: "info" })}
-            color="error"
-          />
-
-        </StyledCard>
-      </Box>
-    </Box>
-  );
 }
