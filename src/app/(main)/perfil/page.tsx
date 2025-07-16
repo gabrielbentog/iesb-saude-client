@@ -398,34 +398,50 @@ export default function ProfilePage() {
     if (!user) return <Container sx={{py: 4}}><Typography color="error">Falha ao carregar perfil.</Typography></Container>;
 
     return (
-        <Box sx={{ py: 6, bgcolor: 'grey.50', minHeight: '100vh' }}>
-            <Container maxWidth="xl">
-                <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
-                <Card>
-                    <ProfileHeader 
-                        user={user} 
-                        mode={mode}
-                        avatarPreview={avatarPreview}
-                        setAvatarFile={setAvatarFile}
-                        onSave={handleSave} 
-                        onCancel={handleCancel} 
-                        onEdit={() => setMode('edit')}
-                        isSaving={isSaving}
-                    />
-                    <CardContent>
-                        <Stack spacing={4}>
-                            <ProfileForm control={form.control} errors={form.formState.errors} isLocked={mode === 'view' || isSaving} />
-                            <SecuritySettings 
-                                onOpenChangePassword={() => setPwDialogOpen(true)} 
-                                onOpenChangeEmail={() => setEmailDialogOpen(true)}
-                            />
-                        </Stack>
-                    </CardContent>
-                </Card>
-            </Container>
-            
-            <ChangePasswordDialog open={pwDialogOpen} onClose={() => setPwDialogOpen(false)} userId={user.id} />
-            <EmailChangeDialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} userId={user.id} />
-        </Box>
-    );
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        display: 'flex',
+        flexDirection: 'column',
+        bgcolor: 'grey.50',
+        boxSizing: 'border-box',
+      }}
+    >
+      <Container
+        maxWidth="xl"
+        sx={{
+          flexGrow: 1,
+          py: 6, // padding moveu pra dentro
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+          <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
+          <Card>
+              <ProfileHeader 
+                  user={user} 
+                  mode={mode}
+                  avatarPreview={avatarPreview}
+                  setAvatarFile={setAvatarFile}
+                  onSave={handleSave} 
+                  onCancel={handleCancel} 
+                  onEdit={() => setMode('edit')}
+                  isSaving={isSaving}
+              />
+              <CardContent>
+                  <Stack spacing={4}>
+                      <ProfileForm control={form.control} errors={form.formState.errors} isLocked={mode === 'view' || isSaving} />
+                      <SecuritySettings 
+                          onOpenChangePassword={() => setPwDialogOpen(true)} 
+                          onOpenChangeEmail={() => setEmailDialogOpen(true)}
+                      />
+                  </Stack>
+              </CardContent>
+          </Card>
+      </Container>
+      
+      <ChangePasswordDialog open={pwDialogOpen} onClose={() => setPwDialogOpen(false)} userId={user.id} />
+      <EmailChangeDialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} userId={user.id} />
+    </Box>
+  );
 }
