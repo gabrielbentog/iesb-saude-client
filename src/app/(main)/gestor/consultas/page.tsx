@@ -234,7 +234,7 @@ export default function AppointmentManagementScreen() {
           startIcon={<AddIcon />}
           onClick={() => pushWithProgress("/gestor/calendario/agendamento")}
         >
-          Agendar Nova Consulta
+          Definir horários
         </Button>
       </Box>
 

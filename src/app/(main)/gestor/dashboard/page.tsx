@@ -341,7 +341,7 @@ export default function ManagerDashboard() {
               </Typography>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 <Button variant="contained" sx={{ bgcolor: "white", color: "primary.main" }} startIcon={<PersonAddIcon />} onClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}>Adicionar Estagiário</Button>
-                <Button variant="outlined" sx={{ borderColor: "white", color: "white" }} startIcon={<AccessTimeIcon />} onClick={() => pushWithProgress("/gestor/calendario/agendamento")}>Alocar Horários</Button>
+                <Button variant="outlined" sx={{ borderColor: "white", color: "white" }} startIcon={<AccessTimeIcon />} onClick={() => pushWithProgress("/gestor/calendario/agendamento")}>Definir Horários</Button>
               </Box>
             </CardContent>
           </Paper>
@@ -375,7 +375,7 @@ export default function ManagerDashboard() {
               <StatCard
                 title="Estagiários Ativos"
                 value={stats.totalInterns}
-                subtitle="Em 3 especialidades"
+                subtitle="Total de estagiários ativos"
                 icon={<PeopleIcon sx={{ color: "success.main" }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}
               />
