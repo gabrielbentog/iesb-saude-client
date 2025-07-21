@@ -46,7 +46,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle"
 import CancelIcon from "@mui/icons-material/Cancel"
 import PendingIcon from "@mui/icons-material/Pending"
 
-import { parseISO, format } from "date-fns"
+import { parseISO, format, add, isAfter } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useParams, useRouter } from "next/navigation"
 import { useToast } from "@/app/contexts/ToastContext";
@@ -100,7 +100,7 @@ const adapt = (raw: RawAppointment): Appointment => ({
     "",
   room: raw.consultationRoom?.name ?? "",
   date: raw.date,
-  time: raw.startTime.slice(0, 5),
+  time: format(parseISO(raw.startTime), "HH:mm"),
   status: (STATUS_LABEL[raw.status] as AppointmentStatus) || "Pendente",
   description: raw.notes || "Sem descrição",
   createdAt: raw.date,
@@ -222,6 +222,12 @@ const AppointmentDetail: React.FC = () => {
   const [error, setError] = useState("")
   const [assignDialogOpen, setAssignDialogOpen] = useState(false)
   const [selectedInternId, setSelectedInternId] = useState("")
+  const [now, setNow] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000); // 1 min
+    return () => clearInterval(t);
+  }, []);
 
   // --------------------------------------------------
   // API calls
@@ -264,6 +270,14 @@ const AppointmentDetail: React.FC = () => {
       return d
     }
   }
+
+  const isBeforeStart = useMemo(() => {
+    if (!appointment) return false;
+
+    const start = new Date(`${appointment.date}T${appointment.time}:00`);
+
+    return now <= start;
+  }, [appointment, now]);
 
   // PATCH assign intern
   const handleAssignIntern = async () => {
@@ -336,6 +350,11 @@ const AppointmentDetail: React.FC = () => {
 
   const btnCfg = BUTTONS_BY_STATUS[appointment.status]
 
+  const disablePrimary =
+    appointment.status === "Confirmada" &&
+    btnCfg.primary?.label === "Concluir" &&
+    isBeforeStart;
+
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: "background.paper", py: 6 }}>
       <Container maxWidth="xl">
@@ -363,6 +382,7 @@ const AppointmentDetail: React.FC = () => {
               {btnCfg.primary && (
                 <ActionButton
                   {...btnCfg.primary}
+                  disabled={disablePrimary}
                   onClick={() => handleChangeStatus(btnCfg.primary!.action)}
                 />
               )}
