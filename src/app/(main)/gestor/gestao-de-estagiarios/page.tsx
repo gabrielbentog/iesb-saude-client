@@ -25,7 +25,7 @@ import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import PsychologyIcon from "@mui/icons-material/Psychology"
-import FitnessCenterIcon from "@mui/icons-material/FitnessCenter"
+import MedicalServicesIcon from "@mui/icons-material/MedicalServices"
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
@@ -50,7 +50,7 @@ const specialtyIcon = (s: string) => {
   switch (s) {
     case "Nutrição":     return <RestaurantIcon fontSize="small" />
     case "Psicologia":   return <PsychologyIcon fontSize="small" />
-    case "Fisioterapia": return <FitnessCenterIcon fontSize="small" />
+    case "Odontologia": return <MedicalServicesIcon fontSize="small" />
     default:             return null
   }
 }

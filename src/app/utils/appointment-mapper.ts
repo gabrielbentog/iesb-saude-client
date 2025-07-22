@@ -3,7 +3,7 @@ import { parseISO, format, isToday, isTomorrow } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import RestaurantIcon from "@mui/icons-material/Restaurant"
 import PsychologyIcon from "@mui/icons-material/Psychology"
-import FitnessCenterIcon from "@mui/icons-material/FitnessCenter"
+import MedicalServicesIcon from "@mui/icons-material/MedicalServices"
 import AssignmentIcon from "@mui/icons-material/Assignment" 
 import { RawAppointment, UIAppointment, STATUS_LABEL, RawAppointmentStatus } from "@/app/types"
 
@@ -24,7 +24,7 @@ export const specialtyIcon = (name?: string) => {
   switch (name) {
     case "Nutrição":     return React.createElement(RestaurantIcon, { fontSize: "small" })
     case "Psicologia":   return React.createElement(PsychologyIcon, { fontSize: "small" })
-    case "Fisioterapia": return React.createElement(FitnessCenterIcon, { fontSize: "small" })
+    case "Odontologia": return React.createElement(MedicalServicesIcon, { fontSize: "small" })
     default:             return React.createElement(AssignmentIcon, { fontSize: "small" })
   }
 }

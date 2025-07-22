@@ -72,7 +72,7 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
               : <PersonIcon fontSize="small" />}
           </Avatar>
           <Typography variant="body2" fontWeight={500} noWrap>
-            {a.intern?.name || "—"}
+            {a.intern && a.intern.name !== '-' ? a.intern.name : "Não designado"}
           </Typography>
         </Box>
       );
