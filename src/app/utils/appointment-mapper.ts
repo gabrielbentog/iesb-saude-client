@@ -5,15 +5,7 @@ import RestaurantIcon from "@mui/icons-material/Restaurant"
 import PsychologyIcon from "@mui/icons-material/Psychology"
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter"
 import AssignmentIcon from "@mui/icons-material/Assignment" 
-import { RawAppointment, UIAppointment } from "../types/appointments"
-
-const STATUS_LABEL: Record<string, UIAppointment["status"]> = {
-  confirmed:  "Confirmada",
-  pending:    "Pendente",
-  rejected:  "Rejeitada",
-  cancelled:   "Cancelada",
-  completed:  "Concluída",
-}
+import { RawAppointment, UIAppointment, STATUS_LABEL, RawAppointmentStatus } from "@/app/types"
 
 export const statusPriority = (raw: string): UIAppointment["priority"] =>
   raw === "pending" ? "high" :
@@ -55,7 +47,7 @@ export const mapRaw = (a: RawAppointment): UIAppointment => {
     room: a.consultationRoom?.name ?? "-",
     date: humanDate(a.date),
     time: format(parseISO(a.startTime), "HH:mm"),
-    status: STATUS_LABEL[a.status] ?? (a.status as UIAppointment["status"]),
+    status: STATUS_LABEL[a.status as RawAppointmentStatus],
     priority: statusPriority(a.status),
     icon: specialtyIcon(specialty),
   }

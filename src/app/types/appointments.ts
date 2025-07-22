@@ -65,19 +65,33 @@ export interface UIAppointment {
   priority: "high" | "normal" | "low"
 }
 
+export type RawAppointmentStatus =
+  | 'pending'
+  | 'admin_confirmed'
+  | 'patient_confirmed'
+  | 'cancelled_by_admin'
+  | 'patient_cancelled'
+  | 'rejected'
+  | 'completed'
+
 /* Mapeia status enum->texto */
-export const STATUS_LABEL: Record<string, string> = {
-  pending: "Pendente",
-  confirmed: "Confirmada",
-  rejected: "Rejeitada",
-  cancelled: "Cancelada",
-  completed: "Concluída",
+export const STATUS_LABEL: Record<RawAppointmentStatus, string> = {
+  pending:            'Pendente',
+  admin_confirmed:    'Aguardando confirmação do Paciente',
+  patient_confirmed:  'Confirmada',
+  cancelled_by_admin: 'Cancelada pelo gestor',
+  patient_cancelled:  'Cancelada pelo paciente',
+  rejected:           'Rejeitada',
+  completed:          'Concluída',
 }
 
+export type AppointmentStatus =
+  (typeof STATUS_LABEL)[keyof typeof STATUS_LABEL]
+
 /* Decide prioridade visual pela situação */
-export const statusPriority = (status: string): UIAppointment["priority"] => {
-  if (status === "Pendente" || status === "pending") return "high"
-  if (status === "Rescheduled" || status === "reagendada") return "low"
+export const statusPriority = (status: AppointmentStatus): UIAppointment["priority"] => {
+  if (status === "pending") return "high"
+  if (status === "admin_confirmed") return "low"
   return "normal"
 }
 

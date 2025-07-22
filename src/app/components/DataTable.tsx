@@ -20,41 +20,63 @@ import ArrowRightAltIcon from '@mui/icons-material/ArrowRightAlt';
 import { styled, alpha } from '@mui/material/styles';
 
 import type { DataTableProps } from "@/app/types";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import PendingIcon from '@mui/icons-material/Pending';
+import CancelIcon from '@mui/icons-material/Cancel';
+import type { AppointmentStatus } from "@/app/types";
 // StyledBadge e IconContainer (certifique-se de que estão definidos ou importados corretamente)
 export const StyledBadge = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "badgeType",
-})<{ badgeType?: string }>(({ theme, badgeType }) => {
-  let backgroundColor = theme.palette.grey[100];
-  let textColor = theme.palette.grey[800];
-
-  if (badgeType === "Confirmada" || badgeType === "Ativo") {
-    backgroundColor = alpha(theme.palette.success.main, 0.1);
-    textColor = theme.palette.success.dark;
-  } else if (badgeType === "Pendente") {
-    backgroundColor = alpha(theme.palette.warning.main, 0.1);
-    textColor = theme.palette.warning.dark;
-  } else if (badgeType === "Cancelada" || badgeType === "Inativo") {
-    backgroundColor = alpha(theme.palette.error.main, 0.1);
-    textColor = theme.palette.error.dark;
-  } else if (badgeType === "Concluída") {
-    backgroundColor = alpha(theme.palette.info.main, 0.1);
-    textColor = theme.palette.info.dark;
-  } else if (badgeType === "Rejeitada") {
-    backgroundColor = alpha(theme.palette.error.main, 0.1);
-    textColor = theme.palette.error.dark;
-  }
-
+})<{ badgeType: AppointmentStatus }>(({ theme, badgeType }) => {
+  const cfg = (() => {
+    switch (badgeType) {
+      case "Confirmada":
+        return {
+          bg: alpha(theme.palette.success.main, 0.1),
+          fg: theme.palette.success.main,
+          icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
+        };
+      case "Concluída":
+        return {
+          bg: alpha(theme.palette.info.main, 0.1),
+          fg: theme.palette.info.main,
+          icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
+        };
+      case "Pendente":
+      case "Aguardando confirmação do Paciente":
+        return {
+          bg: alpha(theme.palette.warning.main, 0.1),
+          fg: theme.palette.warning.main,
+          icon: <PendingIcon sx={{ fontSize: 16 }} />,
+        };
+      case "Cancelada pelo gestor":
+      case "Cancelada pelo paciente":
+      case "Rejeitada":
+        return {
+          bg: alpha(theme.palette.error.main, 0.1),
+          fg: theme.palette.error.main,
+          icon: <CancelIcon sx={{ fontSize: 16 }} />,
+        };
+      default:
+        return {
+          bg: alpha(theme.palette.grey[500], 0.1),
+          fg: theme.palette.grey[700],
+          icon: null,
+        };
+    }
+  })();
   return {
-    backgroundColor,
-    color: textColor,
-    fontWeight: 500,
-    fontSize: 12,
-    height: 24,
-    borderRadius: 4,          // Deixa mais retangular
-    padding: '0 8px',         // Ajusta o espaçamento horizontal
-    textTransform: 'none',    // Mantém a capitalização original
+    backgroundColor: cfg.bg,
+    color: cfg.fg,
+    fontWeight: 600,
+    fontSize: "0.75rem",
+    height: 28,
+    borderRadius: 4,
+    padding: '0 8px',
+    textTransform: 'none',
+    "& .MuiChip-icon": { color: cfg.fg },
     "&:hover": {
-      backgroundColor: alpha(backgroundColor, 0.8),
+      backgroundColor: alpha(cfg.bg, 0.8),
     },
   };
 });

@@ -94,8 +94,14 @@ const renderAppointmentCell = (a: UIAppointment, id: string) => {
       return `${a.date} às ${a.time}`
 
     case "status":
-      return <StyledBadge label={a.status} badgeType={a.status} />
-
+      return (
+        <StyledBadge
+          label={a.status === "Aguardando confirmação do Paciente"
+            ? "Aguard. Confirmação"
+            : a.status}
+          badgeType={a.status}
+        />
+      )
     default:
       return null
   }
@@ -160,7 +166,9 @@ export default function AppointmentManagementScreen() {
   const todayCount = appointments.filter((a) => a.date === todayISO).length
   const totalCountLocal = appointments.length
   const completedCount  = appointments.filter((a) => a.status === "Concluída").length
-  const pendingCount    = appointments.filter((a) => a.status === "Pendente").length
+  const pendingCount    = appointments.filter(
+    (a) => a.status === "Pendente" || a.status === "Aguardando confirmação do Paciente"
+  ).length
   const completionRate  = totalCountLocal ? Math.round((completedCount / totalCountLocal) * 100) : 0
 
   // ───────────── Manipulação de menu ─────────────
@@ -197,7 +205,7 @@ export default function AppointmentManagementScreen() {
       setAppointments((prev) =>
       prev.map((a) =>
         a.id === selectedAppointment.id
-        ? { ...a, status: "Cancelada" }
+        ? { ...a, status: "Cancelada pelo gestor" }
         : a
       )
       )
@@ -320,7 +328,11 @@ export default function AppointmentManagementScreen() {
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           Editar
         </MenuItem>
-        {selectedAppointment && selectedAppointment.status !== "Rejeitada" && selectedAppointment.status !== "Cancelada" && (
+        {selectedAppointment
+          && !["Rejeitada",
+               "Cancelada pelo gestor",
+               "Cancelada pelo paciente",
+               "Concluída"].includes(selectedAppointment.status) && (
           <MenuItem onClick={handleCancelAppointment} sx={{ color: theme.palette.error.main }}>
             <DeleteIcon fontSize="small" sx={{ mr: 1 }} />
             Cancelar Consulta
