@@ -1,342 +1,462 @@
 "use client";
 
-import React from "react";
+import type React from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
   Button,
-  Card,
-  useMediaQuery,
-  Chip,
-  Avatar,
+  CardContent,
   Grid,
   Paper,
   Container,
-  Stack,
+  Tabs,
+  Tab,
+  CircularProgress,
+  Avatar,
+  Alert,
+  useMediaQuery,
+  Fab,
+  styled,
+  useTheme,
 } from "@mui/material";
-import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
-import { useTheme } from "@mui/material/styles";
+import { alpha } from "@mui/material/styles";
 
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import LocationOnIcon from "@mui/icons-material/LocationOn";
-import VideocamIcon from "@mui/icons-material/Videocam";
-import DescriptionIcon from "@mui/icons-material/Description";
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import HistoryIcon from "@mui/icons-material/History";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import PsychologyIcon from "@mui/icons-material/Psychology";
-import RestaurantIcon from "@mui/icons-material/Restaurant";
+import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
+import InfoIcon from "@mui/icons-material/Info";
 
+import { StatCard } from "@/app/components/ui/StatCard";
+import { DataTable, StyledBadge, IconContainer } from "@/app/components/DataTable";
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
+import { apiFetch } from "@/app/lib/api";
+import {
+  RawAppointment,
+  PaginatedResponse,
+  UIAppointment,
+} from "@/app/types";
+import { mapRaw } from "@/app/utils/appointment-mapper";
+import type { TabPanelProps } from "@/app/types";
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Tipagem local para os KPIs do paciente
+// ────────────────────────────────────────────────────────────────────────────────
+interface DashboardPatientStats {
+  nextAppointment: string | null;
+  completedAppointments: number;
+  pendingConfirm: number;
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Cabeçalhos Tabelas
+// ────────────────────────────────────────────────────────────────────────────────
+const nextHeaders = [
+  { id: "professional", label: "Profissional" },
+  { id: "specialty", label: "Especialidade" },
+  { id: "location", label: "Local" },
+  { id: "room", label: "Sala" },
+  { id: "dateTime", label: "Data/Hora" },
+  { id: "status", label: "Status" },
+] as const;
+
+type NextHeaderId = (typeof nextHeaders)[number]["id"];
+
+const historyHeaders = [
+  { id: "professional", label: "Profissional" },
+  { id: "specialty", label: "Especialidade" },
+  { id: "dateTime", label: "Data/Hora" },
+  { id: "status", label: "Status" },
+] as const;
+
+type HistoryHeaderId = (typeof historyHeaders)[number]["id"];
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Renderização de Células
+// ────────────────────────────────────────────────────────────────────────────────
+const renderAppointmentCell = (
+  a: UIAppointment,
+  id: NextHeaderId | HistoryHeaderId,
+) => {
+  switch (id) {
+    case "professional": {
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar src={a.intern?.avatar} sx={{ width: 32, height: 32 }}>
+            {a.intern?.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")}
+          </Avatar>
+          <Typography fontWeight={500}>{a.intern?.name}</Typography>
+        </Box>
+      );
+    }
+    case "specialty":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconContainer sx={{ color: "primary.main" }}>{a.icon}</IconContainer>
+          {a.specialty}
+        </Box>
+      );
+    case "location":
+      return a.location;
+    case "room":
+      return a.room;
+    case "dateTime":
+      return `${a.date} às ${a.time}`;
+    case "status":
+      return <StyledBadge label={a.status} badgeType={a.status} />;
+    default:
+      return null;
+  }
+};
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Styled Tabs
+// ────────────────────────────────────────────────────────────────────────────────
+const StyledTabsList = styled(Tabs)(({ theme }) => ({
+  backgroundColor: alpha(theme.palette.primary.main, 0.05),
+  borderRadius: 8,
+  minHeight: 44,
+  width: "100%",
+  "& .MuiTabs-indicator": { display: "none" },
+}));
+
+const StyledTab = styled(Tab)(({ theme }) => ({
+  textTransform: "none",
+  fontWeight: 600,
+  fontSize: 14,
+  minHeight: 44,
+  borderRadius: 8,
+  color: theme.palette.text.primary,
+  "&.Mui-selected": {
+    color: theme.palette.primary.main,
+    backgroundColor: theme.palette.background.paper,
+  },
+}));
+
+function TabPanel({ children, value, index, ...other }: TabPanelProps) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`tabpanel-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────────────────────────
+// Componente Principal
+// ────────────────────────────────────────────────────────────────────────────────
 export default function PatientDashboard() {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const pushWithProgress = usePushWithProgress();
 
-  // Mock data for upcoming appointments
-  const upcomingAppointments = [
-    {
-      id: 1,
-      specialty: "Nutrição",
-      professional: "Dra. Ana Silva",
-      location: "Clínica Mais Saúde - Bloco B",
-      address: "Av. Paulista, 1234 • São Paulo",
-      date: "Hoje",
-      time: "14:00",
-      remainingTime: "4h restantes",
-      status: "Confirmada",
-      isOnline: false,
-      icon: <RestaurantIcon fontSize="medium" />,
-    },
-    {
-      id: 2,
-      specialty: "Psicologia",
-      professional: "Dr. Carlos Mendes",
-      location: "Atendimento Online",
-      address: "Link disponível 15 min antes",
-      date: "Amanhã",
-      time: "10:30",
-      remainingTime: "1d restante",
-      status: "Agendada",
-      isOnline: true,
-      icon: <PsychologyIcon fontSize="medium" />,
-    },
-  ];
+  // KPIs
+  const [stats, setStats] = useState<DashboardPatientStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [errorStats, setErrorStats] = useState(false);
 
-  return (
+  // Próximas consultas
+  const [nextAppointments, setNextAppointments] = useState<UIAppointment[]>([]);
+  const [loadingNext, setLoadingNext] = useState(true);
+  const [errorNext, setErrorNext] = useState(false);
+
+  // Histórico
+  const [history, setHistory] = useState<UIAppointment[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [errorHistory, setErrorHistory] = useState(false);
+  const [fetchedHistory, setFetchedHistory] = useState(false);
+
+  // UI State
+  const [tabValue, setTabValue] = useState(0);
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // ───────────── Fetch KPIs ─────────────
+  const fetchKpis = async () => {
+    setLoadingStats(true);
+    setErrorStats(false);
+    try {
+      const res = await apiFetch<any>("/api/dashboard/patient_kpis");
+      const {
+        nextAppointment,
+        completed,
+        pendingConfirm,
+      } = res.data;
+      setStats({
+        nextAppointment,
+        completedAppointments: completed,
+        pendingConfirm: pendingConfirm ?? 0,
+      });
+    } catch (e) {
+      console.error("Falha ao carregar KPIs", e);
+      setErrorStats(true);
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchKpis();
+  }, []);
+
+  // ───────────── Fetch Próximas ─────────────
+  const fetchNext = async () => {
+    setLoadingNext(true);
+    setErrorNext(false);
+    try {
+      const res = await apiFetch<PaginatedResponse<RawAppointment>>(
+        "/api/appointments/next?page[number]=1&page[size]=5",
+      );
+      const raw = res.data ?? [];
+      setNextAppointments(raw.map(mapRaw));
+    } catch (e) {
+      console.error("Falha ao carregar próximas consultas", e);
+      setErrorNext(true);
+    } finally {
+      setLoadingNext(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNext();
+  }, []);
+
+  // ───────────── Fetch Histórico (on demand) ─────────────
+  const fetchHistory = async () => {
+    setLoadingHistory(true);
+    setErrorHistory(false);
+    try {
+      const res = await apiFetch<PaginatedResponse<RawAppointment>>(
+        "/api/appointments/history?page[number]=1&page[size]=8",
+      );
+      const raw = res.data ?? [];
+      setHistory(raw.map(mapRaw));
+      setFetchedHistory(true);
+    } catch (e) {
+      console.error("Falha ao carregar histórico", e);
+      setErrorHistory(true);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tabValue === 1 && !fetchedHistory) {
+      fetchHistory();
+    }
+  }, [tabValue, fetchedHistory]);
+
+  // ───────────── Handlers ─────────────
+  const handleTabChange = (_: React.SyntheticEvent, newVal: number) =>
+    setTabValue(newVal);
+
+  const renderError = (retryFn: () => void, msg: string) => (
     <Box
       sx={{
-        minHeight: "100vh",
-        bgcolor: theme.palette.background.default,
-        color: theme.palette.text.primary,
-        py: { xs: 4, md: 6 },
+        py: 4,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 2,
       }}
     >
-      <Container maxWidth="lg">
-        {/* Header Welcome */}
-        {/* <Box mb={5}>
-          <Typography variant="h4" fontWeight={700} gutterBottom>
-            Bem-vindo à Plataforma!
-          </Typography>
-          <Typography
-            variant="body1"
-            color="text.secondary"
-            maxWidth={480}
-            mb={3}
-            lineHeight={1.6}
-          >
-            Acesse consultas gratuitas com estagiários de nutrição, psicologia e outras especialidades.
-          </Typography>
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            onClick={() => pushWithProgress("/paciente/agendamento")}
+      <Alert severity="error" sx={{ maxWidth: 400, width: "100%" }}>
+        {msg}
+      </Alert>
+      <Button variant="outlined" onClick={retryFn}>
+        Tentar novamente
+      </Button>
+    </Box>
+  );
+
+  if (loadingStats) {
+    return (
+      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+  if (errorStats) {
+    return renderError(fetchKpis, "Não foi possível carregar o painel do paciente.");
+  }
+  if (!stats)
+    return <Typography>Não foi possível carregar o painel.</Typography>;
+
+  return (
+    <Box sx={{ minHeight: "100vh", bgcolor: "background.paper", py: 6 }}>
+      <Container maxWidth="xl">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {/* Banner */}
+          <Paper
             sx={{
-              borderRadius: 2,
-              textTransform: "none",
-              px: 4,
-              fontWeight: 600,
-              boxShadow: theme.shadows[3],
+              overflow: "hidden",
+              border: "none",
+              bgcolor: "primary.main",
+              color: "white",
+              position: "relative",
             }}
-            endIcon={<ArrowForwardIcon />}
+            elevation={0}
           >
-            Agendar Nova Consulta
-          </Button>
-        </Box> */}
-
-        {/* Próximas Consultas */}
-        <Typography variant="h6" fontWeight={700} mb={3}>
-          Próximas Consultas
-        </Typography>
-
-        {upcomingAppointments.length === 0 && (
-          <Typography color="text.secondary">Nenhuma consulta agendada.</Typography>
-        )}
-
-        <Grid container spacing={3} mb={5}>
-          {upcomingAppointments.map((appointment) => (
-            <Grid key={appointment.id} item xs={12} md={6}>
-              <Card
+            <CardContent sx={{ p: 4 }}>
+              <Typography variant="h4" fontWeight={700} gutterBottom>
+                Painel do Paciente
+              </Typography>
+              <Typography
+                variant="body1"
                 sx={{
-                  borderRadius: 1,
-                  boxShadow: theme.shadows[1],
-                  transition: "box-shadow 0.3s ease, transform 0.3s ease",
-                  "&:hover": {
-                    boxShadow: theme.shadows[4],
-                    transform: "translateY(-4px)",
-                  },
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
+                  mb: 3,
+                  maxWidth: "80%",
+                  color: "rgba(255,255,255,0.9)",
                 }}
               >
-                {/* Header */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    bgcolor: theme.palette.primary.main,
-                    color: "common.white",
-                    px: 3,
-                    py: 2,
-                    borderTopLeftRadius: 8,
-                    borderTopRightRadius: 8,
-                  }}
+                Acompanhe suas consultas, histórico e tratamentos em um só lugar.
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button
+                  variant="contained"
+                  sx={{ bgcolor: "white", color: "primary.main" }}
+                  startIcon={<AddCircleOutlineIcon />}
+                  onClick={() =>
+                    pushWithProgress("/paciente/agendamento")
+                  }
                 >
-                  <Avatar
-                    sx={{
-                      bgcolor: "rgba(255,255,255,0.2)",
-                      mr: 2,
-                      width: 48,
-                      height: 48,
-                    }}
-                  >
-                    {appointment.icon}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      {appointment.specialty}
-                    </Typography>
-                    <Typography variant="body2" fontWeight={500}>
-                      {appointment.professional}
-                    </Typography>
+                  Agendar Consulta
+                </Button>
+                {/* <Button
+                  variant="outlined"
+                  sx={{ borderColor: "white", color: "white" }}
+                  startIcon={<LocalHospitalIcon />}
+                  onClick={() => pushWithProgress("/paciente/prescricoes")}
+                >
+                  Ver Prescrições
+                </Button> */}
+              </Box>
+            </CardContent>
+          </Paper>
+
+          {/* KPIs */}
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                title="Próxima Consulta"
+                value={stats.nextAppointment ?? "--"}
+                subtitle="Data/Hora"
+                icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                title="Consultas Concluídas"
+                value={stats.completedAppointments}
+                subtitle="Total até hoje"
+                icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={4}>
+              <StatCard
+                title="Pendente confirmação"
+                value={stats.pendingConfirm}
+                subtitle="Aguardando sua ação"
+                icon={<InfoIcon sx={{ color: "warning.main" }} />}
+                iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+              />
+            </Grid>
+          </Grid>
+
+          {/* Tabs */}
+          <Box sx={{ width: "100%" }}>
+            <StyledTabsList
+              value={tabValue}
+              onChange={handleTabChange}
+              variant="fullWidth"
+            >
+              <StyledTab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <CalendarMonthIcon sx={{ fontSize: 16 }} /> Próximas Consultas
                   </Box>
-                  <Chip
-                    label={appointment.status}
-                    color={appointment.status === "Confirmada" ? "success" : "warning"}
-                    size="small"
-                    sx={{
-                      ml: "auto",
-                      fontWeight: 600,
-                      bgcolor: "rgba(255,255,255,0.25)",
-                      color: "common.white",
-                    }}
-                  />
+                }
+              />
+              <StyledTab
+                label={
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <HistoryIcon sx={{ fontSize: 16 }} /> Histórico
+                  </Box>
+                }
+              />
+            </StyledTabsList>
+
+            {/* Tab 0: Próximas consultas */}
+            <TabPanel value={tabValue} index={0}>
+              {loadingNext ? (
+                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+                  <CircularProgress />
                 </Box>
+              ) : errorNext ? (
+                renderError(fetchNext, "Não foi possível carregar as próximas consultas.")
+              ) : (
+                <DataTable<UIAppointment>
+                  title="Próximas Consultas"
+                  subtitle="Suas consultas agendadas"
+                  headers={[...nextHeaders]}
+                  data={nextAppointments}
+                  renderCell={(a, id) =>
+                    renderAppointmentCell(a, id as NextHeaderId)
+                  }
+                  rowKeyExtractor={(a) => a.id}
+                  onViewAllClick={() => pushWithProgress("/paciente/consultas")}
+                />
+              )}
+            </TabPanel>
 
-                {/* Body */}
-                <Box sx={{ p: 3, flexGrow: 1 }}>
-                  <Stack spacing={2}>
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <LocationOnIcon color="action" sx={{ mr: 1 }} />
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          {appointment.location}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          {appointment.address}
-                        </Typography>
-                      </Box>
-                    </Box>
-
-                    <Box sx={{ display: "flex", alignItems: "center" }}>
-                      <AccessTimeIcon color="action" sx={{ mr: 1 }} />
-                      <Box>
-                        <Typography variant="body2" fontWeight={600}>
-                          {appointment.date} às {appointment.time}
-                        </Typography>
-                        <Typography variant="caption" color="primary" fontWeight={600}>
-                          {appointment.remainingTime}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </Stack>
+            {/* Tab 1: Histórico */}
+            <TabPanel value={tabValue} index={1}>
+              {loadingHistory ? (
+                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
+                  <CircularProgress />
                 </Box>
+              ) : errorHistory ? (
+                renderError(fetchHistory, "Não foi possível carregar seu histórico.")
+              ) : (
+                <DataTable<UIAppointment>
+                  title="Histórico de Consultas"
+                  subtitle="Consultas já realizadas"
+                  headers={[...historyHeaders]}
+                  data={history}
+                  renderCell={(a, id) =>
+                    renderAppointmentCell(a, id as HistoryHeaderId)
+                  }
+                  rowKeyExtractor={(a) => a.id}
+                  onViewAllClick={() =>
+                    pushWithProgress("/paciente/consultas/historico")
+                  }
+                />
+              )}
+            </TabPanel>
+          </Box>
 
-                {/* Footer */}
-                <Box
-                  sx={{
-                    px: 3,
-                    py: 2,
-                    borderTop: `1px solid ${theme.palette.divider}`,
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    gap: 1,
-                  }}
-                >
-                  {appointment.isOnline ? (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<VideocamIcon />}
-                      sx={{ textTransform: "none" }}
-                    >
-                      Entrar na Consulta
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<LocationOnIcon />}
-                      sx={{ textTransform: "none" }}
-                    >
-                      Ver no Mapa
-                    </Button>
-                  )}
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    sx={{ textTransform: "none" }}
-                  >
-                    Detalhes
-                  </Button>
-                </Box>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
-
-        {/* Acesso Rápido */}
-        <Typography variant="h6" fontWeight={700} mb={3}>
-          Acesso Rápido
-        </Typography>
-        <Grid container spacing={3}>
-          {[{
-            label: "Agendar Consulta",
-            icon: <EventAvailableIcon />,
-            color: "primary",
-            href: "/paciente/agendamento",
-          },{
-            label: "Calendário",
-            icon: <CalendarMonthIcon />,
-            color: "secondary",
-            href: "/paciente/calendario",
-          },{
-            label: "Histórico",
-            icon: <HistoryIcon />,
-            color: "info",
-            href: "/paciente/historico",
-          },{
-            label: "Documentos",
-            icon: <DescriptionIcon />,
-            color: "warning",
-            href: "/paciente/documentos",
-          }].map(({ label, icon, color, href }) => (
-            <Grid key={label} item xs={6} sm={3}>
-              <Card
-                onClick={() => pushWithProgress(href)}
-                sx={{
-                  p: 2,
-                  height: 120,
-                  borderRadius: 3,
-                  cursor: "pointer",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  textAlign: "center",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:hover": {
-                    transform: "translateY(-6px)",
-                    boxShadow: theme.shadows[6],
-                  },
-                }}
-                elevation={3}
-              >
-                <Avatar
-                  sx={{
-                    bgcolor: theme.palette[color].light,
-                    mb: 1,
-                    width: 56,
-                    height: 56,
-                  }}
-                >
-                  {icon}
-                </Avatar>
-                <Typography variant="subtitle1" fontWeight={700}>
-                  {label}
-                </Typography>
-              </Card>
-            </Grid>
-          ))}
-        </Grid>
+          {/* FAB móvel */}
+          {isMobile && (
+            <Fab
+              color="primary"
+              sx={{ position: "fixed", bottom: 24, right: 24 }}
+              onClick={() => pushWithProgress("/paciente/calendario/agendar")}
+            >
+              <AddCircleOutlineIcon />
+            </Fab>
+          )}
+        </Box>
       </Container>
-
-      {/* Floating Button (Mobile) */}
-      {isMobile && (
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => pushWithProgress("/paciente/agendamento")}
-          sx={{
-            position: "fixed",
-            bottom: 16,
-            right: 16,
-            borderRadius: "999px",
-            px: 3,
-            py: 1.5,
-            textTransform: "none",
-            fontWeight: 600,
-            boxShadow: theme.shadows[5],
-            zIndex: 1500,
-          }}
-          startIcon={<EventAvailableIcon />}
-        >
-          Agendar Consulta
-        </Button>
-      )}
     </Box>
   );
 }

@@ -14,8 +14,7 @@ import {
   MenuItem,
   IconButton,
   Avatar,
-  CircularProgress,
-  LinearProgress,
+  CircularProgress
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -265,9 +264,6 @@ export default function AppointmentPatientScreen() {
             subtitle="Aguardando"
             icon={<ScheduleIcon sx={{ color: theme.palette.warning.main }} />}
             iconBgColor={alpha(theme.palette.warning.main, 0.1)}
-            trendComponent={
-              <LinearProgress variant="determinate" value={appointments.length ? (pendingCount / appointments.length) * 100 : 0} sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: alpha(theme.palette.warning.main, 0.2) }} />
-            }
           />
         </Grid>
       </Grid>
