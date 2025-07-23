@@ -56,7 +56,7 @@ type ApiResponse<T> = { data: T };
  * ------------------------------------------------------------------*/
 const phoneRegex = /^\(?\d{2}\)?\s?\d{4,5}-?\d{4}$/;
 
-export const formSchema = z.object({
+const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
   telefone: z.string().regex(phoneRegex, "Telefone inválido"),
