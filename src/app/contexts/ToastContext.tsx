@@ -6,7 +6,6 @@ import type {
   Toast,
   ToastOptions,
   ToastContextType,
-  AnchorOrigin,
   ToastProviderProps,
 } from '@/app/types';
 

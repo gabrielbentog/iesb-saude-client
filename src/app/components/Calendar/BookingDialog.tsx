@@ -8,7 +8,7 @@ import {
 } from '@mui/material';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import type { CalendarEvent, BookingDialogProps } from '@/app/types';
+import type { BookingDialogProps } from '@/app/types';
 
 export function BookingDialog({ open, event, onClose, onSubmitBooking }: BookingDialogProps) {
   const [objective, setObjective] = useState('');

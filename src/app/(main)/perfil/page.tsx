@@ -10,13 +10,18 @@ import {
   Edit, Save, Cancel, PhotoCamera, DeleteOutline, Security, Password, Person, Email
 } from "@mui/icons-material";
 import { z } from "zod";
-import { useForm, Controller, type UseFormReturn } from "react-hook-form";
+import { useForm, Controller, type FieldValues, type UseFormReturn } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { apiFetch } from "@/app/lib/api";
 import { useToast } from "@/app/contexts/ToastContext";
 import { useApi } from "@/app/hooks/useApi";
 import type { User } from '@/app/types';
+
+interface ApiError {
+  status?: number;
+  data?: { errors?: Record<string, string[]> };
+}
 
 // --- Schemas e Tipos ---
 const profileSchema = z.object({
@@ -72,13 +77,22 @@ const saveUserToLocalStorage = (user: User) => {
   }
 };
 
-const applyBackendErrorsToForm = (err: unknown, setError: UseFormReturn<any>['setError']) => {
-    const apiError = err as { status?: number; data?: { errors?: Record<string, string[]> } };
-    if (apiError?.status === 422 && apiError?.data?.errors) {
-        Object.entries(apiError.data.errors).forEach(([key, msgs]) => {
-            setError(key, { type: "server", message: msgs.join(", ") });
-        });
-    }
+const applyBackendErrorsToForm = <
+  TFieldValues extends FieldValues = FieldValues
+>(
+  err: unknown,
+  setError: UseFormReturn<TFieldValues>["setError"]
+): void => {
+  const apiError = err as ApiError;
+
+  if (apiError?.status === 422 && apiError.data?.errors) {
+    Object.entries(apiError.data.errors).forEach(([key, msgs]) => {
+      setError(key as import("react-hook-form").Path<TFieldValues>, {
+        type: "server",
+        message: msgs.join(", "),
+      });
+    });
+  }
 };
 
 // --- Componentes Aninhados ---

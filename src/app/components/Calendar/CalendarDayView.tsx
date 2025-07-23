@@ -20,7 +20,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
-import type { CalendarEvent, CalendarDayViewProps } from '@/app/types';
+import type { CalendarDayViewProps } from '@/app/types';
 
 
 export function CalendarDayView({

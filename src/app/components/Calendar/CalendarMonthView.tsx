@@ -26,7 +26,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
-import type { CalendarEvent, CalendarMonthViewProps } from '@/app/types';
+import type { CalendarMonthViewProps } from '@/app/types';
 
 
 export function CalendarMonthView({

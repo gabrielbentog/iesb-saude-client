@@ -64,9 +64,12 @@ export function CalendarHeader({
   const totalActive = campusFilters.length + specialtyFilters.length;
 
   /* filtra lista localmente */
-  const textMatch = (v: string) => v.toLowerCase().includes(search.toLowerCase());
-  const campusFiltered = useMemo(() => campusList.filter(textMatch), [search, campusList]);
-  const specialtyFiltered = useMemo(() => specialtyList.filter(textMatch), [search, specialtyList]);
+  const textMatch = React.useCallback(
+    (v: string) => v.toLowerCase().includes(search.toLowerCase()),
+    [search]
+  );
+  const campusFiltered = useMemo(() => campusList.filter(textMatch), [campusList, textMatch]);
+  const specialtyFiltered = useMemo(() => specialtyList.filter(textMatch), [specialtyList, textMatch]);
 
   /* chips ativos */
   const activeChips = [...campusFilters, ...specialtyFilters];

@@ -31,13 +31,26 @@ import 'dayjs/locale/pt-br';
 import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { apiFetch } from '@/app/lib/api';
 import type { Campus, Especialidade, Slot } from '@/app/types';
-
+import { useToast } from '@/app/contexts/ToastContext';
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 
 dayjs.locale('pt-br');
 
 const steps = ['Informações', 'Data e Horário', 'Objetivo', 'Confirmação'];
 
+interface ApiResponseError {
+  response: Response;           // fetch Response (ou use AxiosError se for Axios)
+}
+
+const isApiResponseError = (e: unknown): e is ApiResponseError =>
+  typeof e === "object" &&
+  e !== null &&
+  "response" in e &&
+  (e as ApiResponseError).response instanceof Response;
+  
 export default function AgendarConsultaPage() {
+  const { showToast } = useToast();
+  const pushWithProgress = usePushWithProgress();
   const [activeStep, setActiveStep] = useState<number>(0);
   const [campusList, setCampusList] = useState<Campus[]>([]);
   const [especialidades, setEspecialidades] = useState<Especialidade[]>([]);
@@ -163,12 +176,12 @@ export default function AgendarConsultaPage() {
         body: JSON.stringify(payload),
       });
 
-      alert("Agendamento criado com sucesso!");
-      setActiveStep(0); // Ou redirecione se quiser
-    } catch (err: any) {
-      if (err?.response?.status === 422 && err?.response?.json) {
-        const errorData = await err.response.json();
-        setApiError(errorData.errors?.join(', ') || "Erro ao agendar.");
+      showToast({message: "Consulta agendada com sucesso!", severity: "success"});
+      pushWithProgress('/paciente/consultas');
+      } catch (err: unknown) {
+      if (isApiResponseError(err) && err.response.status === 422) {
+        const errorData: { errors?: string[] } = await err.response.json();
+        setApiError(errorData.errors?.join(", ") || "Erro ao agendar.");
       } else {
         setApiError("Erro inesperado ao tentar agendar a consulta.");
       }

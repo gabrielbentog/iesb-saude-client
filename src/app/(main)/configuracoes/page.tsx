@@ -8,7 +8,6 @@ import {
   FormControlLabel,
   Button,
   Divider,
-  useTheme,
   FormControl,
   InputLabel,
   Select,
@@ -17,9 +16,7 @@ import {
 import { useState } from "react";
 
 export default function ConfiguracoesPage() {
-  const theme = useTheme();
 
-  const [darkMode, setDarkMode] = useState(true);
   const [emailNotif, setEmailNotif] = useState(true);
   const [language, setLanguage] = useState("pt-BR");
   const [twoFactor, setTwoFactor] = useState(false);
@@ -27,7 +24,6 @@ export default function ConfiguracoesPage() {
   const handleSave = () => {
     console.log({
       language,
-      darkMode,
       emailNotif,
       twoFactor
     });

@@ -36,7 +36,7 @@ export async function apiFetch<T = unknown>(
       try {
         const errorBody = await res.json();
         if (errorBody && Array.isArray(errorBody.errors)) {
-          errorMsg += ': ' + errorBody.errors.map((e: any) => e.title).join(', ');
+          errorMsg += ': ' + errorBody.errors.map((e: { title: string }) => e.title).join(', ');
         } else if (errorBody && errorBody.message) {
           errorMsg += ': ' + errorBody.message;
         }

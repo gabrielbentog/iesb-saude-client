@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -27,7 +27,6 @@ import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
 import HistoryIcon from "@mui/icons-material/History";
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital";
 import InfoIcon from "@mui/icons-material/Info";
 
 import { StatCard } from "@/app/components/ui/StatCard";
@@ -85,7 +84,7 @@ const renderAppointmentCell = (
     case "professional": {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar src={a.intern?.avatar} sx={{ width: 32, height: 32 }}>
+          <Avatar src={a.intern?.avatarUrl} sx={{ width: 32, height: 32 }}>
             {a.intern?.name
               .split(" ")
               .map((n) => n[0])
@@ -180,11 +179,19 @@ export default function PatientDashboard() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // ───────────── Fetch KPIs ─────────────
-  const fetchKpis = async () => {
+  interface PatientKpisResponse {
+    data: {
+      nextAppointment: string | null;
+      completed: number;
+      pendingConfirm?: number;
+    }
+  }
+
+  const fetchKpis = useCallback(async () => {
     setLoadingStats(true);
     setErrorStats(false);
     try {
-      const res = await apiFetch<any>("/api/dashboard/patient_kpis");
+      const res = await apiFetch<PatientKpisResponse>("/api/dashboard/patient_kpis");
       const {
         nextAppointment,
         completed,
@@ -192,7 +199,7 @@ export default function PatientDashboard() {
       } = res.data;
       setStats({
         nextAppointment,
-        completedAppointments: completed,
+        completedAppointments: completed ?? 0,
         pendingConfirm: pendingConfirm ?? 0,
       });
     } catch (e) {
@@ -201,11 +208,11 @@ export default function PatientDashboard() {
     } finally {
       setLoadingStats(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchKpis();
-  }, []);
+  }, [fetchKpis]);
 
   // ───────────── Fetch Próximas ─────────────
   const fetchNext = async () => {

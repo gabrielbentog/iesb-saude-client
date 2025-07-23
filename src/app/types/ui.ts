@@ -61,7 +61,7 @@ export interface DataTableProps<T> {
 }
 
 export interface ScheduleItemProps {
-  control: Control<any>;
+  control: Control<Record<string, unknown>>;
   index: number;
   repeatType: number;
   onRemoveDay: () => void;

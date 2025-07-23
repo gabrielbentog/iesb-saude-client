@@ -37,7 +37,9 @@ import { useToast } from '@/app/contexts/ToastContext';
 import type { SidebarProps } from '@/app/types';
 
 // Estilos para os itens da lista, para evitar repetição
-const listItemButtonStyles = (theme: any, open: boolean, isActive: boolean = false) => ({
+import type { Theme } from "@mui/material/styles";
+
+const listItemButtonStyles = (theme: Theme, open: boolean, isActive: boolean = false) => ({
   borderRadius: theme.shape.borderRadius * 1.5, // Um pouco mais arredondado
   mb: theme.spacing(0.5),
   py: theme.spacing(1.25), // Ajuste de padding vertical
