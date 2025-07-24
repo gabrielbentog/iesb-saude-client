@@ -25,8 +25,10 @@ interface ApiError {
 
 // --- Schemas e Tipos ---
 const profileSchema = z.object({
-  id: z.string().min(1),
-  name: z.string().trim().min(2, "Informe o nome completo."),
+  id:    z.string().min(1),
+  name:  z.string().trim().min(2, "Informe o nome completo."),
+  phone: z.string().trim().optional().refine(v => !v || /^\+?\d{10,14}$/.test(v), "Telefone inválido."),
+  cpf:   z.string().trim().optional().refine(v => !v || /^\d{11}$/.test(v), "CPF deve ter 11 dígitos."),
   email: z.string().trim().email("Email inválido."),
   image: z.string().url().optional().or(z.literal("")).nullable(),
 });
@@ -61,6 +63,8 @@ const mapUserToForm = (user: User): Omit<ProfileFormValues, 'currentPassword'> =
   id: user.id, 
   name: user.name ?? "", 
   email: user.email ?? "",
+  phone: user.phone ?? "",
+  cpf: user.cpf ?? "",
   image: user.image ?? null,
 });
 
@@ -191,7 +195,8 @@ const ProfileForm: FC<{
     control: UseFormReturn<ProfileFormValues>['control'];
     errors: UseFormReturn<ProfileFormValues>['formState']['errors'];
     isLocked: boolean;
-}> = ({ control, errors, isLocked }) => (
+    cpfPersisted?: boolean;
+}> = ({ control, errors, isLocked, cpfPersisted }) => (
   <Section title={<><Person /> <Typography variant="h6">Informações Pessoais</Typography></>}>
     <Grid container spacing={2}>
         <Grid item xs={12} sm={6}>
@@ -203,6 +208,40 @@ const ProfileForm: FC<{
             <Controller name="email" control={control} render={({ field }) => (
                 <TextField {...field} label="Email" fullWidth variant="outlined" disabled helperText="Para alterar o email, use a seção de segurança."/>
             )} />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Telefone"
+                fullWidth
+                variant="outlined"
+                disabled={isLocked}
+                error={!!errors.phone}
+                helperText={errors.phone?.message}
+                placeholder="+5511999999999"
+              />
+            )}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Controller
+            name="cpf"
+            control={control}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="CPF"
+                fullWidth
+                variant="outlined"
+                disabled={isLocked || cpfPersisted}
+                error={!!errors.cpf}
+                helperText={ cpfPersisted ? "CPF não pode ser alterado depois de salvo." : errors.cpf?.message }/>
+            )}
+          />
         </Grid>
     </Grid>
   </Section>
@@ -356,10 +395,11 @@ export default function ProfilePage() {
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [user, setUser] = useState<User | null>(null);
+    const cpfPersisted = !!user?.cpf;
 
     const form = useForm<ProfileFormValues>({
       resolver: zodResolver(profileSchema),
-      defaultValues: { id: "", name: "", email: "", image: "" }
+      defaultValues: { id: "", name: "", email: "", cpf: "", phone: "", image: "" }
     });
 
     useEffect(() => {
@@ -385,7 +425,11 @@ export default function ProfilePage() {
       if (!user) return;
       setIsSaving(true);
       try {
-          const body = { user: { name: values.name } };
+          const body = { user: { 
+            name: values.name, 
+            cpf: values.cpf || null, 
+            phone: values.phone || null 
+          }};
           const response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
           const updatedUser = response.data;
           saveUserToLocalStorage(updatedUser);
@@ -444,7 +488,12 @@ export default function ProfilePage() {
               />
               <CardContent>
                   <Stack spacing={4}>
-                      <ProfileForm control={form.control} errors={form.formState.errors} isLocked={mode === 'view' || isSaving} />
+                      <ProfileForm
+                        control={form.control}
+                        errors={form.formState.errors}
+                        isLocked={mode === 'view' || isSaving}
+                        cpfPersisted={cpfPersisted}
+                      />
                       <SecuritySettings 
                           onOpenChangePassword={() => setPwDialogOpen(true)} 
                           onOpenChangeEmail={() => setEmailDialogOpen(true)}
