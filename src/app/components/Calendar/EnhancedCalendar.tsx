@@ -77,11 +77,13 @@ export default function EnhancedCalendar({
   const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEvent | null>(null);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<CalendarEvent | null>(null);
 
-  const { data: campusApi } = useApi<CollegeLocation[]>("/api/college_locations");
-  const campusStatic = (campusApi ?? []).map((c) => c.name);
+  const { data: specRes } = useApi<{ data: SimpleSpec[] }>("/api/specialties/simple");
 
-  const { data: specApi } = useApi<SimpleSpec[]>("/api/specialties/simple");
-  const specialtyStatic = (specApi ?? []).map((s) => s.name);
+  const specialtyStatic = (specRes?.data ?? []).map((s) => s.name);
+
+  const { data: campusRes } = useApi<{ data: CollegeLocation[] }>("/api/college_locations");
+
+  const campusStatic = (campusRes?.data ?? []).map((c) => c.name);
 
   const { start, end } = rangeFor(view, currentDate);
   const { data: calApi, loading } = useApi<CalendarApi>(
