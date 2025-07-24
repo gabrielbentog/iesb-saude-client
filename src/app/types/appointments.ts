@@ -1,5 +1,6 @@
 import { parseISO, isToday, isTomorrow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { UserData } from "@/app/types"
 export interface RawAppointment {
   id: string
   date: string
@@ -31,6 +32,14 @@ export interface RawAppointment {
     collegeLocationName?: string
     specialtyName?: string
   }
+}
+
+export interface RawStatusHistory {
+  id: string;
+  fromStatus: AppointmentStatus;
+  toStatus: AppointmentStatus;
+  changedAt: string;        // ISO
+  changedBy?: UserData;
 }
 
 export interface AppointmentsResponse {

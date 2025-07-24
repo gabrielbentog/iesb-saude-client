@@ -1,11 +1,6 @@
 "use client";
 
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Avatar,
@@ -33,6 +28,8 @@ import {
   styled,
   useMediaQuery,
   useTheme,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -64,7 +61,11 @@ import { apiFetch } from "@/app/lib/api";
 import { fetchInterns } from "@/app/lib/api/interns";
 
 /* types */
-import type { RawAppointment, Intern } from "@/app/types";
+import type {
+  RawAppointment,
+  Intern,
+  RawStatusHistory,
+} from "@/app/types";
 import {
   STATUS_LABEL,
   AppointmentStatus,
@@ -76,7 +77,7 @@ import {
 } from "@/app/components/ui/ActionButton";
 
 /* ------------------------------------------------------------------ */
-/* Local helpers & types                                              */
+/* Types & data adapters                                              */
 /* ------------------------------------------------------------------ */
 interface Appointment {
   id: string;
@@ -105,7 +106,9 @@ const adapt = (raw: RawAppointment): Appointment => ({
   patientPhone: raw.user.phone ?? undefined,
   patientEmail: raw.user.email ?? undefined,
   specialty:
-    raw.consultationRoom?.specialtyName ?? raw.timeSlot?.specialtyName ?? "",
+    raw.consultationRoom?.specialtyName ??
+    raw.timeSlot?.specialtyName ??
+    "",
   location:
     raw.consultationRoom?.collegeLocationName ??
     raw.timeSlot?.collegeLocationName ??
@@ -121,7 +124,7 @@ const adapt = (raw: RawAppointment): Appointment => ({
 });
 
 /* ------------------------------------------------------------------ */
-/* Styled components – layout/visual intact                           */
+/* Styled helpers                                                     */
 /* ------------------------------------------------------------------ */
 const StyledBadge = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "badgeType",
@@ -198,14 +201,20 @@ const InfoRow: React.FC<{
   const theme = useTheme();
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2 }}>
-      <IconContainer sx={{ bgcolor: iconBgColor || alpha(theme.palette.primary.main, 0.1) }}>
+      <IconContainer
+        sx={{ bgcolor: iconBgColor || alpha(theme.palette.primary.main, 0.1) }}
+      >
         {icon}
       </IconContainer>
       <Box sx={{ flex: 1 }}>
-        <Typography variant="caption" color="text.secondary" fontWeight={500}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          fontWeight={500}
+        >
           {label}
         </Typography>
-        <Typography variant="body2" fontWeight={600}>
+        <Typography variant="body2" fontWeight={600} noWrap>
           {value}
         </Typography>
       </Box>
@@ -214,9 +223,8 @@ const InfoRow: React.FC<{
 };
 
 /* ------------------------------------------------------------------ */
-/* Button factory w/ business rules                                   */
+/* Action‑button factory                                              */
 /* ------------------------------------------------------------------ */
-
 type Role = "Gestor" | "Paciente" | "Estagiário";
 
 interface ButtonsResult {
@@ -236,33 +244,40 @@ function buildButtons(
     color: ActionButtonProps["colorKey"],
     icon: ActionButtonProps["iconType"],
     next: RawAppointmentStatus,
+    confirmMsg: string,
     disabled = false,
-  ) => ({ label, colorKey: color, iconType: icon, action: next, disabled, onClick: () => change(next) });
+  ) => ({ label, colorKey: color, iconType: icon, action: next, disabled, onClick: () => change(next),
+    confirm: {
+      title: "Confirmação",
+      description: confirmMsg,
+      confirmLabel: "Sim, continuar",
+      cancelLabel: "Cancelar",
+    } 
+  });
 
   if (role === "Gestor") {
     switch (status) {
       case "Pendente":
         return {
-          primary: mk("Aprovar", "success", "check", "admin_confirmed"),
-          secondary: mk("Rejeitar", "error", "close", "rejected"),
-          tertiary: mk("Cancelar", "error", "close", "cancelled_by_admin"),
+          primary: mk("Aprovar", "success", "check", "admin_confirmed", "Deseja aprovar esta consulta? Após a aprovação, o paciente terá que confirmar sua presença."),
+          secondary: mk("Rejeitar", "error", "close", "rejected", "Deseja rejeitar esta consulta? Após rejeitar o pedido, o horário ficará disponível para outros pacientes."),
         };
       case "Aguardando confirmação do Paciente":
         return {
-          secondary: mk("Cancelar", "error", "close", "cancelled_by_admin"),
+          secondary: mk("Cancelar", "error", "close", "cancelled_by_admin", "Deseja cancelar esta consulta? Após cancelar, o horário ficará disponível para outros pacientes."),
         };
       case "Confirmada": // patient_confirmed
         return {
-          primary: mk("Concluir", "info", "check", "completed", !canComplete),
-          secondary: mk("Cancelar", "error", "close", "cancelled_by_admin"),
+          primary: mk("Concluir", "info", "check", "completed", "Deseja concluir esta consulta? Após a conclusão não será possível editar ou cancelar.", !canComplete),
+          secondary: mk("Cancelar", "error", "close", "cancelled_by_admin", "Deseja cancelar esta consulta? Após cancelar, o horário ficará disponível para outros pacientes."),
         };
       case "Cancelada pelo gestor":
         return {
-          primary: mk("Reabrir", "success", "check", "pending"),
+          primary: mk("Reabrir", "success", "check", "pending", "Deseja reabrir esta consulta?"),
         };
       case "Cancelada pelo paciente":
         return {
-          primary: mk("Reabrir", "success", "check", "pending"),
+          primary: mk("Reabrir", "success", "check", "pending", "Deseja reabrir esta consulta?"),
         };
       default:
         return {};
@@ -271,8 +286,8 @@ function buildButtons(
   // patient role
   if (status === "Aguardando confirmação do Paciente") {
     return {
-      primary: mk("Confirmar", "success", "check", "patient_confirmed"),
-      secondary: mk("Cancelar", "error", "close", "patient_cancelled"),
+      primary: mk("Confirmar", "success", "check", "patient_confirmed", "Deseja confirmar esta consulta?"),
+      secondary: mk("Cancelar", "error", "close", "patient_cancelled", "Deseja cancelar esta consulta? Após cancelar, o horário ficará disponível para outros pacientes."),
     };
   }
   return {};
@@ -287,10 +302,9 @@ export interface AppointmentDetailProps {
   } | null;
 }
 
-const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) => {
-  /* ------------------------------------------------------------------ */
-  /* Setup & hooks                                                     */
-  /* ------------------------------------------------------------------ */
+const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
+  currentUser,
+}) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const router = useRouter();
@@ -301,28 +315,40 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
 
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [interns, setInterns] = useState<Intern[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedInternId, setSelectedInternId] = useState("");
-  const [now, setNow] = useState<Date>(new Date());
+  const [history, setHistory] = useState<RawStatusHistory[]>([]);
 
-  /* tick every minute so canComplete recalculates */
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedInternId, setSelectedInternId] = useState<string>("");
+
+  const [now, setNow] = useState<Date>(new Date());
+  const [tab, setTab] = useState<"details" | "history">("details");
+
+  /* Tick a cada minuto para recalcular canComplete */
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 60_000);
     return () => clearInterval(t);
   }, []);
 
   /* ------------------------------------------------------------------ */
-  /* API – load appointment + interns                                   */
+  /* Carrega dados: consulta, estagiários, histórico                     */
   /* ------------------------------------------------------------------ */
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const { data } = await apiFetch<{ data: RawAppointment }>(`/api/appointments/${id}`);
-      const internsResp = await fetchInterns(1, 100);
-      setAppointment(adapt(data));
+      const [{ data: raw }, internsResp, histResp] = await Promise.all([
+        apiFetch<{ data: RawAppointment }>(`/api/appointments/${id}`),
+        fetchInterns(1, 100),
+        apiFetch<{ data: RawStatusHistory[] }>(
+          `/api/appointments/${id}/appointment_status_histories`,
+        ),
+      ]);
+
+      setAppointment(adapt(raw));
       setInterns(internsResp.data);
+      setHistory(histResp.data);
     } catch {
       setError("Não foi possível carregar os dados da consulta.");
     } finally {
@@ -335,7 +361,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
   }, [loadData]);
 
   /* ------------------------------------------------------------------ */
-  /* Helpers                                                            */
+  /* Utilitários                                                        */
   /* ------------------------------------------------------------------ */
   const getInitials = useCallback(
     (name: string) =>
@@ -355,7 +381,6 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
     }
   }, []);
 
-  /* derived times */
   const startDateTime = useMemo(() => {
     if (!appointment) return null;
     return new Date(`${appointment.date}T${appointment.time}:00`);
@@ -367,7 +392,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
   }, [now, startDateTime]);
 
   /* ------------------------------------------------------------------ */
-  /* Actions: patch status & assign intern                              */
+  /* Ações                                                              */
   /* ------------------------------------------------------------------ */
   const patchStatus = useCallback(
     async (next: RawAppointmentStatus) => {
@@ -377,12 +402,15 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
           body: JSON.stringify({ appointment: { status: next } }),
         });
         showToast({ message: "Status atualizado!", severity: "success" });
-        setAppointment((prev) => (prev ? { ...prev, status: STATUS_LABEL[next] } : prev));
+        setAppointment((prev) =>
+          prev ? { ...prev, status: STATUS_LABEL[next] } : prev,
+        );
+        loadData(); // recarrega histórico
       } catch {
         showToast({ message: "Erro ao atualizar status", severity: "error" });
       }
     },
-    [id, showToast],
+    [id, showToast, loadData],
   );
 
   const handleAssignIntern = useCallback(async () => {
@@ -392,13 +420,17 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
       body: JSON.stringify({ appointment: { intern_id: selectedInternId } }),
     });
     const chosen = interns.find((i) => i.id === selectedInternId);
-    setAppointment({ ...appointment, internName: chosen?.name ?? null, internId: selectedInternId });
+    setAppointment({
+      ...appointment,
+      internName: chosen?.name ?? null,
+      internId: selectedInternId,
+    });
     setAssignDialogOpen(false);
     setSelectedInternId("");
   }, [appointment, id, interns, selectedInternId]);
 
   /* ------------------------------------------------------------------ */
-  /* Buttons config – recalculates when status/role/time changes        */
+  /* Botões                                                             */
   /* ------------------------------------------------------------------ */
   const btnCfg = useMemo(
     () => buildButtons(role, appointment?.status ?? "Pendente", canComplete, patchStatus),
@@ -406,7 +438,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
   );
 
   /* ------------------------------------------------------------------ */
-  /* Render guards                                                      */
+  /* Guardas de render                                                  */
   /* ------------------------------------------------------------------ */
   if (loading) {
     return (
@@ -415,6 +447,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
       </Box>
     );
   }
+
   if (error) {
     return (
       <Container sx={{ py: 4 }}>
@@ -422,6 +455,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
       </Container>
     );
   }
+
   if (!appointment) return null;
 
   /* ------------------------------------------------------------------ */
@@ -431,11 +465,14 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
     <Box sx={{ minHeight: "100vh", bgcolor: "background.paper", py: 6 }}>
       <Container maxWidth="xl">
         {/* Banner */}
-        <Paper sx={{ bgcolor: "primary.main", color: "white", overflow: "hidden" }} elevation={0}>
+        <Paper sx={{ bgcolor: "primary.main", color: "white" }} elevation={0}>
           <CardContent sx={{ p: 4 }}>
             <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <IconButton onClick={() => router.back()} sx={{ color: "white", bgcolor: alpha("#fff", 0.1) }}>
+                <IconButton
+                  onClick={() => router.back()}
+                  sx={{ color: "white", bgcolor: alpha("#fff", 0.1) }}
+                >
                   <ArrowBackIcon />
                 </IconButton>
                 <Typography variant="h4" fontWeight={700}>
@@ -451,15 +488,38 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
           </CardContent>
         </Paper>
 
-        {/* Body */}
-        <Box sx={{ mt: 4 }}>
-          <Grid container spacing={4}>
+        {/* Tabs */}
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          textColor="inherit"
+          indicatorColor="primary"
+          sx={{ mt: 4 }}
+        >
+          <Tab value="details" label="Detalhes" />
+          <Tab value="history" label="Histórico" />
+        </Tabs>
+
+        {/* Detalhes */}
+        {tab === "details" && (
+          <Grid container spacing={4} sx={{ mt: 2 }}>
             {/* Patient card */}
             <Grid item xs={12} md={4}>
               <InfoCard>
                 <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
-                    <Avatar src={appointment.patientAvatar} sx={{ width: 80, height: 80, fontSize: "1.5rem", mb: 2, border: `3px solid ${alpha(theme.palette.primary.main, 0.1)}` }}>
+                  <Box
+                    sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}
+                  >
+                    <Avatar
+                      src={appointment.patientAvatar}
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        fontSize: "1.5rem",
+                        mb: 2,
+                        border: `3px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                      }}
+                    >
                       {getInitials(appointment.patientName)}
                     </Avatar>
                     <Typography variant="h6" fontWeight={700} textAlign="center">
@@ -472,41 +532,84 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
                   <Divider sx={{ my: 2 }} />
                   <Stack spacing={0}>
                     {appointment.patientPhone && (
-                      <InfoRow icon={<PhoneIcon sx={{ color: "success.main" }} />} label="Telefone" value={appointment.patientPhone} iconBgColor={alpha(theme.palette.success.main, 0.1)} />
+                      <InfoRow
+                        icon={<PhoneIcon sx={{ color: "success.main" }} />}
+                        label="Telefone"
+                        value={appointment.patientPhone}
+                        iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                      />
                     )}
                     {appointment.patientEmail && (
-                      <InfoRow icon={<EmailIcon sx={{ color: "info.main" }} />} label="E-mail" value={appointment.patientEmail} iconBgColor={alpha(theme.palette.info.main, 0.1)} />
+                      <InfoRow
+                        icon={<EmailIcon sx={{ color: "info.main" }} />}
+                        label="E-mail"
+                        value={appointment.patientEmail}
+                        iconBgColor={alpha(theme.palette.info.main, 0.1)}
+                      />
                     )}
                     {appointment.patientCpf && (
-                      <InfoRow icon={<AssignmentIndIcon sx={{ color: "warning.main" }} />} label="CPF" value={appointment.patientCpf} iconBgColor={alpha(theme.palette.warning.main, 0.1)} />
+                      <InfoRow
+                        icon={<AssignmentIndIcon sx={{ color: "warning.main" }} />}
+                        label="CPF"
+                        value={appointment.patientCpf}
+                        iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+                      />
                     )}
                   </Stack>
                 </CardContent>
               </InfoCard>
             </Grid>
 
-            {/* Details */}
+            {/* Right column */}
             <Grid item xs={12} md={8}>
               <Grid container spacing={3}>
+                {/* Details */}
                 <Grid item xs={12}>
                   <InfoCard>
                     <CardContent sx={{ p: 3 }}>
-                      <Typography variant="h6" fontWeight={700} mb={3} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Typography
+                        variant="h6"
+                        fontWeight={700}
+                        mb={3}
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
                         Detalhes da Consulta
-                        <StyledBadge label={appointment.status} badgeType={appointment.status} />
+                        <StyledBadge
+                          label={appointment.status}
+                          badgeType={appointment.status}
+                        />
                       </Typography>
                       <Grid container spacing={2}>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<MedicalServicesIcon sx={{ color: "primary.main" }} />} label="Especialidade" value={appointment.specialty} />
+                          <InfoRow
+                            icon={<MedicalServicesIcon sx={{ color: "primary.main" }} />}
+                            label="Especialidade"
+                            value={appointment.specialty}
+                          />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<CalendarMonthIcon sx={{ color: "success.main" }} />} label="Data e Hora" value={`${formatDate(appointment.date)} às ${appointment.time}`} iconBgColor={alpha(theme.palette.success.main, 0.1)} />
+                          <InfoRow
+                            icon={<CalendarMonthIcon sx={{ color: "success.main" }} />}
+                            label="Data e Hora"
+                            value={`${formatDate(appointment.date)} às ${appointment.time}`}
+                            iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                          />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<LocationOnIcon sx={{ color: "warning.main" }} />} label="Local" value={appointment.location || '-'} iconBgColor={alpha(theme.palette.warning.main, 0.1)} />
+                          <InfoRow
+                            icon={<LocationOnIcon sx={{ color: "warning.main" }} />}
+                            label="Local"
+                            value={appointment.location || "-"}
+                            iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+                          />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<AccessTimeIcon sx={{ color: "info.main" }} />} label="Sala" value={appointment.room || '-'} iconBgColor={alpha(theme.palette.info.main, 0.1)} />
+                          <InfoRow
+                            icon={<AccessTimeIcon sx={{ color: "info.main" }} />}
+                            label="Sala"
+                            value={appointment.room || "-"}
+                            iconBgColor={alpha(theme.palette.info.main, 0.1)}
+                          />
                         </Grid>
                       </Grid>
                     </CardContent>
@@ -521,20 +624,40 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
                         Estagiário Designado
                       </Typography>
                       {role === "Gestor" && (
-                        <Tooltip title={appointment.internName ? "Alterar estagiário" : "Designar estagiário"}>
+                        <Tooltip
+                          title={
+                            appointment.internName ? "Alterar estagiário" : "Designar estagiário"
+                          }
+                        >
                           <IconButton
                             size="small"
                             onClick={() => setAssignDialogOpen(true)}
-                            sx={{ position: "absolute", top: 16, right: 16, bgcolor: alpha(theme.palette.primary.main, 0.08), "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.16) } }}
+                            sx={{
+                              position: "absolute",
+                              top: 16,
+                              right: 16,
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                              "&:hover": {
+                                bgcolor: alpha(theme.palette.primary.main, 0.16),
+                              },
+                            }}
                           >
                             {appointment.internName ? <EditIcon /> : <PersonAddIcon />}
                           </IconButton>
                         </Tooltip>
                       )}
                       {appointment.internName ? (
-                        <InfoRow icon={<AssignmentIndIcon sx={{ color: "success.main" }} />} label="Estagiário Responsável" value={appointment.internName} iconBgColor={alpha(theme.palette.success.main, 0.1)} />
+                        <InfoRow
+                          icon={<AssignmentIndIcon sx={{ color: "success.main" }} />}
+                          label="Estagiário Responsável"
+                          value={appointment.internName}
+                          iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                        />
                       ) : (
-                        <Alert severity="info" sx={{ borderRadius: 2, alignItems: "center" }}>
+                        <Alert
+                          severity="info"
+                          sx={{ borderRadius: 2, alignItems: "center" }}
+                        >
                           Nenhum estagiário designado.
                         </Alert>
                       )}
@@ -549,7 +672,17 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
                       <Typography variant="h6" fontWeight={700} mb={2}>
                         Descrição da Consulta
                       </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.6, whiteSpace: "pre-line", p: 2, bgcolor: alpha(theme.palette.grey[500], 0.05), borderRadius: 2 }}>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          lineHeight: 1.6,
+                          whiteSpace: "pre-line",
+                          p: 2,
+                          bgcolor: alpha(theme.palette.grey[500], 0.05),
+                          borderRadius: 2,
+                        }}
+                      >
                         {appointment.description}
                       </Typography>
                     </CardContent>
@@ -558,18 +691,82 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
               </Grid>
             </Grid>
           </Grid>
-        </Box>
+        )}
+
+        {/* Histórico */}
+        {tab === "history" && (
+          <Box sx={{ mt: 4 }}>
+            {history.length === 0 ? (
+              <Alert severity="info">Nenhuma alteração de status encontrada.</Alert>
+            ) : (
+              <Stack spacing={2}>
+                {history.map((h) => (
+                  <Paper
+                    key={h.id}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 2,
+                      borderRadius: 2,
+                    }}
+                  >
+                    {/* Avatar do autor (fallback — iniciais) */}
+                    <Avatar
+                      src={h.changedBy?.avatar ?? ""}
+                      sx={{ width: 40, height: 40, fontSize: "0.875rem" }}
+                    >
+                      {getInitials(h.changedBy?.name ?? "S")}
+                    </Avatar>
+
+                    {/* Texto principal */}
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography variant="body2" fontWeight={600} noWrap>
+                        {h.changedBy ? h.changedBy.name : "Sistema"}
+                        {" — "}
+                        {format(parseISO(h.changedAt), "dd/MM/yyyy HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {h.fromStatus} → {h.toStatus}
+                      </Typography>
+                    </Box>
+
+                    {/* Badge de status */}
+                    <StyledBadge
+                      label={h.toStatus}
+                      badgeType={h.toStatus}
+                      sx={{ flexShrink: 0 }}
+                    />
+                  </Paper>
+                ))}
+              </Stack>
+            )}
+          </Box>
+        )}
       </Container>
 
       {/* FAB mobile */}
       {isMobile && role === "Gestor" && (
-        <Fab color="primary" sx={{ position: "fixed", bottom: 24, right: 24 }} onClick={() => setAssignDialogOpen(true)}>
+        <Fab
+          color="primary"
+          sx={{ position: "fixed", bottom: 24, right: 24 }}
+          onClick={() => setAssignDialogOpen(true)}
+        >
           <PersonAddIcon />
         </Fab>
       )}
 
       {/* Dialog assign intern */}
-      <Dialog open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <Dialog
+        open={assignDialogOpen}
+        onClose={() => setAssignDialogOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
         <DialogTitle>
           <Typography variant="h6" fontWeight={700}>
             Designar Estagiário
@@ -579,7 +776,14 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
           </Typography>
         </DialogTitle>
         <DialogContent>
-          <TextField select fullWidth label="Estagiário" value={selectedInternId} onChange={(e) => setSelectedInternId(e.target.value)} margin="normal">
+          <TextField
+            select
+            fullWidth
+            label="Estagiário"
+            value={selectedInternId}
+            onChange={(e) => setSelectedInternId(e.target.value)}
+            margin="normal"
+          >
             {interns.map((i) => (
               <MenuItem key={i.id} value={String(i.id)}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -592,7 +796,11 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 1 }}>
           <Button onClick={() => setAssignDialogOpen(false)}>Cancelar</Button>
-          <Button variant="contained" disabled={!selectedInternId} onClick={handleAssignIntern}>
+          <Button
+            variant="contained"
+            disabled={!selectedInternId}
+            onClick={handleAssignIntern}
+          >
             Salvar
           </Button>
         </DialogActions>
