@@ -15,7 +15,7 @@
     "@hookform/resolvers": "^5.0.1",
     "@mui/icons-material": "^6.4.8",
     "@mui/material": "^6.4.8",
-    "@mui/x-date-pickers": "^8.5.0",
+    "@mui/x-date-pickers": "^8.9.0",
     "axios": "^1.8.4",
     "date-fns": "^2.30.0",
     "dayjs": "^1.11.13",

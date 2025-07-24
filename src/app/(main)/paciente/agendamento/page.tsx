@@ -18,17 +18,12 @@ import {
   Badge,
   CircularProgress,
 } from '@mui/material';
-// import { useTheme } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import {
-  LocalizationProvider,
-  DatePicker,
-  PickersDay,
-} from '@mui/x-date-pickers';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-import type { PickersDayProps } from '@mui/x-date-pickers/PickersDay';
+import { LocalizationProvider, DatePicker } from '@mui/x-date-pickers';
+import { PickersDay, PickersDayProps } from '@mui/x-date-pickers/PickersDay';
 import { apiFetch } from '@/app/lib/api';
 import type { Campus, Especialidade, Slot } from '@/app/types';
 import { useToast } from '@/app/contexts/ToastContext';
@@ -188,7 +183,7 @@ export default function AgendarConsultaPage() {
     }
   };
 
-  const renderDayWithBadge = (props: PickersDayProps<Dayjs>) => {
+  const renderDayWithBadge = (props: PickersDayProps) => {
     const dateString = props.day.format('YYYY-MM-DD');
     const hasSlots = availableDatesInMonth.has(dateString);
     return (
