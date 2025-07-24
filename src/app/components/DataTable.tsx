@@ -42,7 +42,12 @@ export const StyledBadge = styled(Chip, {
           fg: theme.palette.info.main,
           icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
         };
-      case "Pendente":
+      case "Aguardando aprovação":
+        return {
+          bg: alpha(theme.palette.info.main, 0.1),
+          fg: theme.palette.info.main,
+          icon: <PendingIcon sx={{ fontSize: 16 }} />,
+        };
       case "Aguardando confirmação do Paciente":
         return {
           bg: alpha(theme.palette.warning.main, 0.1),

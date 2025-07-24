@@ -150,9 +150,9 @@ export default function AppointmentPatientScreen() {
   }, [fetchAppointments]);
 
   // ───────────── KPIs dinâmicos ─────────────
-  const upcomingCount = appointments.filter((a) => ["Confirmada", "Pendente", "Reagendada"].includes(a.status)).length;
+  const upcomingCount = appointments.filter((a) => ["Confirmada", "Aguardando aprovação"].includes(a.status)).length;
   const completedCount = appointments.filter((a) => a.status === "Concluída").length;
-  const pendingCount = appointments.filter((a) => a.status === "Pendente").length;
+  const pendingCount = appointments.filter((a) => a.status === "Aguardando aprovação").length;
 
   // ───────────── Handlers de paginação ─────────────
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
@@ -306,12 +306,12 @@ export default function AppointmentPatientScreen() {
         <MenuItem onClick={handleViewDetails}>
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Ver Detalhes
         </MenuItem>
-        {selectedAppointment && ["Confirmada", "Pendente"].includes(selectedAppointment.status) && (
+        {selectedAppointment && ["Confirmada", "Aguardando aprovação"].includes(selectedAppointment.status) && (
           <MenuItem onClick={handleReschedule}>
             <EditCalendarIcon fontSize="small" sx={{ mr: 1 }} /> Reagendar
           </MenuItem>
         )}
-        {selectedAppointment && ["Confirmada", "Pendente"].includes(selectedAppointment.status) && (
+        {selectedAppointment && ["Confirmada", "Aguardando aprovação"].includes(selectedAppointment.status) && (
           <MenuItem onClick={handleCancel} sx={{ color: theme.palette.error.main }}>
             <CancelIcon fontSize="small" sx={{ mr: 1 }} /> Cancelar Consulta
           </MenuItem>

@@ -28,7 +28,7 @@ export interface ConsultaPaciente {
   specialty: string;
   date: string;
   time: string;
-  status: 'Confirmada' | 'Pendente' | 'Reagendada' | 'Cancelada' | 'Concluída';
+  status: 'Confirmada' | 'Aguardando aprovação' | 'Reagendada' | 'Cancelada' | 'Concluída';
   priority?: 'low' | 'normal' | 'high';
   specialtyIcon: React.ReactNode;
   location: string;

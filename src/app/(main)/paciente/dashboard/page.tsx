@@ -108,7 +108,9 @@ const renderAppointmentCell = (
     case "dateTime":
       return `${a.date} às ${a.time}`;
     case "status":
-      return <StyledBadge label={a.status} badgeType={a.status} />;
+      return <StyledBadge label={a.status === "Aguardando confirmação do Paciente"
+            ? "Aguard. Confirmação"
+            : a.status} badgeType={a.status} />;
     default:
       return null;
   }

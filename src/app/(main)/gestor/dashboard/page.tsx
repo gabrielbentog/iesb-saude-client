@@ -29,7 +29,6 @@ import { alpha } from "@mui/material/styles";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import PeopleIcon from "@mui/icons-material/People";
 import AssignmentIcon from "@mui/icons-material/Assignment";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
@@ -234,11 +233,6 @@ export default function ManagerDashboard() {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
-  const isPositive = (stats?.appointmentsTrend ?? 0) > 0;
-  const isNegative = (stats?.appointmentsTrend ?? 0) < 0;
-  const trendColor = isPositive ? theme.palette.success.main : isNegative ? theme.palette.error.main : theme.palette.text.secondary;
-  const TrendIcon = TrendingUpIcon;
-
   // ───────────── Fetch KPIs ─────────────
   useEffect(() => {
     let ignore = false;
@@ -329,7 +323,7 @@ export default function ManagerDashboard() {
   if (!stats) return <Typography>Não foi possível carregar o painel.</Typography>;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.paper", py: 6 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: theme.palette.background.default, pt: 2 }}>
       <Container maxWidth="xl">
         <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {/* Banner */}
@@ -352,14 +346,9 @@ export default function ManagerDashboard() {
               <StatCard
                 title="Consultas Hoje"
                 value={stats.appointmentsToday}
-                subtitle="vs. semana passada"
+                subtitle="Agendadas para hoje"
                 icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
-                trendComponent={<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                  <TrendIcon sx={{ fontSize: 16, color: trendColor, transform: isNegative ? "rotate(180deg)" : "none" }} />
-                  <Typography variant="body2" sx={{ color: trendColor, fontWeight: 600 }}>{stats.appointmentsTrend > 0 && "+"}{stats.appointmentsTrend}%</Typography>
-                  <Typography variant="body2" color="text.primary">vs. semana passada</Typography>
-                </Box>}
               />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
@@ -373,21 +362,20 @@ export default function ManagerDashboard() {
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Estagiários Ativos"
-                value={stats.totalInterns}
-                subtitle="Total de estagiários ativos"
-                icon={<PeopleIcon sx={{ color: "success.main" }} />}
+                title="Consultas para Aprovar"
+                value={stats.pendingAppointments}
+                subtitle="Consultas pendentes de aprovação"
+                icon={<CheckCircleIcon sx={{ color: "success.main" }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}
               />
             </Grid>
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
-                title="Taxa de Conclusão"
-                value={`${stats.completionRate}%`}
-                subtitle=""
-                icon={<CheckCircleIcon sx={{ color: "success.main" }} />}
+                title="Estagiários Ativos"
+                value={stats.totalInterns}
+                subtitle="Total de estagiários ativos"
+                icon={<PeopleIcon sx={{ color: "success.main" }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}
-                trendComponent={<LinearProgress variant="determinate" value={stats.completionRate} sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: alpha(theme.palette.success.main, 0.2) }} />}
               />
             </Grid>
           </Grid>

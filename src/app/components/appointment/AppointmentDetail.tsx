@@ -143,7 +143,12 @@ const StyledBadge = styled(Chip, {
           fg: theme.palette.info.main,
           icon: <CheckCircleIcon sx={{ fontSize: 16 }} />,
         };
-      case "Pendente":
+      case "Aguardando aprovação":
+        return {
+          bg: alpha(theme.palette.info.main, 0.1),
+          fg: theme.palette.info.main,
+          icon: <PendingIcon sx={{ fontSize: 16 }} />,
+        };
       case "Aguardando confirmação do Paciente":
         return {
           bg: alpha(theme.palette.warning.main, 0.1),
@@ -257,7 +262,7 @@ function buildButtons(
 
   if (role === "Gestor") {
     switch (status) {
-      case "Pendente":
+      case "Aguardando aprovação":
         return {
           primary: mk("Aprovar", "success", "check", "admin_confirmed", "Deseja aprovar esta consulta? Após a aprovação, o paciente terá que confirmar sua presença."),
           secondary: mk("Rejeitar", "error", "close", "rejected", "Deseja rejeitar esta consulta? Após rejeitar o pedido, o horário ficará disponível para outros pacientes."),
@@ -433,7 +438,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
   /* Botões                                                             */
   /* ------------------------------------------------------------------ */
   const btnCfg = useMemo(
-    () => buildButtons(role, appointment?.status ?? "Pendente", canComplete, patchStatus),
+    () => buildButtons(role, appointment?.status ?? "Aguardando aprovação", canComplete, patchStatus),
     [role, appointment?.status, canComplete, patchStatus],
   );
 
@@ -696,54 +701,78 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
         {/* Histórico */}
         {tab === "history" && (
           <Box sx={{ mt: 4 }}>
-            {history.length === 0 ? (
-              <Alert severity="info">Nenhuma alteração de status encontrada.</Alert>
-            ) : (
-              <Stack spacing={2}>
-                {history.map((h) => (
-                  <Paper
-                    key={h.id}
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 2,
-                      borderRadius: 2,
-                    }}
+            <Stack spacing={2}>
+              {history.map((h) => (
+                <Paper
+                  key={h.id}
+                  variant="outlined"
+                  sx={{
+                    p: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 2,
+                    borderRadius: 2,
+                  }}
+                >
+                  {/* Avatar do autor (fallback — iniciais) */}
+                  <Avatar
+                    src={h.changedBy?.avatar ?? ""}
+                    sx={{ width: 40, height: 40, fontSize: "0.875rem" }}
                   >
-                    {/* Avatar do autor (fallback — iniciais) */}
-                    <Avatar
-                      src={h.changedBy?.avatar ?? ""}
-                      sx={{ width: 40, height: 40, fontSize: "0.875rem" }}
-                    >
-                      {getInitials(h.changedBy?.name ?? "S")}
-                    </Avatar>
+                    {getInitials(h.changedBy?.name ?? "S")}
+                  </Avatar>
 
-                    {/* Texto principal */}
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="body2" fontWeight={600} noWrap>
-                        {h.changedBy ? h.changedBy.name : "Sistema"}
-                        {" — "}
-                        {format(parseISO(h.changedAt), "dd/MM/yyyy HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {h.fromStatus} → {h.toStatus}
-                      </Typography>
-                    </Box>
+                  {/* Texto principal */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" fontWeight={600} noWrap>
+                      {h.changedBy ? h.changedBy.name : "Sistema"}
+                      {" — "}
+                      {format(parseISO(h.changedAt), "dd/MM/yyyy HH:mm", {
+                        locale: ptBR,
+                      })}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Moveu de {h.fromStatus} para {h.toStatus}
+                    </Typography>
+                  </Box>
 
-                    {/* Badge de status */}
-                    <StyledBadge
-                      label={h.toStatus}
-                      badgeType={h.toStatus}
-                      sx={{ flexShrink: 0 }}
-                    />
-                  </Paper>
-                ))}
-              </Stack>
-            )}
+                  {/* Badge de status */}
+                  <StyledBadge
+                    label={h.toStatus}
+                    badgeType={h.toStatus}
+                    sx={{ flexShrink: 0 }}
+                  />
+                </Paper>
+              ))}
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  borderRadius: 2,
+                  opacity: 0.7,
+                }}
+              >
+                <Avatar sx={{ width: 40, height: 40, fontSize: "0.875rem", bgcolor: "grey.200", color: "grey.700" }}>
+                  S
+                </Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Typography variant="body2" fontWeight={600} noWrap>
+                    Sistema — {appointment && format(parseISO(appointment.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Agendamento criado
+                  </Typography>
+                </Box>
+                <StyledBadge
+                  label={"Aguardando aprovação"}
+                  badgeType={"Confirmada"}
+                  sx={{ flexShrink: 0 }}
+                />
+              </Paper>
+            </Stack>
           </Box>
         )}
       </Container>

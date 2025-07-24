@@ -85,7 +85,7 @@ export type RawAppointmentStatus =
 
 /* Mapeia status enum->texto */
 export const STATUS_LABEL: Record<RawAppointmentStatus, string> = {
-  pending:            'Pendente',
+  pending:            'Aguardando aprovação',
   admin_confirmed:    'Aguardando confirmação do Paciente',
   patient_confirmed:  'Confirmada',
   cancelled_by_admin: 'Cancelada pelo gestor',

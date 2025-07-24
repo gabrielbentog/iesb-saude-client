@@ -11,7 +11,7 @@ import {
   useTheme,
   Menu,
   MenuItem,
-  LinearProgress,
+  Skeleton,
   IconButton,
   Avatar,
   CircularProgress,
@@ -21,7 +21,6 @@ import { alpha } from "@mui/material/styles"
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"
 import CheckCircleIcon   from "@mui/icons-material/CheckCircle"
-import ScheduleIcon      from "@mui/icons-material/Schedule"
 import AssignmentIcon    from "@mui/icons-material/Assignment"
 import AddIcon           from "@mui/icons-material/Add"
 import MoreHorizIcon     from "@mui/icons-material/MoreHoriz"
@@ -38,7 +37,9 @@ import {
   RawAppointment,
   PaginatedResponse,
   UIAppointment,
-  MetaWithPagination
+  MetaWithPagination,
+  DashboardStats,
+  KpiResponse,
 } from "@/app/types"
 
 import {mapRaw} from "@/app/utils/appointment-mapper"
@@ -121,6 +122,8 @@ export default function AppointmentManagementScreen() {
   // dados
   const [appointments, setAppointments] = useState<UIAppointment[]>([])
   const [loading, setLoading] = useState(true)
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
 
   // menu de ações
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -161,15 +164,36 @@ export default function AppointmentManagementScreen() {
     }
   }, [page, rowsPerPage])
 
+  useEffect(() => {
+    let ignore = false;
+    (async () => {
+      try {
+        const res = await apiFetch<KpiResponse>("/api/dashboard/kpis");
+        if (ignore) return;
+        const { appointmentsToday, totalAppointments, interns, completionRate } = res.data;
+        setStats({
+          appointmentsToday: appointmentsToday.total,
+          appointmentsTrend: appointmentsToday.percentChange,
+          totalAppointments: totalAppointments.total,
+          completedAppointments: totalAppointments.completed,
+          pendingAppointments: totalAppointments.pending,
+          totalInterns: interns.activeCount,
+          completionRate,
+        });
+      } catch (e) {
+        console.error("Falha ao carregar KPIs", e);
+      } finally {
+        if (!ignore) setLoadingStats(false);
+      }
+    })();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
   // ───────────── KPIs dinâmicos (baseados no slice atual) ─────────────
   const todayISO = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
   const todayCount = appointments.filter((a) => a.date === todayISO).length
-  const totalCountLocal = appointments.length
-  const completedCount  = appointments.filter((a) => a.status === "Concluída").length
-  const pendingCount    = appointments.filter(
-    (a) => a.status === "Pendente" || a.status === "Aguardando confirmação do Paciente"
-  ).length
-  const completionRate  = totalCountLocal ? Math.round((completedCount / totalCountLocal) * 100) : 0
 
   // ───────────── Manipulação de menu ─────────────
   const handleMenuClick = (e: React.MouseEvent<HTMLElement>, appt: UIAppointment) => {
@@ -247,51 +271,39 @@ export default function AppointmentManagementScreen() {
       </Box>
 
       {/* KPI Cards */}
-      <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Consultas Hoje"
-            value={todayCount}
-            subtitle="Agendadas para hoje"
-            icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
-            iconBgColor={alpha(theme.palette.primary.main, 0.1)}
-          />
+      { loadingStats ? (
+        <Skeleton variant="rounded" height={120} />
+      ) : (
+        <Grid container spacing={3} mb={4}>
+          <Grid item xs={12} sm={6} md={4}>
+            <StatCard
+              title="Consultas Hoje"
+              value={todayCount}
+              subtitle="Agendadas para hoje"
+              icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
+              iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <StatCard
+              title="Pendente confirmação"
+              value={stats?.pendingAppointments || '-'}
+              subtitle={"Consultas pendentes"}  
+              icon={<AssignmentIcon sx={{ color: theme.palette.info.main }} />}
+              iconBgColor={alpha(theme.palette.info.main, 0.1)}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6} md={4}>
+            <StatCard
+              title="Consultas Concluídas"
+              value={stats?.completedAppointments || '-'}
+              subtitle="Finalizadas"
+              icon={<CheckCircleIcon sx={{ color: theme.palette.success.main }} />}
+              iconBgColor={alpha(theme.palette.success.main, 0.1)}
+            />
+          </Grid>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Total de Consultas"
-            value={totalCountLocal}
-            subtitle={`${completedCount} concluídas, ${pendingCount} pendentes`}
-            icon={<AssignmentIcon sx={{ color: theme.palette.info.main }} />}
-            iconBgColor={alpha(theme.palette.info.main, 0.1)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Consultas Concluídas"
-            value={completedCount}
-            subtitle="Finalizadas"
-            icon={<CheckCircleIcon sx={{ color: theme.palette.success.main }} />}
-            iconBgColor={alpha(theme.palette.success.main, 0.1)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Taxa de Conclusão"
-            value={`${completionRate}%`}
-            subtitle="% finalizadas"
-            icon={<ScheduleIcon sx={{ color: theme.palette.success.main }} />}
-            iconBgColor={alpha(theme.palette.success.main, 0.1)}
-            trendComponent={
-              <LinearProgress
-                variant="determinate"
-                value={completionRate}
-                sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: alpha(theme.palette.success.main, 0.2) }}
-              />
-            }
-          />
-        </Grid>
-      </Grid>
+      )}
 
       {/* DataTable */}
       <DataTable<UIAppointment>
