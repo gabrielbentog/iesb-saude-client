@@ -43,12 +43,10 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { apiFetch } from "@/app/lib/api";
 import { useApi } from "@/app/hooks/useApi";
 import { useToast } from "@/app/contexts/ToastContext";
-
+import type { CollegeLocation } from "@/app/types";
 /* ------------------------------------------------------------------
  * Tipos
  * ------------------------------------------------------------------*/
-
-type CollegeLocation = { id: string; name: string };
 type ApiResponse<T> = { data: T };
 
 /* ------------------------------------------------------------------

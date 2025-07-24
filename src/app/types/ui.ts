@@ -1,5 +1,6 @@
 import type React from 'react';
 import type { Control } from "react-hook-form";
+import type { FormValues } from '@/app/components/agendamento/schemas';
 
 export interface SidebarProps {
   open: boolean;
@@ -61,7 +62,7 @@ export interface DataTableProps<T> {
 }
 
 export interface ScheduleItemProps {
-  control: Control<Record<string, unknown>>;
+  control: Control<FormValues>;
   index: number;
   repeatType: number;
   onRemoveDay: () => void;

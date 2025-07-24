@@ -84,8 +84,6 @@ export interface EventDetailDialogProps {
   onDeleted: (info: { type: 'single' | 'series'; id?: string; timeSlotId?: string }) => void;
 }
 
-export type CollegeLocation = { id: string; name: string };
-export type SimpleSpec = { id: string; name: string };
 export type ApiSlot = {
   id: string;
   startAt: string;

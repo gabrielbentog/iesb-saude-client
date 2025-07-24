@@ -33,7 +33,7 @@ import { ScheduleItem } from "@/app/components/agendamento/ScheduleItem";
 
 import { useApi } from "@/app/hooks/useApi";
 import { apiFetch } from "@/app/lib/api";
-import { CollegeLocation } from "./types";
+import { CollegeLocation } from "@/app/types";
 import { FormValues } from "@/app/components/agendamento/schemas";
 import { ptBR } from "@mui/x-date-pickers/locales";
 import type { ApiResponse } from '@/app/types';
