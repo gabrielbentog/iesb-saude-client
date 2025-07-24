@@ -503,10 +503,10 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({ currentUser }) =>
                           <InfoRow icon={<CalendarMonthIcon sx={{ color: "success.main" }} />} label="Data e Hora" value={`${formatDate(appointment.date)} às ${appointment.time}`} iconBgColor={alpha(theme.palette.success.main, 0.1)} />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<LocationOnIcon sx={{ color: "warning.main" }} />} label="Local" value={appointment.location} iconBgColor={alpha(theme.palette.warning.main, 0.1)} />
+                          <InfoRow icon={<LocationOnIcon sx={{ color: "warning.main" }} />} label="Local" value={appointment.location || '-'} iconBgColor={alpha(theme.palette.warning.main, 0.1)} />
                         </Grid>
                         <Grid item xs={12} sm={6}>
-                          <InfoRow icon={<AccessTimeIcon sx={{ color: "info.main" }} />} label="Sala" value={appointment.room} iconBgColor={alpha(theme.palette.info.main, 0.1)} />
+                          <InfoRow icon={<AccessTimeIcon sx={{ color: "info.main" }} />} label="Sala" value={appointment.room || '-'} iconBgColor={alpha(theme.palette.info.main, 0.1)} />
                         </Grid>
                       </Grid>
                     </CardContent>

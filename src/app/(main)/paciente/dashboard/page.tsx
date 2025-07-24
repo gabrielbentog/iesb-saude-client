@@ -298,7 +298,7 @@ export default function PatientDashboard() {
     return <Typography>Não foi possível carregar o painel.</Typography>;
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "background.paper", py: 6 }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: 'background.default', py: 6 }}>
       <Container maxWidth="xl">
         <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {/* Banner */}
@@ -373,7 +373,7 @@ export default function PatientDashboard() {
               <StatCard
                 title="Pendente confirmação"
                 value={stats.pendingConfirm}
-                subtitle="Aguardando sua ação"
+                subtitle="Aguardando confirmação"
                 icon={<InfoIcon sx={{ color: "warning.main" }} />}
                 iconBgColor={alpha(theme.palette.warning.main, 0.1)}
               />

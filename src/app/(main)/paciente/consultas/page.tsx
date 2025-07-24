@@ -261,7 +261,7 @@ export default function AppointmentPatientScreen() {
           <StatCard
             title="Pendentes"
             value={pendingCount}
-            subtitle="Aguardando"
+            subtitle="Aguardando confirmação"
             icon={<ScheduleIcon sx={{ color: theme.palette.warning.main }} />}
             iconBgColor={alpha(theme.palette.warning.main, 0.1)}
           />

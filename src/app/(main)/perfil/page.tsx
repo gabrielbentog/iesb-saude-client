@@ -157,6 +157,11 @@ const ProfileHeader: FC<{
     isSaving: boolean;
 }> = ({ user, mode, avatarPreview, setAvatarFile, onSave, onCancel, onEdit, isSaving }) => (
     <CardHeader
+      sx={{
+        // eixo Y primeiro, depois eixo X
+        py: { xs: 3, md: 4 },   // 24 px → 32 px
+        px: { xs: 2, md: 4 },   // 16 px → 32 px
+      }}
       disableTypography
       title={
         <Stack direction={{ xs: "column", sm: "row" }} spacing={3} alignItems="center" justifyContent="space-between">
@@ -198,7 +203,7 @@ const ProfileForm: FC<{
     cpfPersisted?: boolean;
 }> = ({ control, errors, isLocked, cpfPersisted }) => (
   <Section title={<><Person /> <Typography variant="h6">Informações Pessoais</Typography></>}>
-    <Grid container spacing={2}>
+    <Grid container spacing={{ xs: 2, md: 3 }}>
         <Grid item xs={12} sm={6}>
             <Controller name="name" control={control} render={({ field }) => (
                 <TextField {...field} label="Nome Completo" fullWidth variant="outlined" disabled={isLocked} error={!!errors.name} helperText={errors.name?.message} />
@@ -461,7 +466,7 @@ export default function ProfilePage() {
         minHeight: '100dvh',
         display: 'flex',
         flexDirection: 'column',
-        bgcolor: 'grey.50',
+        bgcolor: 'background.default',
         boxSizing: 'border-box',
       }}
     >
@@ -469,7 +474,7 @@ export default function ProfilePage() {
         maxWidth="xl"
         sx={{
           flexGrow: 1,
-          py: 6, // padding moveu pra dentro
+          py: { xs: 4, md: 6 },
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -486,7 +491,13 @@ export default function ProfilePage() {
                   onEdit={() => setMode('edit')}
                   isSaving={isSaving}
               />
-              <CardContent>
+              <CardContent
+                  sx={{
+                    // eixo Y primeiro, depois eixo X
+                    py: { xs: 3, md: 4 },   // 24 px → 32 px
+                    px: { xs: 2, md: 4 },   // 16 px → 32 px
+                  }}
+                >
                   <Stack spacing={4}>
                       <ProfileForm
                         control={form.control}
