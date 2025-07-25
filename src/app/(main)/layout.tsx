@@ -23,8 +23,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   // Toda vez que "isMobile" mudar (ex: resize), podemos ajustar open
   useEffect(() => {
-    if (isMobile) setOpen(false);
-    else setOpen(true);
+    if (isMobile) setOpen(false);   // fecha ao entrar no mobile
   }, [isMobile]);
 
   const handleDrawerToggle = () => {
@@ -66,6 +65,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               easing: defaultTheme.transitions.easing.easeOut,
               duration: defaultTheme.transitions.duration.enteringScreen,
             }),
+            zIndex: 0,
             pt: "64px",
             minHeight: "100vh",
             bgcolor: theme.palette.background.default,

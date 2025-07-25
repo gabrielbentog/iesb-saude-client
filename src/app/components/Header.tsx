@@ -5,19 +5,19 @@ import {
   AppBar,
   Toolbar,
   IconButton,
-  Box,
   Tooltip,
   Avatar,
   Badge,
+  Box,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import type { HeaderProps, UserData } from '@/app/types';
+import type { HeaderProps, UserData } from "@/app/types";
 import {
   Menu as MenuIcon,
-  Search as SearchIcon,
   Notifications as NotificationsIcon,
 } from "@mui/icons-material";
 
+const ICON_AREA = 48; // largura do botão/hamburger
 
 const Header: React.FC<HeaderProps> = ({
   drawerWidth,
@@ -30,68 +30,63 @@ const Header: React.FC<HeaderProps> = ({
   const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
-    const session = localStorage.getItem("session");
-    if (session) {
-      const data = JSON.parse(session);
-      const userData = data.user || null;
-      setUser(userData);
+    const s = localStorage.getItem("session");
+    if (s) {
+      const data = JSON.parse(s);
+      setUser(data.user || null);
     }
   }, []);
 
-  const handleAvatarError = () => {
-    setUseFallback(true);
-  };
+  const avatarUrl =
+    user?.avatar && !useFallback ? user.avatar : undefined;
 
-  const getInitials = (name?: string): string => {
-    if (!name) return "U";
-    const words = name.trim().split(" ");
-    const initials = words.map((word) => word[0]?.toUpperCase() || "");
-    return initials.slice(0, 1).join("");
-  };
-
-  const avatarUrl = user?.avatar && !useFallback ? user.avatar : undefined;
-  const initials = getInitials(user?.name);
+  const initials = user?.name
+    ? user.name
+        .trim()
+        .split(" ")
+        .map((w) => w[0])
+        .shift()
+        ?.toUpperCase() ?? "U"
+    : "U";
 
   return (
     <AppBar
       position="fixed"
       sx={{
-        // Em telas mobile, ocupa 100% e não adiciona margin-left.
-        // Em telas maiores, empurra de acordo com a sidebar.
-        width: "100%",
+        width: isMobile ? "100%" : `calc(100% - ${drawerWidth}px)`,
         ml: isMobile ? 0 : `${drawerWidth}px`,
-        transition: theme.transitions.create(["margin", "width"], {
-          easing: theme.transitions.easing.sharp,
-          duration: theme.transitions.duration.leavingScreen,
-        }),
         bgcolor: theme.palette.background.default,
-        boxShadow: "none", // Remove a sombra
+        boxShadow: "none",
+        zIndex: theme.zIndex.drawer + 1,
+        transition: theme.transitions.create(["margin", "width"]),
       }}
     >
-      <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-        <Box sx={{ display: "flex", alignItems: "center" }}>
-          {/* Ícone de menu aparece em mobile ou quando a sidebar está fechada */}
+      <Toolbar disableGutters sx={{ px: 2 }}>
+        {/* Área fixa de 48 px  →  evita ‘saltos’ */}
+        <Box
+          sx={{
+            width: ICON_AREA,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mr: 2,
+          }}
+        >
           {isMobile && (
             <IconButton
-              aria-label="open drawer"
-              edge="start"
               onClick={onToggleSidebar}
               color="primary"
-              sx={{ mr: 2 }}
+              size="large"
             >
               <MenuIcon />
             </IconButton>
           )}
         </Box>
 
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Tooltip title="Search">
-            <IconButton sx={{ color: theme.palette.primary.main }}>
-              <SearchIcon />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="Notifications">
+        {/* Conteúdo empurrado p/ a direita */}
+        {!isMobile && (
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center", ml: "auto" }}>
+          <Tooltip title="Notificações">
             <IconButton sx={{ color: theme.palette.primary.main }}>
               <Badge badgeContent={4} color="error">
                 <NotificationsIcon />
@@ -99,27 +94,29 @@ const Header: React.FC<HeaderProps> = ({
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="Profile">
+          <Tooltip title="Perfil">
             <Avatar
-              alt={user?.name || "Usuário"}
               src={avatarUrl}
-              onError={handleAvatarError}
+              alt={user?.name || "Usuário"}
+              onError={() => setUseFallback(true)}
               sx={{
                 width: 36,
                 height: 36,
-                cursor: "pointer",
-                border: "2px solid white",
-                transition: "transform 0.2s",
-                bgcolor: !avatarUrl ? theme.palette.secondary.main : undefined,
-                color: !avatarUrl ? "white" : undefined,
+                bgcolor: !avatarUrl
+                  ? theme.palette.secondary.main
+                  : undefined,
+                color: !avatarUrl ? "#fff" : undefined,
                 fontWeight: 600,
-                "&:hover": { transform: "scale(1.1)" },
+                border: "2px solid white",
+                cursor: "pointer",
               }}
             >
               {!avatarUrl && initials}
             </Avatar>
           </Tooltip>
         </Box>
+        )}
+
       </Toolbar>
     </AppBar>
   );
