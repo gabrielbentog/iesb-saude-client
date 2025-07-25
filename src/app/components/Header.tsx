@@ -23,6 +23,7 @@ const Header: React.FC<HeaderProps> = ({
   drawerWidth,
   onToggleSidebar,
   isMobile,
+  open,
 }) => {
   const theme = useTheme();
 
@@ -53,11 +54,11 @@ const Header: React.FC<HeaderProps> = ({
     <AppBar
       position="fixed"
       sx={{
-        width: isMobile ? "100%" : `calc(100% - ${drawerWidth}px)`,
-        ml: isMobile ? 0 : `${drawerWidth}px`,
+        width: !isMobile && open ? `calc(100% - ${drawerWidth}px)` : "100%",
+        ml:    !isMobile && open ? `${drawerWidth}px` : 0,
         bgcolor: theme.palette.background.default,
         boxShadow: "none",
-        zIndex: theme.zIndex.drawer + 1,
+        zIndex: isMobile ? theme.zIndex.drawer + 1 : undefined,
         transition: theme.transitions.create(["margin", "width"]),
       }}
     >

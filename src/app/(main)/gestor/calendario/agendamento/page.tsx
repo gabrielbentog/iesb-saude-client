@@ -159,7 +159,7 @@ export default function ScheduleFormPage() {
           </Typography>
         </Stack>
 
-        <Paper sx={{ p: 4 }}>
+        <Paper sx={{ p: { xs: 2, md: 4 } }}>
           {/* campus + especialidade */}
           <Box
             display="grid"
@@ -283,8 +283,9 @@ export default function ScheduleFormPage() {
           </Stack>
 
           {/* ações */}
-          <Stack direction="row" justifyContent="space-between" mt={4} spacing={2}>
+          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" mt={4} spacing={2}>
             <Button
+              sx={{ width: { xs: "100%", sm: "auto" } }}
               startIcon={<AddIcon />}
               variant="outlined"
               onClick={() =>
@@ -305,6 +306,7 @@ export default function ScheduleFormPage() {
             </Button>
 
             <Button
+              sx={{ width: { xs: "100%", sm: "auto" } }}
               variant="contained"
               disabled={isSubmitting}
               onClick={handleSubmit(onSubmit)}

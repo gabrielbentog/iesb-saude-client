@@ -8,7 +8,7 @@ import AddIcon from "@mui/icons-material/Add";
 import type { ScheduleItemProps } from '@/app/types';
 
 const GRID_SM = "240px 1fr 1fr auto auto";   // Data | Início | Fim | + | 🗑️
-const GRID_XS = "1fr 1fr auto auto";         // mobile (data quebra pra cima)
+const GRID_XS = "1fr";         // mobile (data quebra pra cima)
 
 const weekDays = [
   { value: 0, label: "Domingo" },

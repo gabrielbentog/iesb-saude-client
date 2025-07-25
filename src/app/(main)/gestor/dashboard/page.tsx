@@ -232,6 +232,7 @@ export default function ManagerDashboard() {
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isXsScreen = useMediaQuery(theme.breakpoints.down("sm"));
 
   // ───────────── Fetch KPIs ─────────────
   useEffect(() => {
@@ -324,18 +325,27 @@ export default function ManagerDashboard() {
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: theme.palette.background.default, pt: 2 }}>
-      <Container maxWidth="xl">
+      <Container maxWidth="xl" sx={{ pb: isMobile ? 8 : 2 }}>
         <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
           {/* Banner */}
           <Paper sx={{ overflow: "hidden", border: "none", bgcolor: "primary.main", color: "white", position: "relative" }} elevation={0}>
-            <CardContent sx={{ p: 4 }}>
+            <CardContent
+              sx={{
+                p: { xs: 3, md: 4 },
+                /* ↓ somente abaixo de `sm` (≤600 px) vira flex coluna */
+                display: { xs: "flex", md: "block" },
+                flexDirection: { xs: "column" },
+                gap: { xs: 3 },
+                /* nada é aplicado ao md +  → layout grande fica intacto */
+              }}
+            >
               <Typography variant="h4" fontWeight={700} gutterBottom>Painel de Gestão</Typography>
               <Typography variant="body1" sx={{ mb: 3, maxWidth: "80%", color: "rgba(255,255,255,0.9)" }}>
                 Gerencie estagiários, horários e consultas com eficiência.
               </Typography>
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                <Button variant="contained" sx={{ bgcolor: "white", color: "primary.main" }} startIcon={<PersonAddIcon />} onClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}>Adicionar Estagiário</Button>
-                <Button variant="outlined" sx={{ borderColor: "white", color: "white" }} startIcon={<AccessTimeIcon />} onClick={() => pushWithProgress("/gestor/calendario/agendamento")}>Definir Horários</Button>
+                <Button fullWidth={isXsScreen} variant="contained" sx={{ bgcolor: "white", color: "primary.main" }} startIcon={<PersonAddIcon />} onClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}>Adicionar Estagiário</Button>
+                <Button fullWidth={isXsScreen} variant="outlined" sx={{ borderColor: "white", color: "white" }} startIcon={<AccessTimeIcon />} onClick={() => pushWithProgress("/gestor/calendario/agendamento")}>Definir Horários</Button>
               </Box>
             </CardContent>
           </Paper>
@@ -381,66 +391,62 @@ export default function ManagerDashboard() {
           </Grid>
 
           {/* Tabs */}
-          <Box sx={{ width: "100%" }}>
-            <StyledTabsList value={tabValue} onChange={handleTabChange} variant="fullWidth">
-              <StyledTab label={<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}><CalendarMonthIcon sx={{ fontSize: 16 }} /> Próximas Consultas</Box>} />
-              <StyledTab label={<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}><PeopleIcon sx={{ fontSize: 16 }} /> Estagiários</Box>} />
-            </StyledTabsList>
+          {!isMobile && (
+            <Box sx={{ width: "100%" }}>
+              <StyledTabsList value={tabValue} onChange={handleTabChange} variant="fullWidth">
+                <StyledTab label={<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}><CalendarMonthIcon sx={{ fontSize: 16 }} /> Próximas Consultas</Box>} />
+                <StyledTab label={<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}><PeopleIcon sx={{ fontSize: 16 }} /> Estagiários</Box>} />
+              </StyledTabsList>
 
-            {/* Tab 0: Appointments */}
-            <TabPanel value={tabValue} index={0}>
-              {loadingAppts ? (
-                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress /></Box>
-              ) : (
-                <DataTable<UIAppointment>
-                  title="Consultas Agendadas"
-                  subtitle="Próximas consultas e seus status"
-                  headers={[...appointmentHeaders]}
-                  data={appointments}
-                  renderCell={(a, id) => renderAppointmentCell(a, id as AppointmentHeaderId)}
-                  rowKeyExtractor={(a) => a.id}
-                  getPriorityBorderColor={(a) => {
-                    switch (a.priority) {
-                      case "high": return `4px solid ${theme.palette.error.main}`;
-                      case "normal": return `4px solid ${theme.palette.info.main}`;
-                      case "low": return `4px solid ${theme.palette.success.main}`;
-                      default: return `4px solid ${theme.palette.grey[300]}`;
-                    }
-                  }}
-                  onViewAllClick={() => pushWithProgress("/gestor/consultas")}
-                />
-              )}
-            </TabPanel>
+              {/* Tab 0: Appointments */}
+              <TabPanel value={tabValue} index={0}>
+                {loadingAppts ? (
+                  <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress /></Box>
+                ) : (
+                  <DataTable<UIAppointment>
+                    title="Consultas Agendadas"
+                    subtitle="Próximas consultas e seus status"
+                    headers={[...appointmentHeaders]}
+                    data={appointments}
+                    renderCell={(a, id) => renderAppointmentCell(a, id as AppointmentHeaderId)}
+                    rowKeyExtractor={(a) => a.id}
+                    getPriorityBorderColor={(a) => {
+                      switch (a.priority) {
+                        case "high": return `4px solid ${theme.palette.error.main}`;
+                        case "normal": return `4px solid ${theme.palette.info.main}`;
+                        case "low": return `4px solid ${theme.palette.success.main}`;
+                        default: return `4px solid ${theme.palette.grey[300]}`;
+                      }
+                    }}
+                    onViewAllClick={() => pushWithProgress("/gestor/consultas")}
+                  />
+                )}
+              </TabPanel>
 
-            {/* Tab 1: Interns */}
-            <TabPanel value={tabValue} index={1}>
-              {loadingInterns ? (
-                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress /></Box>
-              ) : (
-                <DataTable<Intern>
-                  title="Gestão de Estagiários"
-                  subtitle="Acompanhe o desempenho dos estagiários"
-                  headers={[...internHeaders]}
-                  data={interns}
-                  renderCell={(i, id) => renderInternCell(i, id as InternHeaderId)}
-                  rowKeyExtractor={(i) => i.id}
-                  onViewAllClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}
-                />
-              )}
-            </TabPanel>
-          </Box>
+              {/* Tab 1: Interns */}
+              <TabPanel value={tabValue} index={1}>
+                {loadingInterns ? (
+                  <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}><CircularProgress /></Box>
+                ) : (
+                  <DataTable<Intern>
+                    title="Gestão de Estagiários"
+                    subtitle="Acompanhe o desempenho dos estagiários"
+                    headers={[...internHeaders]}
+                    data={interns}
+                    renderCell={(i, id) => renderInternCell(i, id as InternHeaderId)}
+                    rowKeyExtractor={(i) => i.id}
+                    onViewAllClick={() => pushWithProgress("/gestor/gestao-de-estagiarios")}
+                  />
+                )}
+              </TabPanel>
+            </Box>
+          )}
 
           {/* Menu */}
           <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleMenuClose} transformOrigin={{ horizontal: "right", vertical: "top" }} anchorOrigin={{ horizontal: "right", vertical: "bottom" }}>
             <MenuItem onClick={handleMenuClose}><VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Ver detalhes</MenuItem>
             <MenuItem onClick={handleMenuClose}><EditIcon fontSize="small" sx={{ mr: 1 }} /> Editar</MenuItem>
           </Menu>
-
-          {isMobile && (
-            <Fab color="primary" sx={{ position: "fixed", bottom: 24, right: 24 }}>
-              <AddIcon />
-            </Fab>
-          )}
         </Box>
       </Container>
     </Box>
