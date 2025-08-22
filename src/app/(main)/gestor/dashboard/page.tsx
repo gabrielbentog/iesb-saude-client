@@ -241,13 +241,14 @@ export default function ManagerDashboard() {
       try {
         const res = await apiFetch<KpiResponse>("/api/dashboard/kpis");
         if (ignore) return;
-        const { appointmentsToday, totalAppointments, interns, completionRate } = res.data;
+        const { appointmentsToday, totalAppointments, interns, completionRate, appointmentsToApprove } = res.data;
         setStats({
           appointmentsToday: appointmentsToday.total,
           appointmentsTrend: appointmentsToday.percentChange,
           totalAppointments: totalAppointments.total,
           completedAppointments: totalAppointments.completed,
           pendingAppointments: totalAppointments.pending,
+          appointmentsToApprove: appointmentsToApprove,
           totalInterns: interns.activeCount,
           completionRate,
         });
@@ -373,7 +374,7 @@ export default function ManagerDashboard() {
             <Grid item xs={12} sm={6} md={3}>
               <StatCard
                 title="Consultas para Aprovar"
-                value={stats.pendingAppointments}
+                value={stats.appointmentsToApprove || 0}
                 subtitle="Consultas pendentes de aprovação"
                 icon={<CheckCircleIcon sx={{ color: "success.main" }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}

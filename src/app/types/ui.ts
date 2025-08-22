@@ -22,6 +22,9 @@ export interface UserData {
   name?: string;
   avatar?: string;
   email?: string;
+  profile?: {
+    name: string;
+  };
 }
 
 export interface StatCardProps {
