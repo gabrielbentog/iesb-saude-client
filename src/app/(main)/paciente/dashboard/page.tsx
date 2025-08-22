@@ -375,7 +375,7 @@ export default function PatientDashboard() {
               <StatCard
                 title="Pendente confirmação"
                 value={stats.pendingConfirm}
-                subtitle="Aguardando confirmação"
+                subtitle="Aguardando sua confirmação"
                 icon={<InfoIcon sx={{ color: "warning.main" }} />}
                 iconBgColor={alpha(theme.palette.warning.main, 0.1)}
               />
