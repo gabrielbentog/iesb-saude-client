@@ -170,11 +170,12 @@ export default function AppointmentManagementScreen() {
       try {
         const res = await apiFetch<KpiResponse>("/api/dashboard/kpis");
         if (ignore) return;
-        const { appointmentsToday, totalAppointments, interns, completionRate } = res.data;
+        const { appointmentsToday, totalAppointments, interns, completionRate, appointmentsToApprove } = res.data;
         setStats({
           appointmentsToday: appointmentsToday.total,
           appointmentsTrend: appointmentsToday.percentChange,
           totalAppointments: totalAppointments.total,
+          appointmentsToApprove: appointmentsToApprove,
           completedAppointments: totalAppointments.completed,
           pendingAppointments: totalAppointments.pending,
           totalInterns: interns.activeCount,
@@ -278,7 +279,7 @@ export default function AppointmentManagementScreen() {
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
               title="Consultas Hoje"
-              value={todayCount}
+              value={todayCount || '-'}
               subtitle="Agendadas para hoje"
               icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
               iconBgColor={alpha(theme.palette.primary.main, 0.1)}
