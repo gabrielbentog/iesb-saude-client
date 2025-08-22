@@ -336,10 +336,6 @@ export default function AppointmentManagementScreen() {
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
           Ver detalhes
         </MenuItem>
-        <MenuItem onClick={handleEditAppointment}>
-          <EditIcon fontSize="small" sx={{ mr: 1 }} />
-          Editar
-        </MenuItem>
         {selectedAppointment
           && !["Rejeitada",
                "Cancelada pelo gestor",

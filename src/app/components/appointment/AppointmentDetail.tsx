@@ -118,7 +118,7 @@ const adapt = (raw: RawAppointment): Appointment => ({
   time: format(parseISO(raw.startTime), "HH:mm"),
   status: STATUS_LABEL[raw.status as RawAppointmentStatus] as AppointmentStatus,
   description: raw.notes || "Sem descrição",
-  createdAt: raw.date,
+  createdAt: raw.createdAt,
   internName: raw.intern?.name ?? null,
   internId: raw.intern?.id ? String(raw.intern.id) : null,
 });
@@ -760,7 +760,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                 </Avatar>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                   <Typography variant="body2" fontWeight={600} noWrap>
-                    Sistema — {appointment && format(parseISO(appointment.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                    Sistema — {appointment?.createdAt ? format(new Date(appointment.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR }) : ""}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     Agendamento criado
@@ -796,13 +796,17 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
         maxWidth="sm"
         PaperProps={{ sx: { borderRadius: 3 } }}
       >
-        <DialogTitle>
-          <Typography variant="h6" fontWeight={700}>
-            Designar Estagiário
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Selecione um estagiário para esta consulta
-          </Typography>
+        <DialogTitle sx={{ pb: 0 }}>
+          <Box>
+            <Typography component="span" variant="h6" fontWeight={700}>
+              Designar Estagiário
+            </Typography>
+          </Box>
+          <Box mt={1}>
+            <Typography component="span" variant="body2" color="text.secondary">
+              Selecione um estagiário para esta consulta
+            </Typography>
+          </Box>
         </DialogTitle>
         <DialogContent>
           <TextField

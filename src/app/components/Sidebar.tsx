@@ -115,12 +115,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       path: "/perfil",
       onClick: () => pushWithProgress("/perfil"),
     },
-    {
-      icon: <SettingsIcon />,
-      text: "Configurações",
-      path: "/configuracoes",
-      onClick: () => pushWithProgress("/configuracoes"),
-    },
+    // {
+    //   icon: <SettingsIcon />,
+    //   text: "Configurações",
+    //   path: "/configuracoes",
+    //   onClick: () => pushWithProgress("/configuracoes"),
+    // },
     {
       icon: <LogoutIcon />,
       text: "Sair",

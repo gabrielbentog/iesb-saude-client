@@ -276,7 +276,7 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
 
     const onSubmit = handleSubmit(async (values) => {
         try {
-            await apiFetch(`/api/users/${userId}/change-password`, {
+            await apiFetch(`/api/users/${userId}/change_password`, {
                 method: "PUT",
                 body: JSON.stringify(values),
             });

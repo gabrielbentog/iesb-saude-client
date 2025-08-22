@@ -77,7 +77,7 @@ const internHeaders = [
   { id: "specialty", label: "Especialidade" },
   { id: "appointmentsCompleted", label: "Consultas Realizadas" },
   { id: "appointmentsScheduled", label: "Consultas Agendadas" },
-  { id: "performance", label: "Performance" },
+  // { id: "performance", label: "Performance" },
   { id: "status", label: "Status" },
 ] as const;
 
@@ -158,14 +158,14 @@ const renderInternCell = (intern: Intern, id: InternHeaderId) => {
       return intern.appointmentsCompleted;
     case "appointmentsScheduled":
       return intern.appointmentsScheduled;
-    case "performance": {
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: 100 }}>
-          <LinearProgress variant="determinate" value={intern.performance} sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} />
-          <Typography variant="caption" fontWeight={500}>{intern.performance}%</Typography>
-        </Box>
-      );
-    }
+    // case "performance": {
+    //   return (
+    //     <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: 100 }}>
+    //       <LinearProgress variant="determinate" value={intern.performance} sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} />
+    //       <Typography variant="caption" fontWeight={500}>{intern.performance}%</Typography>
+    //     </Box>
+    //   );
+    // }
     case "status":
       return <StyledBadge label={intern.status} badgeType={intern.status} />;
     default:

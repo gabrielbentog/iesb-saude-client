@@ -8,6 +8,7 @@ export interface RawAppointment {
   endTime: string
   status: string
   notes?: string
+  createdAt: string
   user: {
     id: string
     name: string

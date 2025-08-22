@@ -41,7 +41,7 @@ const internHeaders = [
   { id: "specialty",             label: "Especialidade"       },
   { id: "appointmentsCompleted", label: "Consultas Realizadas"},
   { id: "appointmentsScheduled", label: "Consultas Agendadas" },
-  { id: "performance",           label: "Performance"         },
+  // { id: "performance",           label: "Performance"         },
   { id: "status",                label: "Status"              },
 ]
 
@@ -79,13 +79,13 @@ const renderInternCell = (intern: Intern, headerId: string) => {
       return intern.appointmentsCompleted
     case "appointmentsScheduled":
       return intern.appointmentsScheduled
-    case "performance":
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: 100 }}>
-          <LinearProgress variant="determinate" value={intern.performance} sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} />
-          <Typography variant="caption" fontWeight={500}>{intern.performance}%</Typography>
-        </Box>
-      )
+    // case "performance":
+    //   return (
+    //     <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: 100 }}>
+    //       <LinearProgress variant="determinate" value={intern.performance} sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} />
+    //       <Typography variant="caption" fontWeight={500}>{intern.performance}%</Typography>
+    //     </Box>
+    //   )
     case "status":
       const badgeType = intern.status === "Ativo" ? "Confirmada" : "Pendente"
       return <StyledBadge label={intern.status} badgeType={badgeType} />
@@ -181,7 +181,7 @@ export default function InternManagementScreen() {
 
       {/* KPIs */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatCard
             title="Estagiários Ativos"
             value={activeInterns}
@@ -190,7 +190,7 @@ export default function InternManagementScreen() {
             iconBgColor={alpha(theme.palette.primary.main, 0.1)}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatCard
             title="Consultas Realizadas"
             value={totalAppointmentsCompleted}
@@ -199,7 +199,7 @@ export default function InternManagementScreen() {
             iconBgColor={alpha(theme.palette.primary.main, 0.1)}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={4}>
           <StatCard
             title="Média por Estagiário"
             value={averageAppointments}
@@ -208,7 +208,7 @@ export default function InternManagementScreen() {
             iconBgColor={alpha(theme.palette.success.main, 0.1)}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        {/* <Grid item xs={12} sm={6} md={3}>
           <StatCard
             title="Taxa de Ocupação"
             value={`${occupancyRate}%`}
@@ -229,7 +229,7 @@ export default function InternManagementScreen() {
               />
             }
           />
-        </Grid>
+        </Grid> */}
       </Grid>
 
       {/* Tabela */}
