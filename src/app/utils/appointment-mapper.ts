@@ -31,17 +31,24 @@ export const specialtyIcon = (name?: string) => {
 
 export const mapRaw = (a: RawAppointment): UIAppointment => {
   const specialty = a.timeSlot?.specialtyName ?? "-"
-  const location  = a.consultationRoom?.collegeLocationName ??
-                    a.timeSlot?.collegeLocationName ?? "-"
+  const location = a.consultationRoom?.collegeLocationName ?? a.timeSlot?.collegeLocationName ?? "-"
+
+  // normalize interns: support legacy `intern` and new `interns[]`
+  const interns: { id: string; name: string; avatarUrl?: string }[] = []
+  const maybeInterns = (a as RawAppointment & { interns?: RawAppointment["intern"][] | undefined }).interns
+  if (Array.isArray(maybeInterns) && maybeInterns.length) {
+    for (const i of maybeInterns) {
+      interns.push({ id: i.id, name: i.name, avatarUrl: i.avatarUrl })
+    }
+  } else if (a.intern) {
+    interns.push({ id: a.intern.id, name: a.intern.name, avatarUrl: a.intern.avatarUrl })
+  }
+
   return {
     id: a.id,
     patientName: a.user.name,
     patientAvatar: "",
-    intern: {
-      id: a.intern?.id ?? "-",
-      name: a.intern?.name ?? "-",
-      avatarUrl: a.intern?.avatarUrl ?? "-",
-    },
+    interns: interns.length ? interns : undefined,
     specialty,
     location,
     room: a.consultationRoom?.name ?? "-",

@@ -16,6 +16,7 @@ import {
   Menu,
   MenuItem,
   Avatar,
+  Tooltip,
   useMediaQuery,
   styled,
   useTheme,
@@ -107,7 +108,21 @@ const renderAppointmentCell = (a: UIAppointment, id: AppointmentHeaderId) => {
       );
     }
     case "intern":
-      return a.intern?.name || "—";
+      if (a.interns && a.interns.length) {
+        const first = a.interns[0].name
+        if (a.interns.length > 1) {
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography fontWeight={500}>{first}</Typography>
+              <Tooltip title={a.interns.slice(1).map(i => i.name).join(', ')}>
+                <Typography variant="caption">+{a.interns.length - 1}</Typography>
+              </Tooltip>
+            </Box>
+          )
+        }
+        return first
+      }
+      return '—'
   // 'specialty' column removed
     case "location":
       return a.location;

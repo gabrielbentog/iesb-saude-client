@@ -19,6 +19,7 @@ import {
   Fab,
   styled,
   useTheme,
+  Tooltip,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 
@@ -82,17 +83,30 @@ const renderAppointmentCell = (
 ) => {
   switch (id) {
     case "professional": {
+      if (a.interns && a.interns.length) {
+        const first = a.interns[0]
+        return (
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Avatar src={first.avatarUrl} sx={{ width: 32, height: 32 }}>
+              {first.name ? first.name.split(" ").map((n) => n[0]).join("") : ""}
+            </Avatar>
+            <Typography fontWeight={500}>{first.name}</Typography>
+            {a.interns.length > 1 && (
+              <Tooltip title={a.interns.slice(1).map(i => i.name).join(', ')}>
+                <Typography variant="caption">+{a.interns.length - 1}</Typography>
+              </Tooltip>
+            )}
+          </Box>
+        );
+      }
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar src={a.intern?.avatarUrl} sx={{ width: 32, height: 32 }}>
-            {a.intern?.name
-              .split(" ")
-              .map((n) => n[0])
-              .join("")}
+          <Avatar sx={{ width: 32, height: 32 }}>
+            <AddCircleOutlineIcon />
           </Avatar>
-          <Typography fontWeight={500}>{a.intern?.name}</Typography>
+          <Typography fontWeight={500}>Não designado</Typography>
         </Box>
-      );
+      )
     }
     case "specialty":
       return (

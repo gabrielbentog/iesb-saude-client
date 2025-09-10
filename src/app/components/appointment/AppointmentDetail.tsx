@@ -94,8 +94,7 @@ interface Appointment {
   status: AppointmentStatus;
   description: string;
   createdAt: string;
-  internName: string | null;
-  internId: string | null;
+  interns?: { id: string; name: string }[];
 }
 
 const adapt = (raw: RawAppointment): Appointment => ({
@@ -119,8 +118,7 @@ const adapt = (raw: RawAppointment): Appointment => ({
   status: STATUS_LABEL[raw.status as RawAppointmentStatus] as AppointmentStatus,
   description: raw.notes || "Sem descrição",
   createdAt: raw.createdAt,
-  internName: raw.intern?.name ?? null,
-  internId: raw.intern?.id ? String(raw.intern.id) : null,
+  interns: raw.interns && raw.interns.length ? raw.interns.map((i) => ({ id: String(i.id), name: i.name })) : raw.intern ? [{ id: String(raw.intern.id), name: raw.intern.name }] : undefined,
 });
 
 /* ------------------------------------------------------------------ */
@@ -326,7 +324,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
   const [error, setError] = useState<string>("");
 
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
-  const [selectedInternId, setSelectedInternId] = useState<string>("");
+  const [selectedInternIds, setSelectedInternIds] = useState<string[]>([]);
 
   const [now, setNow] = useState<Date>(new Date());
   const [tab, setTab] = useState<"details" | "history">("details");
@@ -419,20 +417,21 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
   );
 
   const handleAssignIntern = useCallback(async () => {
-    if (!selectedInternId || !appointment) return;
+    if (!selectedInternIds || !appointment) return;
+    // limite de 3
+    const ids = selectedInternIds.slice(0, 3);
     await apiFetch(`/api/appointments/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ appointment: { intern_id: selectedInternId } }),
+      body: JSON.stringify({ appointment: { intern_ids: ids } }),
     });
-    const chosen = interns.find((i) => i.id === selectedInternId);
+    const chosen = interns.filter((i) => ids.includes(String(i.id)));
     setAppointment({
       ...appointment,
-      internName: chosen?.name ?? null,
-      internId: selectedInternId,
+      interns: chosen.map((c) => ({ id: String(c.id), name: c.name })),
     });
     setAssignDialogOpen(false);
-    setSelectedInternId("");
-  }, [appointment, id, interns, selectedInternId]);
+    setSelectedInternIds([]);
+  }, [appointment, id, interns, selectedInternIds]);
 
   /* ------------------------------------------------------------------ */
   /* Botões                                                             */
@@ -626,13 +625,11 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                   <InfoCard sx={{ position: "relative" }}>
                     <CardContent sx={{ p: 3 }}>
                       <Typography variant="h6" fontWeight={700} mb={3}>
-                        Estagiário Designado
+                        Estagiário Designados
                       </Typography>
                       {role === "Gestor" && (
                         <Tooltip
-                          title={
-                            appointment.internName ? "Alterar estagiário" : "Designar estagiário"
-                          }
+                          title={appointment.interns && appointment.interns.length ? "Alterar estagiários" : "Designar estagiários"}
                         >
                           <IconButton
                             size="small"
@@ -647,23 +644,30 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                               },
                             }}
                           >
-                            {appointment.internName ? <EditIcon /> : <PersonAddIcon />}
+                            {appointment.interns && appointment.interns.length ? <EditIcon /> : <PersonAddIcon />}
                           </IconButton>
                         </Tooltip>
                       )}
-                      {appointment.internName ? (
-                        <InfoRow
-                          icon={<AssignmentIndIcon sx={{ color: "success.main" }} />}
-                          label="Estagiário Responsável"
-                          value={appointment.internName}
-                          iconBgColor={alpha(theme.palette.success.main, 0.1)}
-                        />
+                      {appointment.interns && appointment.interns.length ? (
+                        <Box>
+                          <InfoRow
+                            icon={<AssignmentIndIcon sx={{ color: "success.main" }} />}
+                            label="Estagiário Responsável"
+                            value={appointment.interns[0].name}
+                            iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                          />
+                          {appointment.interns.length > 1 && (
+                            <Tooltip title={appointment.interns.slice(1).map(i => i.name).join(', ')}>
+                              <Typography variant="caption" sx={{ ml: 2, display: 'inline-block' }}>+{appointment.interns.length - 1} outros</Typography>
+                            </Tooltip>
+                          )}
+                        </Box>
                       ) : (
                         <Alert
                           severity="info"
                           sx={{ borderRadius: 2, alignItems: "center" }}
                         >
-                          Nenhum estagiário designado.
+                          Nenhum estagiário designados.
                         </Alert>
                       )}
                     </CardContent>
@@ -811,10 +815,22 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
         <DialogContent>
           <TextField
             select
+            SelectProps={{
+              multiple: true,
+              renderValue: (selected) => {
+                const arr = Array.isArray(selected) ? selected : [selected]
+                const names = interns.filter(i => arr.includes(String(i.id))).map(i => i.name)
+                return names.join(', ')
+              }
+            }}
             fullWidth
-            label="Estagiário"
-            value={selectedInternId}
-            onChange={(e) => setSelectedInternId(e.target.value)}
+            label="Estagiários (max 3)"
+            value={selectedInternIds}
+            onChange={(e) => {
+              const val = e.target.value
+              const arr = Array.isArray(val) ? val.map(String) : [String(val)]
+              setSelectedInternIds(arr.slice(0, 3))
+            }}
             margin="normal"
           >
             {interns.map((i) => (
@@ -831,7 +847,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
           <Button onClick={() => setAssignDialogOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
-            disabled={!selectedInternId}
+            disabled={!selectedInternIds || selectedInternIds.length === 0}
             onClick={handleAssignIntern}
           >
             Salvar

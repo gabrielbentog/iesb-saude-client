@@ -15,6 +15,7 @@ import {
   IconButton,
   Avatar,
   CircularProgress,
+  Tooltip,
 } from "@mui/material"
 import { alpha } from "@mui/material/styles"
 
@@ -71,7 +72,21 @@ const renderAppointmentCell = (a: UIAppointment, id: string) => {
       )
 
     case "intern":
-      return a.intern?.name || "—"
+      if (a.interns && a.interns.length) {
+        const first = a.interns[0].name
+        if (a.interns.length > 1) {
+          return (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography fontWeight={500}>{first}</Typography>
+              <Tooltip title={a.interns.slice(1).map(i => i.name).join(', ')}>
+                <Typography variant="caption">+{a.interns.length - 1}</Typography>
+              </Tooltip>
+            </Box>
+          )
+        }
+        return first
+      }
+      return '—'
 
     case "location":
       return a.location

@@ -22,6 +22,11 @@ export interface RawAppointment {
     name: string
     avatarUrl?: string
   }
+  interns?: {
+    id: string
+    name: string
+    avatarUrl?: string
+  }[]
   timeSlot?: {
     id: string
     collegeLocationName?: string
@@ -60,11 +65,11 @@ export interface UIAppointment {
   id: string
   patientName: string
   patientAvatar: string
-  intern?: {
+  interns?: {
     id: string
     name: string
     avatarUrl?: string
-  }
+  }[]
   specialty: string
   location: string      // ← novo
   room: string          // ← novo
