@@ -58,6 +58,7 @@ const formSchema = z.object({
   nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
   email: z.string().email("Email inválido"),
   telefone: z.string().regex(phoneRegex, "Telefone inválido"),
+  registration_code: z.string().optional(),
 
   college_location_id: z.string({
     invalid_type_error: "Selecione o campus",
@@ -95,7 +96,8 @@ async function createIntern(data: FormValues) {
       user: {
         name: data.nome,
         email: data.email,
-        collegeLocationId: data.college_location_id,
+  collegeLocationId: data.college_location_id,
+  registrationCode: data.registration_code ?? undefined,
         profileName: "Estagiário",
         semester: data.periodo,
       },
@@ -158,6 +160,7 @@ export default function RegisterInternPage() {
       nome: "",
       email: "",
       telefone: "",
+    registration_code: "",
       college_location_id: "", // coerção
       periodo: "",
       observacoes: "",
@@ -357,6 +360,13 @@ export default function RegisterInternPage() {
               <Grid item xs={12} md={6}>
                 <Controller name="periodo" control={control} render={({ field }) => (
                   <TextField {...field} label="Período/Semestre" fullWidth placeholder="Ex: 6º semestre" error={!!errors.periodo} helperText={errors.periodo?.message} />
+                )} />
+              </Grid>
+
+              {/* Matrícula / Registration Code */}
+              <Grid item xs={12} md={6}>
+                <Controller name="registration_code" control={control} render={({ field }) => (
+                  <TextField {...field} label="Matrícula" fullWidth placeholder="Ex: 202134567" error={!!errors.registration_code} helperText={errors.registration_code?.message} />
                 )} />
               </Grid>
 

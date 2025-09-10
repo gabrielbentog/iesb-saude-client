@@ -13,12 +13,10 @@ import {
   Container,
   Tabs,
   Tab,
-  LinearProgress,
   Menu,
   MenuItem,
   Avatar,
   useMediaQuery,
-  Fab,
   styled,
   useTheme,
   CircularProgress,
@@ -32,7 +30,6 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import AddIcon from "@mui/icons-material/Add";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import RestaurantIcon from "@mui/icons-material/Restaurant";
@@ -40,7 +37,7 @@ import PsychologyIcon from "@mui/icons-material/Psychology";
 import FitnessCenterIcon from "@mui/icons-material/FitnessCenter";
 
 import { StatCard } from "@/app/components/ui/StatCard";
-import { DataTable, StyledBadge, IconContainer } from "@/app/components/DataTable";
+import { DataTable, StyledBadge } from "@/app/components/DataTable";
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { apiFetch } from "@/app/lib/api";
 import {
@@ -63,7 +60,6 @@ import type { TabPanelProps } from "@/app/types";
 const appointmentHeaders = [
   { id: "patient", label: "Paciente" },
   { id: "intern", label: "Estagiário" },
-  { id: "specialty", label: "Especialidade" },
   { id: "location", label: "Local" },
   { id: "room", label: "Sala" },
   { id: "dateTime", label: "Data/Hora" },
@@ -74,7 +70,6 @@ type AppointmentHeaderId = (typeof appointmentHeaders)[number]["id"];
 
 const internHeaders = [
   { id: "name", label: "Estagiário" },
-  { id: "specialty", label: "Especialidade" },
   { id: "appointmentsCompleted", label: "Consultas Realizadas" },
   { id: "appointmentsScheduled", label: "Consultas Agendadas" },
   // { id: "performance", label: "Performance" },
@@ -113,14 +108,7 @@ const renderAppointmentCell = (a: UIAppointment, id: AppointmentHeaderId) => {
     }
     case "intern":
       return a.intern?.name || "—";
-    case "specialty": {
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer sx={{ color: "primary.main" }}>{a.icon}</IconContainer>
-          {a.specialty}
-        </Box>
-      );
-    }
+  // 'specialty' column removed
     case "location":
       return a.location;
     case "room":
@@ -146,14 +134,7 @@ const renderInternCell = (intern: Intern, id: InternHeaderId) => {
         </Box>
       );
     }
-    case "specialty": {
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer sx={{ color: "primary.main" }}>{intern.icon}</IconContainer>
-          {intern.specialty}
-        </Box>
-      );
-    }
+  // 'specialty' column removed
     case "appointmentsCompleted":
       return intern.appointmentsCompleted;
     case "appointmentsScheduled":
@@ -294,6 +275,7 @@ export default function ManagerDashboard() {
           id: i.id,
           name: i.name,
           specialty: i.specialty ?? "-",
+          registrationCode: i.registrationCode ?? undefined,
           avatar: i.avatarUrl ?? "",
           appointmentsCompleted: i.appointmentsCompleted,
           appointmentsScheduled: i.appointmentsScheduled,

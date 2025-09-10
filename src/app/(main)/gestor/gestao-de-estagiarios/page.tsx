@@ -12,7 +12,6 @@ import {
   useTheme,
   Menu,
   MenuItem,
-  LinearProgress,
   CircularProgress,
 } from "@mui/material"
 import { alpha } from "@mui/material/styles"
@@ -20,12 +19,9 @@ import { alpha } from "@mui/material/styles"
 // Icons
 import PersonAddIcon from "@mui/icons-material/PersonAdd"
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt"
-import EventNoteIcon from "@mui/icons-material/EventNote"
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
-import RestaurantIcon from "@mui/icons-material/Restaurant"
-import PsychologyIcon from "@mui/icons-material/Psychology"
-import MedicalServicesIcon from "@mui/icons-material/MedicalServices"
+// removed specialty icons (column removed)
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz"
 import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
@@ -33,27 +29,17 @@ import EditIcon from "@mui/icons-material/Edit"
 import { fetchInterns } from "@/app/lib/api/interns"
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 import { StatCard } from "@/app/components/ui/StatCard"
-import { DataTable, StyledBadge, IconContainer } from "@/app/components/DataTable"
+import { DataTable, StyledBadge } from "@/app/components/DataTable"
 import type { Intern } from "@/app/types"
 
 const internHeaders = [
   { id: "name",                  label: "Estagiário"          },
-  { id: "specialty",             label: "Especialidade"       },
   { id: "appointmentsCompleted", label: "Consultas Realizadas"},
   { id: "appointmentsScheduled", label: "Consultas Agendadas" },
-  // { id: "performance",           label: "Performance"         },
   { id: "status",                label: "Status"              },
 ]
 
-// helper p/ specialty → ícone
-const specialtyIcon = (s: string) => {
-  switch (s) {
-    case "Nutrição":     return <RestaurantIcon fontSize="small" />
-    case "Psicologia":   return <PsychologyIcon fontSize="small" />
-    case "Odontologia": return <MedicalServicesIcon fontSize="small" />
-    default:             return null
-  }
-}
+// specialty column removed - no icon helper
 
 const renderInternCell = (intern: Intern, headerId: string) => {
   switch (headerId) {
@@ -66,26 +52,10 @@ const renderInternCell = (intern: Intern, headerId: string) => {
           <Typography fontWeight={500}>{intern.name}</Typography>
         </Box>
       )
-    case "specialty":
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer sx={{ color: "primary.main" }}>
-            {specialtyIcon(intern.specialty)}
-          </IconContainer>
-          {intern.specialty}
-        </Box>
-      )
     case "appointmentsCompleted":
       return intern.appointmentsCompleted
     case "appointmentsScheduled":
       return intern.appointmentsScheduled
-    // case "performance":
-    //   return (
-    //     <Box sx={{ display: "flex", alignItems: "center", gap: 1, width: 100 }}>
-    //       <LinearProgress variant="determinate" value={intern.performance} sx={{ flexGrow: 1, height: 6, borderRadius: 3 }} />
-    //       <Typography variant="caption" fontWeight={500}>{intern.performance}%</Typography>
-    //     </Box>
-    //   )
     case "status":
       const badgeType = intern.status === "Ativo" ? "Confirmada" : "Pendente"
       return <StyledBadge label={intern.status} badgeType={badgeType} />
@@ -134,9 +104,7 @@ export default function InternManagementScreen() {
   // KPIs
   const activeInterns              = interns.filter((i) => i.status === "Ativo").length
   const totalAppointmentsCompleted = interns.reduce((sum, i) => sum + i.appointmentsCompleted, 0)
-  const totalAppointmentsScheduled = interns.reduce((sum, i) => sum + i.appointmentsScheduled, 0)
   const averageAppointments        = activeInterns ? Math.round(totalAppointmentsCompleted / activeInterns) : 0
-  const occupancyRate              = activeInterns ? Math.round((totalAppointmentsScheduled / (activeInterns * 10)) * 100) : 0
 
   // handlers tabela
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage)

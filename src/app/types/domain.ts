@@ -81,6 +81,7 @@ export interface User {
 export interface Intern {
   id: string;
   name: string;
+  registrationCode?: string;
   specialty: string;
   avatar: string;
   appointmentsCompleted: number;
@@ -93,6 +94,7 @@ export interface Intern {
 export interface ApiIntern {
   id: string
   name: string
+  registrationCode?: string
   specialty: string | null
   avatarUrl: string | null
   appointmentsCompleted: number

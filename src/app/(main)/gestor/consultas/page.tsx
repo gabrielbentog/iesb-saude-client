@@ -25,12 +25,11 @@ import AssignmentIcon    from "@mui/icons-material/Assignment"
 import AddIcon           from "@mui/icons-material/Add"
 import MoreHorizIcon     from "@mui/icons-material/MoreHoriz"
 import VisibilityIcon    from "@mui/icons-material/Visibility"
-import EditIcon          from "@mui/icons-material/Edit"
 import DeleteIcon        from "@mui/icons-material/Delete"
 
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 import { StatCard } from "@/app/components/ui/StatCard"
-import { DataTable, StyledBadge, IconContainer } from "@/app/components/DataTable"
+import { DataTable, StyledBadge } from "@/app/components/DataTable"
 
 import { apiFetch } from "@/app/lib/api"
 import {
@@ -48,13 +47,12 @@ import {mapRaw} from "@/app/utils/appointment-mapper"
 // Cabeçalhos da Tabela
 // ────────────────────────────────────────────────────────────────────────────────
 const appointmentHeaders = [
-  { id: "patient",   label: "Paciente" },
-  { id: "intern",    label: "Estagiário" },
-  { id: "specialty", label: "Especialidade" },
-  { id: "location",  label: "Local" },
-  { id: "room",      label: "Sala" },
-  { id: "dateTime",  label: "Data/Hora" },
-  { id: "status",    label: "Status" },
+  { id: "patient",  label: "Paciente" },
+  { id: "intern",   label: "Estagiário" },
+  { id: "location", label: "Local" },
+  { id: "room",     label: "Sala" },
+  { id: "dateTime", label: "Data/Hora" },
+  { id: "status",   label: "Status" },
 ] as const
 
 // ────────────────────────────────────────────────────────────────────────────────
@@ -74,16 +72,6 @@ const renderAppointmentCell = (a: UIAppointment, id: string) => {
 
     case "intern":
       return a.intern?.name || "—"
-
-    case "specialty":
-      return (
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <IconContainer sx={{ color: "primary.main" }}>
-            {a.icon}
-          </IconContainer>
-          {a.specialty}
-        </Box>
-      )
 
     case "location":
       return a.location
@@ -212,12 +200,14 @@ export default function AppointmentManagementScreen() {
     }
     handleMenuClose()
   }
+
   const handleEditAppointment = () => {
     if (selectedAppointment) {
       pushWithProgress(`/gestor/consultas/editar/${selectedAppointment.id}`)
     }
     handleMenuClose()
   }
+
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return
     setLoading(true)
