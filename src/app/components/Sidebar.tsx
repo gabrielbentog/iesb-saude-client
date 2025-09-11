@@ -23,7 +23,6 @@ import {
   Home as HomeIcon,
   Logout as LogoutIcon,
   CalendarToday as CalendarIcon,
-  Settings as SettingsIcon,
   Dashboard as DashboardIcon,
   Person as PersonIcon,
   DarkMode as DarkModeIcon,

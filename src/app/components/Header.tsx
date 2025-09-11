@@ -21,9 +21,7 @@ import {
   Menu as MenuIcon,
   Notifications as NotificationsIcon,
   Person as PersonIcon,
-  Settings as SettingsIcon,
   Logout as LogoutIcon,
-  Dashboard as DashboardIcon,
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";

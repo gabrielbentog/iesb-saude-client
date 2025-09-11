@@ -216,13 +216,6 @@ export default function AppointmentManagementScreen() {
     handleMenuClose()
   }
 
-  const handleEditAppointment = () => {
-    if (selectedAppointment) {
-      pushWithProgress(`/gestor/consultas/editar/${selectedAppointment.id}`)
-    }
-    handleMenuClose()
-  }
-
   const handleCancelAppointment = async () => {
     if (!selectedAppointment) return
     setLoading(true)
