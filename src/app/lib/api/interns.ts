@@ -37,3 +37,9 @@ export async function fetchInterns(
   internsCache.set(key, result);
   return result;
 }
+
+export async function deleteIntern(id: string): Promise<void> {
+  // invalidate cache conservatively
+  internsCache.clear();
+  await apiFetch<void>(`/api/users/${id}`, { method: "DELETE" });
+}

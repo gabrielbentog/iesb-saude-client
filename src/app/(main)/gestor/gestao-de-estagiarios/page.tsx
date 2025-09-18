@@ -19,6 +19,7 @@ import { alpha } from "@mui/material/styles"
 // Icons
 import PersonAddIcon from "@mui/icons-material/PersonAdd"
 import PeopleAltIcon from "@mui/icons-material/PeopleAlt"
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline"
 import AssignmentTurnedInIcon from "@mui/icons-material/AssignmentTurnedIn"
 import TrendingUpIcon from "@mui/icons-material/TrendingUp"
 // removed specialty icons (column removed)
@@ -27,7 +28,10 @@ import VisibilityIcon from "@mui/icons-material/Visibility"
 import EditIcon from "@mui/icons-material/Edit"
 
 import { fetchInterns } from "@/app/lib/api/interns"
+import { deleteIntern } from "@/app/lib/api/interns"
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
+import { useToast } from "@/app/contexts/ToastContext"
+import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog"
 import { StatCard } from "@/app/components/ui/StatCard"
 import { DataTable, StyledBadge } from "@/app/components/DataTable"
 import type { Intern } from "@/app/types"
@@ -67,6 +71,7 @@ const renderInternCell = (intern: Intern, headerId: string) => {
 export default function InternManagementScreen() {
   const theme            = useTheme()
   const pushWithProgress = usePushWithProgress()
+  const { showToast } = useToast()
 
   // paginação
   const [page,        setPage]        = useState(0)   // ZERO-based
@@ -83,6 +88,7 @@ export default function InternManagementScreen() {
   // menu de ações
   const [anchorEl,        setAnchorEl]   = useState<null | HTMLElement>(null)
   const [selectedIntern,  setSelectedIntern] = useState<Intern | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const loadInterns = useCallback(async () => {
     setLoading(true);
@@ -126,6 +132,27 @@ export default function InternManagementScreen() {
   const handleEditIntern  = () => {
     if (selectedIntern) pushWithProgress(`/gestor/estagiarios/editar/${selectedIntern.id}`)
     handleMenuClose()
+  }
+
+  const handleDeleteIntern = async () => {
+    if (!selectedIntern) {
+      handleMenuClose()
+      return
+    }
+
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteIntern(selectedIntern.id)
+      await loadInterns()
+      showToast({ message: `Estagiário "${selectedIntern.name}" apagado com sucesso.`, severity: 'success' })
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setLoading(false)
+      setConfirmOpen(false)
+      handleMenuClose()
+    }
   }
 
   const internActions = (intern: Intern) => (
@@ -238,7 +265,20 @@ export default function InternManagementScreen() {
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           Editar
         </MenuItem>
+        <MenuItem onClick={() => setConfirmOpen(true)}>
+          <DeleteOutlineIcon fontSize="small" sx={{ mr: 1 }} />
+          Apagar
+        </MenuItem>
       </Menu>
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Apagar estagiário"
+        description={selectedIntern ? `Tem certeza que deseja apagar o estagiário "${selectedIntern.name}"? Esta ação não pode ser desfeita.` : "Tem certeza?"}
+        confirmLabel="Apagar"
+        cancelLabel="Cancelar"
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={handleDeleteIntern}
+      />
     </Container>
   )
 }
