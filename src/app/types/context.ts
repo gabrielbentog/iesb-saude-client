@@ -29,4 +29,7 @@ export interface ToastProviderProps {
 export interface ThemeContextProps {
   toggleTheme: () => void;
   isDark: boolean;
+  // preferência atual: 'system'|'light'|'dark'
+  themePreference: 'system' | 'light' | 'dark';
+  setThemePreference: (p: 'system' | 'light' | 'dark') => void;
 }

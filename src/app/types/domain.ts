@@ -75,6 +75,8 @@ export interface User {
   email: string;
   profileId: number;
   image: string | null;
+  // preferência de tema do usuário: 'system' usa preferência do sistema
+  themePreference?: 'system' | 'light' | 'dark';
   createdAt: string;
 }
 

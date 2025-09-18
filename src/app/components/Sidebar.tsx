@@ -33,6 +33,9 @@ import { usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import Image from "next/image";
 import { useToast } from '@/app/contexts/ToastContext';
+import { useThemeContext } from '@/app/contexts/ThemeContext'
+import { useCurrentUser, updateSessionInStorage } from '@/app/hooks/useCurrentUser'
+import { apiFetch } from '@/app/lib/api'
 import type { SidebarProps } from '@/app/types';
 
 // Estilos para os itens da lista, para evitar repetição
@@ -73,8 +76,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   open,
   drawerWidth,
   onToggleSidebar,
-  darkMode,
-  onToggleDarkMode,
   isMobile,
 }) => {
   const theme = useTheme();
@@ -83,6 +84,32 @@ const Sidebar: React.FC<SidebarProps> = ({
   const session = Cookies.get("session");
   const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
   const { showToast } = useToast();
+  const { themePreference, setThemePreference, isDark } = useThemeContext()
+  const currentSession = useCurrentUser()
+
+  const handleToggleTheme = async (nextPref: 'system' | 'light' | 'dark') => {
+    const prev = themePreference
+    // otimista
+    setThemePreference(nextPref)
+    try {
+      if (currentSession?.user?.id) {
+        await apiFetch(`/api/users/${currentSession.user.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({ user: { themePreference: nextPref } }),
+        })
+        // atualiza sessão local
+        updateSessionInStorage({ ...currentSession, user: { ...currentSession.user, themePreference: nextPref } })
+        showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
+      } else {
+        // sem sessão, apenas persiste local
+        showToast({ message: 'Tema alterado localmente', severity: 'info' });
+      }
+  } catch {
+      // rollback
+      setThemePreference(prev)
+      showToast({ message: 'Não foi possível salvar a preferência no servidor.', severity: 'error' });
+    }
+  }
 
   const collapsedWidth = theme.spacing(7); // Usar theme.spacing para consistência
 
@@ -249,10 +276,10 @@ const Sidebar: React.FC<SidebarProps> = ({
           <ListItem disablePadding>
             <Tooltip title={!open ? "Modo Escuro" : ""} placement="right" arrow>
               <ListItemButton
-                onClick={() => {
+                  onClick={() => {
                   if (!open) { // Só alterna se estiver fechado, senão deixa o Switch controlar
-                    showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
-                    onToggleDarkMode();
+                    const next = themePreference === 'dark' ? 'light' : 'dark'
+                    void handleToggleTheme(next)
                   }
                 }}
                 sx={listItemButtonStyles(theme, open)}
@@ -263,10 +290,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <ListItemText primary="Modo Escuro" sx={{ mr: 1 }}/>
                     <Switch
                       edge="end"
-                      checked={darkMode}
+                      checked={isDark}
                       onChange={() => {
-                        showToast({ message: 'Tema alterado com sucesso!', severity: 'success' });
-                        onToggleDarkMode();
+                        const next = themePreference === 'dark' ? 'light' : 'dark'
+                        void handleToggleTheme(next)
                       }}
                       onClick={(e) => e.stopPropagation()} // Impede que o clique no Switch propague para o ListItemButton
                       size="small"

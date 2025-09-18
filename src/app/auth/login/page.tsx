@@ -20,6 +20,7 @@ import { Visibility, VisibilityOff, School } from "@mui/icons-material";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/contexts/ToastContext";
+import { updateSessionInStorage } from '@/app/hooks/useCurrentUser'
 
 export default function LoginPage() {
   const theme = useTheme();
@@ -44,18 +45,36 @@ export default function LoginPage() {
         }
       );
 
-      const sessionData = {
-        user: response.user,
+      type SessionData = {
+        user: Record<string, unknown>
+        token: string
+        loggedIn: boolean
+      }
+
+      const sessionData: SessionData = {
+        user: response.user as Record<string, unknown>,
         token: response.token,
         loggedIn: true,
       };
+      // se o backend fornecer preferência de tema, persiste também
+      try {
+        if (response.user && 'themePreference' in response.user) {
+          const maybePref = (response.user as unknown as { themePreference?: string }).themePreference
+          if (maybePref) {
+            window.localStorage.setItem('themePreference', maybePref)
+            // também adiciona na sessão salva
+            sessionData.user = { ...sessionData.user, themePreference: maybePref }
+          }
+        }
+      } catch {}
 
-      localStorage.setItem("session", JSON.stringify(sessionData));
+  // salva a sessão e notifica listeners
+  updateSessionInStorage(sessionData)
       Cookies.set(
         "session",
         JSON.stringify({
           token: sessionData?.token,
-          profile: sessionData?.user?.profile?.name,
+          profile: response.user?.profile?.name ?? "",
         }),
         { expires: 7, secure: true }
       );

@@ -110,35 +110,34 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: '#1E88E5',        // Azul principal
-      light: '#42A5F5',
-      dark: '#1565C0',
+      main: '#E50839',   // vermelho principal
+      dark: '#AB062D',
+      light: '#FF6371',
       contrastText: '#FFFFFF',
     },
     secondary: {
-      main: '#90CAF9',        // Azul claro para contraste
+      main: '#9E9E9E',   // cinza médio
     },
     background: {
-      default: '#0D1117',     // Azul escuro para o fundo
-      paper: '#161B22',       // Azul um pouco mais claro para painéis
+      default: '#121212', // cinza quase preto
+      paper: '#1E1E1E',   // cinza mais claro para painéis
     },
     text: {
-      primary: '#E6EDF3',     // Branco levemente azulado (como no GitHub Dark)
-      secondary: '#8B949E',   // Cinza claro azulado
+      primary: '#E0E0E0', // cinza claro
+      secondary: '#B0B0B0', // cinza médio
     },
-    divider: '#30363D',       // Linha divisória discreta
+    divider: '#2C2C2C',
     success: {
-      main: '#2EA043',        // Verde escuro usado em temas escuros
+      main: '#10b981',
     },
     warning: {
-      main: '#D29922',
+      main: '#f59e0b',
     },
     error: {
-      main: '#F85149',
+      main: '#ef4444',
     },
     info: {
-      main: '#58A6FF',
+      main: '#3b82f6',
     },
   },
 });
-

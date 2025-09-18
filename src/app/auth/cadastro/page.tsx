@@ -27,6 +27,7 @@ import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
 import { useToast } from "@/app/contexts/ToastContext";
+import { updateSessionInStorage } from '@/app/hooks/useCurrentUser'
 
 export default function RegisterPage() {
   const theme = useTheme();
@@ -111,6 +112,19 @@ export default function RegisterPage() {
           token: response.token,
         })
       );
+      try {
+        let finalSession: unknown
+        if (response.user && 'themePreference' in response.user) {
+          const maybePref = (response.user as unknown as { themePreference?: string }).themePreference
+          if (maybePref) {
+            window.localStorage.setItem('themePreference', maybePref)
+            finalSession = { user: { ...(response.user as object), themePreference: maybePref }, loggedIn: true, token: response.token }
+          }
+        }
+        if (!finalSession) finalSession = { user: response.user, loggedIn: true, token: response.token }
+        updateSessionInStorage(finalSession)
+      } catch {}
+
       Cookies.set(
         "session",
         JSON.stringify({

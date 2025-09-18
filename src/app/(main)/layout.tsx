@@ -2,11 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { ThemeProvider } from "@mui/material/styles";
 import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import type { MainLayoutProps } from '@/app/types';
-import { lightTheme, darkTheme } from "../theme/theme";
+import { useCurrentUser } from '@/app/hooks/useCurrentUser'
 
 
 const drawerWidth = 260;
@@ -19,7 +18,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   // Se for mobile, começamos com a sidebar fechada
   const [open, setOpen] = useState(!isMobile);
-  const [darkMode, setDarkMode] = useState(false);
+  useCurrentUser()
 
   // Toda vez que "isMobile" mudar (ex: resize), podemos ajustar open
   useEffect(() => {
@@ -30,14 +29,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
     setOpen(!open);
   };
 
-  const handleDarkModeToggle = () => {
-    setDarkMode(!darkMode);
-  };
-
-  const theme = darkMode ? darkTheme : lightTheme;
-
   return (
-    <ThemeProvider theme={theme}>
       <Box sx={{ display: "flex" }}>
         <Header
           open={open}
@@ -51,8 +43,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           open={open}
           drawerWidth={drawerWidth}
           onToggleSidebar={handleDrawerToggle}
-          darkMode={darkMode}
-          onToggleDarkMode={handleDarkModeToggle}
           isMobile={isMobile}
         />
 
@@ -68,14 +58,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
             zIndex: 0,
             pt: "64px",
             minHeight: "100vh",
-            bgcolor: theme.palette.background.default,
-            color: theme.palette.text.primary,
+            bgcolor: useTheme().palette.background.default,
+            color: useTheme().palette.text.primary,
           }}
         >
           {children}
         </Box>
       </Box>
-    </ThemeProvider>
   );
 };
 

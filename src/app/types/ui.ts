@@ -6,8 +6,6 @@ export interface SidebarProps {
   open: boolean;
   drawerWidth: number;
   onToggleSidebar: () => void;
-  darkMode: boolean;
-  onToggleDarkMode: () => void;
   isMobile: boolean;
 }
 

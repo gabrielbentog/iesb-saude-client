@@ -5,6 +5,7 @@ import { Inter } from 'next/font/google';
 import NProgressHandler from '@/app/components/nprogress';
 import { Suspense } from 'react';
 import { ToastProvider } from "@/app/contexts/ToastContext";
+import { ThemeProvider } from '@/app/contexts/ThemeContext'
 
 const inter = Inter({
   variable: '--font-inter',
@@ -26,9 +27,11 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         <Suspense fallback={<div>Loading...</div>}>
           <NProgressHandler />
-          <ToastProvider>
-            <main>{children}</main>
-          </ToastProvider>
+          <ThemeProvider>
+            <ToastProvider>
+              <main>{children}</main>
+            </ToastProvider>
+          </ThemeProvider>
           
         </Suspense>
       </body>
