@@ -26,10 +26,12 @@ import {
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
+import { useToast } from "@/app/contexts/ToastContext";
 
 export default function RegisterPage() {
   const theme = useTheme();
   const pushWithProgress = usePushWithProgress();
+  const { showToast } = useToast();
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -121,9 +123,9 @@ export default function RegisterPage() {
       pushWithProgress("/paciente/dashboard");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        alert("Erro ao cadastrar: " + error.message);
+        showToast({ message: `Erro ao cadastrar: ${error.message}`, severity: "error" });
       } else {
-        alert("Erro ao cadastrar: Erro desconhecido");
+        showToast({ message: "Erro ao cadastrar: Erro desconhecido", severity: "error" });
       }
     }
   };

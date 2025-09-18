@@ -19,12 +19,14 @@ import {
 import { Visibility, VisibilityOff, School } from "@mui/icons-material";
 import { apiFetch } from "@/app/lib/api";
 import Cookies from "js-cookie";
+import { useToast } from "@/app/contexts/ToastContext";
 
 export default function LoginPage() {
   const theme = useTheme();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const pushWithProgress = usePushWithProgress();
+  const { showToast } = useToast();
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -65,9 +67,9 @@ export default function LoginPage() {
       pushWithProgress(`/${sanitizedProfileName}/dashboard`);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        alert("Erro no login: " + error.message);
+        showToast({ message: `Erro no login: ${error.message}`, severity: "error" });
       } else {
-        alert("Erro no login: Erro desconhecido");
+        showToast({ message: "Erro no login: Erro desconhecido", severity: "error" });
       }
     } finally {
       setIsLoading(false);

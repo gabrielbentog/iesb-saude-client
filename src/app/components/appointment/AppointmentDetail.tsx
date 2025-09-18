@@ -61,20 +61,9 @@ import { apiFetch } from "@/app/lib/api";
 import { fetchInterns } from "@/app/lib/api/interns";
 
 /* types */
-import type {
-  RawAppointment,
-  Intern,
-  RawStatusHistory,
-} from "@/app/types";
-import {
-  STATUS_LABEL,
-  AppointmentStatus,
-  RawAppointmentStatus,
-} from "@/app/types";
-import {
-  ActionButton,
-  type ActionButtonProps,
-} from "@/app/components/ui/ActionButton";
+import type { RawAppointment, Intern, RawStatusHistory } from "@/app/types";
+import { STATUS_LABEL, AppointmentStatus, RawAppointmentStatus } from "@/app/types";
+import { ActionButton, type ActionButtonProps } from "@/app/components/ui/ActionButton";
 
 /* ------------------------------------------------------------------ */
 /* Types & data adapters                                              */
@@ -105,20 +94,21 @@ const adapt = (raw: RawAppointment): Appointment => ({
   patientPhone: raw.user.phone ?? undefined,
   patientEmail: raw.user.email ?? undefined,
   specialty:
-    raw.consultationRoom?.specialtyName ??
-    raw.timeSlot?.specialtyName ??
-    "",
+    raw.consultationRoom?.specialtyName ?? raw.timeSlot?.specialtyName ?? "",
   location:
-    raw.consultationRoom?.collegeLocationName ??
-    raw.timeSlot?.collegeLocationName ??
-    "",
+    raw.consultationRoom?.collegeLocationName ?? raw.timeSlot?.collegeLocationName ?? "",
   room: raw.consultationRoom?.name ?? "",
   date: raw.date, // yyyy-MM-dd
   time: format(parseISO(raw.startTime), "HH:mm"),
   status: STATUS_LABEL[raw.status as RawAppointmentStatus] as AppointmentStatus,
   description: raw.notes || "Sem descrição",
   createdAt: raw.createdAt,
-  interns: raw.interns && raw.interns.length ? raw.interns.map((i) => ({ id: String(i.id), name: i.name })) : raw.intern ? [{ id: String(raw.intern.id), name: raw.intern.name }] : undefined,
+  interns:
+    raw.interns && raw.interns.length
+      ? raw.interns.map((i) => ({ id: String(i.id), name: i.name }))
+      : raw.intern
+      ? [{ id: String(raw.intern.id), name: raw.intern.name }]
+      : undefined,
 });
 
 /* ------------------------------------------------------------------ */
@@ -204,17 +194,11 @@ const InfoRow: React.FC<{
   const theme = useTheme();
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 2, p: 2 }}>
-      <IconContainer
-        sx={{ bgcolor: iconBgColor || alpha(theme.palette.primary.main, 0.1) }}
-      >
+      <IconContainer sx={{ bgcolor: iconBgColor || alpha(theme.palette.primary.main, 0.1) }}>
         {icon}
       </IconContainer>
       <Box sx={{ flex: 1 }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          fontWeight={500}
-        >
+        <Typography variant="caption" color="text.secondary">
           {label}
         </Typography>
         <Typography variant="body2" fontWeight={600} noWrap>
@@ -262,8 +246,20 @@ function buildButtons(
     switch (status) {
       case "Aguardando aprovação":
         return {
-          primary: mk("Aprovar", "success", "check", "admin_confirmed", "Deseja aprovar esta consulta? Após a aprovação, o paciente terá que confirmar sua presença."),
-          secondary: mk("Rejeitar", "error", "close", "rejected", "Deseja rejeitar esta consulta? Após rejeitar o pedido, o horário ficará disponível para outros pacientes."),
+          primary: mk(
+            "Aprovar",
+            "success",
+            "check",
+            "admin_confirmed",
+            "Deseja aprovar esta consulta? Após a aprovação, o paciente terá que confirmar sua presença.",
+          ),
+          secondary: mk(
+            "Rejeitar",
+            "error",
+            "close",
+            "rejected",
+            "Deseja rejeitar esta consulta? Após rejeitar o pedido, o horário ficará disponível para outros pacientes.",
+          ),
         };
       case "Aguardando confirmação do Paciente":
         return {
@@ -275,9 +271,6 @@ function buildButtons(
           secondary: mk("Cancelar", "error", "close", "cancelled_by_admin", "Deseja cancelar esta consulta? Após cancelar, o horário ficará disponível para outros pacientes."),
         };
       case "Cancelada pelo gestor":
-        return {
-          primary: mk("Reabrir", "success", "check", "pending", "Deseja reabrir esta consulta?"),
-        };
       case "Cancelada pelo paciente":
         return {
           primary: mk("Reabrir", "success", "check", "pending", "Deseja reabrir esta consulta?"),
@@ -338,21 +331,22 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
   /* ------------------------------------------------------------------ */
   /* Carrega dados: consulta, estagiários, histórico                     */
   /* ------------------------------------------------------------------ */
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (signal?: AbortSignal) => {
     try {
       setLoading(true);
       const [{ data: raw }, internsResp, histResp] = await Promise.all([
-        apiFetch<{ data: RawAppointment }>(`/api/appointments/${id}`),
+        apiFetch<{ data: RawAppointment }>(`/api/appointments/${id}`, { signal }),
         fetchInterns(1, 100),
-        apiFetch<{ data: RawStatusHistory[] }>(
-          `/api/appointments/${id}/appointment_status_histories`,
-        ),
+        apiFetch<{ data: RawStatusHistory[] }>(`/api/appointments/${id}/appointment_status_histories`, { signal }),
       ]);
 
       setAppointment(adapt(raw));
       setInterns(internsResp.data);
       setHistory(histResp.data);
-    } catch {
+    } catch (err) {
+      // ignore aborts
+      const maybe = err as { name?: string } | undefined;
+      if (maybe?.name === "AbortError") return;
       setError("Não foi possível carregar os dados da consulta.");
     } finally {
       setLoading(false);
@@ -360,7 +354,11 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
   }, [id]);
 
   useEffect(() => {
-    loadData();
+    const c = new AbortController();
+    loadData(c.signal).catch(() => {
+      /* swallow */
+    });
+    return () => c.abort();
   }, [loadData]);
 
   /* ------------------------------------------------------------------ */
@@ -420,18 +418,27 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
     if (!selectedInternIds || !appointment) return;
     // limite de 3
     const ids = selectedInternIds.slice(0, 3);
-    await apiFetch(`/api/appointments/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify({ appointment: { intern_ids: ids } }),
-    });
-    const chosen = interns.filter((i) => ids.includes(String(i.id)));
-    setAppointment({
-      ...appointment,
-      interns: chosen.map((c) => ({ id: String(c.id), name: c.name })),
-    });
-    setAssignDialogOpen(false);
-    setSelectedInternIds([]);
-  }, [appointment, id, interns, selectedInternIds]);
+    try {
+      await apiFetch(`/api/appointments/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify({ appointment: { intern_ids: ids } }),
+      });
+      showToast({ message: "Estagiários atualizados", severity: "success" });
+      setAssignDialogOpen(false);
+      setSelectedInternIds([]);
+      await loadData(); // recarrega a consulta atualizada
+    } catch {
+      showToast({ message: "Erro ao atualizar estagiários", severity: "error" });
+    }
+  }, [appointment, id, selectedInternIds, loadData, showToast]);
+
+  // prefill selection when opening dialog
+  useEffect(() => {
+    if (assignDialogOpen && appointment) {
+      const ids = appointment.interns ? appointment.interns.map((i) => String(i.id)).slice(0, 3) : [];
+      setSelectedInternIds(ids);
+    }
+  }, [assignDialogOpen, appointment]);
 
   /* ------------------------------------------------------------------ */
   /* Botões                                                             */
