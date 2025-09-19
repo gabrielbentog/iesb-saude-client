@@ -6,6 +6,9 @@ export interface CalendarEvent {
   title: string;
   description?: string;
   location?: string;
+  patientName?: string;
+  patientId?: string;
+  appointmentId?: string;
   category: EventCategory;
   allDay?: boolean;
   participants?: string[];
@@ -91,6 +94,8 @@ export type ApiSlot = {
   specialtyName: string;
   timeSlotId?: string;
   patientName?: string;
+  appointmentId?: string;
+  patientId?: string;
   isRecurring?: boolean;
 };
 export type CalendarApi = { free: ApiSlot[]; busy: ApiSlot[] };

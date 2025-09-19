@@ -27,7 +27,12 @@ interface ApiError {
 const profileSchema = z.object({
   id:    z.string().min(1),
   name:  z.string().trim().min(2, "Informe o nome completo."),
-  phone: z.string().trim().optional().refine(v => !v || /^\+?\d{10,14}$/.test(v), "Telefone inválido."),
+  phone: z.string().trim().optional().refine(v => {
+    if (!v) return true;
+    // permite formatos com espaços, parênteses, traço e +; valida apenas dígitos entre 10 e 14
+    const digits = v.replace(/\D/g, '');
+    return /^\d{10,14}$/.test(digits);
+  }, "Telefone inválido."),
   cpf:   z.string().trim().optional().refine(v => !v || /^\d{11}$/.test(v), "CPF deve ter 11 dígitos."),
   email: z.string().trim().email("Email inválido."),
   image: z.string().url().optional().or(z.literal("")).nullable(),
@@ -58,6 +63,22 @@ interface UserApiResponse {
 
 // --- Helpers ---
 const initialsFromName = (name?: string): string => !name ? "?" : name.trim().split(/\s+/).slice(0, 2).map((n) => n[0]?.toUpperCase() ?? "").join("");
+
+// formata entrada de telefone incrementalmente para +55 (AA) NNNNN-NNNN
+const formatPhoneInput = (raw?: string) => {
+  if (!raw) return "";
+  const digits = String(raw).replace(/\D/g, "");
+  if (!digits) return "";
+  let d = digits;
+  let prefix = "";
+  if (d.startsWith("55")) {
+    prefix = "+55 ";
+    d = d.slice(2);
+  }
+  if (d.length <= 2) return `${prefix}(${d}`;
+  if (d.length <= 6) return `${prefix}(${d.slice(0,2)}) ${d.slice(2)}`;
+  return `${prefix}(${d.slice(0,2)}) ${d.slice(2,7)}${d.length > 7 ? `-${d.slice(7,11)}` : ""}`;
+}
 
 const mapUserToForm = (user: User): Omit<ProfileFormValues, 'currentPassword'> => ({
   id: user.id, 
@@ -215,22 +236,24 @@ const ProfileForm: FC<{
             )} />
         </Grid>
         <Grid item xs={12} sm={6}>
-          <Controller
-            name="phone"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                label="Telefone"
-                fullWidth
-                variant="outlined"
-                disabled={isLocked}
-                error={!!errors.phone}
-                helperText={errors.phone?.message}
-                placeholder="+5511999999999"
-              />
-            )}
-          />
+            <Controller
+              name="phone"
+              control={control}
+              render={({ field }) => (
+                <TextField
+                  label="Telefone"
+                  fullWidth
+                  variant="outlined"
+                  disabled={isLocked}
+                  error={!!errors.phone}
+                  helperText={errors.phone?.message}
+                  placeholder="+55 (11) 99999-9999"
+                  value={field.value ?? ''}
+                  onChange={(e) => field.onChange(formatPhoneInput(e.target.value))}
+                  onBlur={field.onBlur}
+                />
+              )}
+            />
         </Grid>
         <Grid item xs={12} sm={6}>
           <Controller
@@ -430,10 +453,12 @@ export default function ProfilePage() {
       if (!user) return;
       setIsSaving(true);
       try {
+          // normalize phone: send only digits or null
+          const phoneDigits = values.phone ? String(values.phone).replace(/\D/g, '') : null;
           const body = { user: { 
             name: values.name, 
             cpf: values.cpf || null, 
-            phone: values.phone || null 
+            phone: phoneDigits || null 
           }};
           const response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
           const updatedUser = response.data;

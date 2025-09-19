@@ -74,6 +74,34 @@ export default function EnhancedCalendar({
   const pushWithProgress = usePushWithProgress();
   const { showToast } = useToast();
 
+  // try to read current session user id to compare with patientId
+  const sessionUserId = (() => {
+    try {
+      if (typeof window === 'undefined') return undefined;
+      const s = localStorage.getItem('session');
+      if (!s) return undefined;
+      const parsed = JSON.parse(s);
+      return parsed?.user?.id;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  // try to read current session profile name (user.profile.name)
+  const sessionProfileName = (() => {
+    try {
+      if (typeof window === 'undefined') return undefined;
+      const s = localStorage.getItem('session');
+      if (!s) return undefined;
+      const parsed = JSON.parse(s);
+      return parsed?.user?.profile?.name;
+    } catch {
+      return undefined;
+    }
+  })();
+
+  const profileNormalized = (userProfile ?? sessionProfileName ?? "").toString().toLowerCase();
+
   const [selectedEventForDetail, setSelectedEventForDetail] = useState<CalendarEvent | null>(null);
   const [selectedSlotForBooking, setSelectedSlotForBooking] = useState<CalendarEvent | null>(null);
 
@@ -102,17 +130,32 @@ export default function EnhancedCalendar({
       const date = toLocalDate(slot.startAt);
       campusSet.add(slot.campusName);
       specSet.add(slot.specialtyName);
+      let title = slot.specialtyName;
+      if (kind === 'busy') {
+        if (profileNormalized === 'gestor') {
+          title = `${slot.patientName ?? 'Indisponível'} · ${slot.specialtyName}`;
+        } else if (profileNormalized === 'paciente') {
+          title = slot.patientId && sessionUserId && slot.patientId === sessionUserId
+            ? `Sua consulta · ${slot.specialtyName}`
+            : 'Indisponível';
+        } else {
+          title = 'Indisponível';
+        }
+      }
 
       raw.push({
         id: `${kind}-${slot.id}-${date.toISOString()}`,
         date,
-        title: kind === "busy" ? "Indisponível" : slot.specialtyName,
-        description: `${slot.specialtyName} • ${slot.campusName}`, // Using description for specialty/campus
-        location: slot.campusName, // Explicit location if needed elsewhere
+        title,
+        description: `${slot.specialtyName} • ${slot.campusName}`,
+        location: slot.campusName,
+        patientName: slot.patientName,
+        patientId: slot.patientId,
+        appointmentId: slot.appointmentId,
         category: slot.specialtyName,
         isRecurring: slot.isRecurring ?? Boolean(slot.timeSlotId),
         timeSlotId: slot.timeSlotId,
-        type: kind, // <-- Set the type here
+        type: kind,
       });
     };
 
@@ -125,7 +168,7 @@ export default function EnhancedCalendar({
     setColorMap(cmap);
 
     return [Array.from(campusSet), Array.from(specSet)];
-  }, [calApi]);
+  }, [calApi, sessionUserId, profileNormalized]);
 
   const campusList = [...new Set([...campusStatic, ...campusDyn])];
   const specialtyList = [...new Set([...specialtyStatic, ...specDyn])];
@@ -165,12 +208,24 @@ export default function EnhancedCalendar({
   };
 
   const handleEventClick = (event: CalendarEvent) => {
-    if (userProfile === 'paciente' && event.type === 'free') {
-      setSelectedSlotForBooking(event); // Abre o BookingDialog
-    } else if (event.type !== 'busy') {
-      setSelectedEventForDetail(event); // Abre o EventDetailDialog apenas se NÃO for busy
+    // Paciente: só permite booking em slots free
+    if (profileNormalized === 'paciente') {
+      if (event.type === 'free') setSelectedSlotForBooking(event);
+      // if it's a busy slot that belongs to the user (compare by id), open detail
+      if (event.type === 'busy' && event.patientId && sessionUserId && event.patientId === sessionUserId) {
+        pushWithProgress(`/gestor/consultas/${event.appointmentId}`)
+      }
+      return;
     }
-    // Se for busy, não faz nada
+
+    // Gestor: pode ver detalhes mesmo para slots 'busy'
+    if (profileNormalized === 'gestor') {
+        pushWithProgress(`/gestor/consultas/${event.appointmentId}`)
+      return;
+    }
+
+    // Outros perfis: abrir detalhes para free, ignorar busy
+    if (event.type === 'free') setSelectedEventForDetail(event);
   };
 
 
