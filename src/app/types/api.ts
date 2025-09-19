@@ -15,3 +15,14 @@ export type ApiResponseCollegeLocations = {
 };
 
 export type SimpleSpec = { id: string; name: string };
+
+export interface NotificationItem {
+  id: string;
+  title: string;
+  body?: string;
+  read: boolean;
+  data?: Record<string, unknown>;
+  url?: string;
+  appointment_id?: string | null;
+  created_at: string;
+}

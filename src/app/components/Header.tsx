@@ -25,6 +25,8 @@ import {
 } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { apiFetch } from "@/app/lib/api";
+import type { NotificationItem } from '@/app/types/api';
 
 const ICON_AREA = 48; // largura do botão/hamburger
 
@@ -41,6 +43,9 @@ const Header: React.FC<HeaderProps> = ({
   const [useFallback, setUseFallback] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationsAnchor, setNotificationsAnchor] = useState<null | HTMLElement>(null);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [notifLoading, setNotifLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const s = localStorage.getItem("session");
@@ -48,6 +53,17 @@ const Header: React.FC<HeaderProps> = ({
       const data = JSON.parse(s);
       setUser(data.user || null);
     }
+    // fetch unread count on mount
+    (async () => {
+      try {
+        const res = await apiFetch<unknown>("/api/notifications/unread_count");
+        const env = (res ?? {}) as Record<string, unknown>;
+        const n = (env['unread_count'] as number | undefined) ?? (env['unreadCount'] as number | undefined) ?? 0;
+        setUnreadCount(n);
+      } catch {
+        // ignore silently for now
+      }
+    })();
   }, []);
 
   const handleLogout = () => {
@@ -55,6 +71,92 @@ const Header: React.FC<HeaderProps> = ({
     Cookies.remove("session");
     router.push("/auth/login");
   };
+
+  const loadNotifications = async () => {
+    setNotifLoading(true);
+    try {
+      const data = await apiFetch<unknown>("/api/notifications?page=1&per_page=10");
+
+      // normalize to a plain object for property access
+      const envelope = (data ?? {}) as Record<string, unknown>;
+
+      // aceita vários formatos e o typo "notificatiaons" e envelopes como { notifications: [], unread_count }
+      const rawCandidates = [
+        envelope['notifications'],
+        envelope['notificatiaons'], // typo
+        envelope['items'],
+        envelope['data'],
+        envelope,
+      ];
+
+      let raw: unknown[] = [];
+      for (const cand of rawCandidates) {
+        if (Array.isArray(cand)) {
+          raw = cand as unknown[];
+          break;
+        }
+        // some APIs return { notifications: { data: [...] } } or { notifications: [...] }
+        if (cand && typeof cand === 'object') {
+          const obj = cand as Record<string, unknown>;
+          if (Array.isArray(obj.notifications)) {
+            raw = obj.notifications as unknown[];
+            break;
+          }
+          if (Array.isArray(obj.data)) {
+            raw = obj.data as unknown[];
+            break;
+          }
+        }
+      }
+
+      const list: unknown[] = raw ?? [];
+
+      const normalized: NotificationItem[] = list
+        .map((n: unknown, idx: number) => {
+          const nn = n as Record<string, unknown>;
+          const createdVal = nn['created_at'] ?? nn['inserted_at'] ?? nn['createdAt'] ?? nn['timestamp'] ?? new Date().toISOString();
+          const iso = new Date(String(createdVal)).toISOString();
+          const idVal = nn['id'] ?? nn['uuid'] ?? nn['_id'] ?? `notif-${iso}-${idx}`;
+          const titleVal = nn['title'] ?? nn['subject'] ?? nn['message_title'] ?? nn['message'] ?? 'Notificação';
+          const bodyVal = nn['body'] ?? nn['message'] ?? nn['content'] ?? '';
+          const readVal =
+            typeof nn['read'] === 'boolean' ? (nn['read'] as boolean) : Boolean(nn['read_at'] ?? nn['readAt']);
+          const urlVal = nn['url'] ?? nn['link'] ?? nn['path'] ?? null;
+          const dataVal = (nn['data'] ?? nn['meta']) as Record<string, unknown> | undefined;
+          const appointmentVal = (nn['appointment_id'] ?? nn['appointmentId'] ?? null) as string | null;
+
+          return {
+            id: String(idVal),
+            title: String(titleVal),
+            body: String(bodyVal),
+            created_at: iso,
+            read: Boolean(readVal),
+            url: urlVal ? String(urlVal) : null,
+            data: dataVal,
+            appointment_id: appointmentVal,
+          } as NotificationItem;
+        })
+        .sort((a: NotificationItem, b: NotificationItem) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setNotifications(normalized);
+
+      // atualizar unreadCount: preferir campo do envelope, senão derivar
+      const envelopeUnread =
+        (envelope['unread_count'] as number | undefined) ??
+        (envelope['unreadCount'] as number | undefined) ??
+        ((envelope['meta'] as Record<string, unknown> | undefined)?.['unread_count'] as number | undefined) ??
+        ((envelope['meta'] as Record<string, unknown> | undefined)?.['unread'] as number | undefined) ??
+        undefined;
+      if (typeof envelopeUnread === 'number') setUnreadCount(envelopeUnread);
+      else setUnreadCount(normalized.filter((n) => !n.read).length);
+    } catch (e) {
+      console.error("Erro ao carregar notificações:", e);
+      setNotifications([]);
+    } finally {
+      setNotifLoading(false);
+    }
+  };
+
 
   const avatarUrl = user?.avatar && !useFallback ? user.avatar : undefined;
 
@@ -120,7 +222,10 @@ const Header: React.FC<HeaderProps> = ({
         <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
           <Tooltip title="Notificações">
             <IconButton
-              onClick={(e) => setNotificationsAnchor(e.currentTarget)}
+              onClick={(e) => {
+                setNotificationsAnchor(e.currentTarget);
+                loadNotifications();
+              }}
               sx={{
                 color: "primary.main",
                 bgcolor: alpha(theme.palette.primary.main, 0.08),
@@ -129,7 +234,7 @@ const Header: React.FC<HeaderProps> = ({
                 },
               }}
             >
-              <Badge badgeContent={2} color="error">
+              <Badge badgeContent={unreadCount} color="error">
                 <NotificationsIcon />
               </Badge>
             </IconButton>
@@ -230,7 +335,7 @@ const Header: React.FC<HeaderProps> = ({
           anchorEl={notificationsAnchor}
           open={Boolean(notificationsAnchor)}
           onClose={() => setNotificationsAnchor(null)}
-          onClick={() => setNotificationsAnchor(null)}
+          /* remove onClick that closed menu on any inner click */
           transformOrigin={{ horizontal: "right", vertical: "top" }}
           anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
           PaperProps={{
@@ -247,10 +352,69 @@ const Header: React.FC<HeaderProps> = ({
             Notificações
           </Typography>
           <Divider />
-          <Box sx={{ p: 2 }}>
-            <Typography variant="body2" color="text.secondary" textAlign="center">
-              Nenhuma notificação no momento
-            </Typography>
+          <Box sx={{ maxHeight: 360, overflow: 'auto' }}>
+            {notifLoading ? (
+              <Box sx={{ p: 2, textAlign: 'center' }}>Carregando…</Box>
+            ) : notifications.length === 0 ? (
+              <Box sx={{ p: 2 }}>
+                <Typography variant="body2" color="text.secondary" textAlign="center">
+                  Nenhuma notificação no momento
+                </Typography>
+              </Box>
+            ) : (
+              notifications.map((n) => (
+                <MenuItem
+                  key={n.id}
+                  onClick={async () => {
+                    // navigate to url if present
+                    if (n.url) {
+                      // mark as read first
+                      if (!n.read) {
+                        try {
+                          await apiFetch(`/api/notifications/${n.id}`, {
+                            method: 'PATCH',
+                            body: JSON.stringify({ notification: { read: true } }),
+                          });
+                          setUnreadCount((c) => Math.max(0, c - 1));
+                          // update local item
+                          setNotifications((prev) => prev.map((it) => it.id === n.id ? { ...it, read: true } : it));
+                        } catch {
+                          // ignore
+                        }
+                      }
+                      setNotificationsAnchor(null);
+                      // relative urls should route within app
+                      if (n.url.startsWith('/')) router.push(n.url);
+                      else window.location.href = n.url;
+                    }
+                  }}
+                  sx={{ whiteSpace: 'normal', alignItems: 'flex-start' }}
+                >
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    {/* simple dot for unread */}
+                    <Box
+                      sx={{
+                        width: 10,
+                        height: 10,
+                        borderRadius: '50%',
+                        bgcolor: n.read ? 'transparent' : 'error.main',
+                        border: n.read ? '1px solid' : 'none',
+                        borderColor: 'divider',
+                      }}
+                    />
+                  </ListItemIcon>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="subtitle2">{n.title}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {n.body}
+                    </Typography>
+                    <Typography variant="caption" display="block" color="text.disabled">
+                      {new Date(n.created_at).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </MenuItem>
+              ))
+            )}
           </Box>
         </Menu>
       </Toolbar>
