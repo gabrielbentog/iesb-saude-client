@@ -130,7 +130,7 @@ export default function InternManagementScreen() {
     handleMenuClose()
   }
   const handleEditIntern  = () => {
-    if (selectedIntern) pushWithProgress(`/gestor/estagiarios/editar/${selectedIntern.id}`)
+    if (selectedIntern) pushWithProgress(`/gestor/gestao-de-estagiarios/editar/${selectedIntern.id}`)
     handleMenuClose()
   }
 
