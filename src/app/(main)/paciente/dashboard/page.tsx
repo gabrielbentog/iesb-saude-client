@@ -10,14 +10,11 @@ import {
   Grid,
   Paper,
   Container,
-  Tabs,
-  Tab,
   CircularProgress,
   Avatar,
   Alert,
   useMediaQuery,
   Fab,
-  styled,
   useTheme,
   Tooltip,
 } from "@mui/material";
@@ -27,7 +24,7 @@ import { alpha } from "@mui/material/styles";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-import HistoryIcon from "@mui/icons-material/History";
+// History tab removed — HistoryIcon no longer needed
 import InfoIcon from "@mui/icons-material/Info";
 
 import { StatCard } from "@/app/components/ui/StatCard";
@@ -40,7 +37,6 @@ import {
   UIAppointment,
 } from "@/app/types";
 import { mapRaw } from "@/app/utils/appointment-mapper";
-import type { TabPanelProps } from "@/app/types";
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Tipagem local para os KPIs do paciente
@@ -65,22 +61,10 @@ const nextHeaders = [
 
 type NextHeaderId = (typeof nextHeaders)[number]["id"];
 
-const historyHeaders = [
-  { id: "professional", label: "Profissional" },
-  { id: "specialty", label: "Especialidade" },
-  { id: "dateTime", label: "Data/Hora" },
-  { id: "status", label: "Status" },
-] as const;
-
-type HistoryHeaderId = (typeof historyHeaders)[number]["id"];
-
 // ────────────────────────────────────────────────────────────────────────────────
 // Renderização de Células
 // ────────────────────────────────────────────────────────────────────────────────
-const renderAppointmentCell = (
-  a: UIAppointment,
-  id: NextHeaderId | HistoryHeaderId,
-) => {
+const renderAppointmentCell = (a: UIAppointment, id: NextHeaderId) => {
   switch (id) {
     case "professional": {
       if (a.interns && a.interns.length) {
@@ -131,43 +115,6 @@ const renderAppointmentCell = (
 };
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Styled Tabs
-// ────────────────────────────────────────────────────────────────────────────────
-const StyledTabsList = styled(Tabs)(({ theme }) => ({
-  backgroundColor: alpha(theme.palette.primary.main, 0.05),
-  borderRadius: 8,
-  minHeight: 44,
-  width: "100%",
-  "& .MuiTabs-indicator": { display: "none" },
-}));
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  textTransform: "none",
-  fontWeight: 600,
-  fontSize: 14,
-  minHeight: 44,
-  borderRadius: 8,
-  color: theme.palette.text.primary,
-  "&.Mui-selected": {
-    color: theme.palette.primary.main,
-    backgroundColor: theme.palette.background.paper,
-  },
-}));
-
-function TabPanel({ children, value, index, ...other }: TabPanelProps) {
-  return (
-    <div
-      role="tabpanel"
-      hidden={value !== index}
-      id={`tabpanel-${index}`}
-      {...other}
-    >
-      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
-    </div>
-  );
-}
-
-// ────────────────────────────────────────────────────────────────────────────────
 // Componente Principal
 // ────────────────────────────────────────────────────────────────────────────────
 export default function PatientDashboard() {
@@ -184,14 +131,7 @@ export default function PatientDashboard() {
   const [loadingNext, setLoadingNext] = useState(true);
   const [errorNext, setErrorNext] = useState(false);
 
-  // Histórico
-  const [history, setHistory] = useState<UIAppointment[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
-  const [errorHistory, setErrorHistory] = useState(false);
-  const [fetchedHistory, setFetchedHistory] = useState(false);
 
-  // UI State
-  const [tabValue, setTabValue] = useState(0);
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // ───────────── Fetch KPIs ─────────────
@@ -251,35 +191,6 @@ export default function PatientDashboard() {
   useEffect(() => {
     fetchNext();
   }, []);
-
-  // ───────────── Fetch Histórico (on demand) ─────────────
-  const fetchHistory = async () => {
-    setLoadingHistory(true);
-    setErrorHistory(false);
-    try {
-      const res = await apiFetch<PaginatedResponse<RawAppointment>>(
-        "/api/appointments/history?page[number]=1&page[size]=8",
-      );
-      const raw = res.data ?? [];
-      setHistory(raw.map(mapRaw));
-      setFetchedHistory(true);
-    } catch (e) {
-      console.error("Falha ao carregar histórico", e);
-      setErrorHistory(true);
-    } finally {
-      setLoadingHistory(false);
-    }
-  };
-
-  useEffect(() => {
-    if (tabValue === 1 && !fetchedHistory) {
-      fetchHistory();
-    }
-  }, [tabValue, fetchedHistory]);
-
-  // ───────────── Handlers ─────────────
-  const handleTabChange = (_: React.SyntheticEvent, newVal: number) =>
-    setTabValue(newVal);
 
   const renderError = (retryFn: () => void, msg: string) => (
     <Box
@@ -396,77 +307,17 @@ export default function PatientDashboard() {
             </Grid>
           </Grid>
 
-          {/* Tabs */}
-          <Box sx={{ width: "100%" }}>
-            <StyledTabsList
-              value={tabValue}
-              onChange={handleTabChange}
-              variant="fullWidth"
-            >
-              <StyledTab
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <CalendarMonthIcon sx={{ fontSize: 16 }} /> Próximas Consultas
-                  </Box>
-                }
-              />
-              <StyledTab
-                label={
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <HistoryIcon sx={{ fontSize: 16 }} /> Histórico
-                  </Box>
-                }
-              />
-            </StyledTabsList>
-
-            {/* Tab 0: Próximas consultas */}
-            <TabPanel value={tabValue} index={0}>
-              {loadingNext ? (
-                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
-                  <CircularProgress />
-                </Box>
-              ) : errorNext ? (
-                renderError(fetchNext, "Não foi possível carregar as próximas consultas.")
-              ) : (
-                <DataTable<UIAppointment>
-                  title="Próximas Consultas"
-                  subtitle="Suas consultas agendadas"
-                  headers={[...nextHeaders]}
-                  data={nextAppointments}
-                  renderCell={(a, id) =>
-                    renderAppointmentCell(a, id as NextHeaderId)
-                  }
-                  rowKeyExtractor={(a) => a.id}
-                  onViewAllClick={() => pushWithProgress("/paciente/consultas")}
-                />
-              )}
-            </TabPanel>
-
-            {/* Tab 1: Histórico */}
-            <TabPanel value={tabValue} index={1}>
-              {loadingHistory ? (
-                <Box sx={{ py: 4, display: "flex", justifyContent: "center" }}>
-                  <CircularProgress />
-                </Box>
-              ) : errorHistory ? (
-                renderError(fetchHistory, "Não foi possível carregar seu histórico.")
-              ) : (
-                <DataTable<UIAppointment>
-                  title="Histórico de Consultas"
-                  subtitle="Consultas já realizadas"
-                  headers={[...historyHeaders]}
-                  data={history}
-                  renderCell={(a, id) =>
-                    renderAppointmentCell(a, id as HistoryHeaderId)
-                  }
-                  rowKeyExtractor={(a) => a.id}
-                  onViewAllClick={() =>
-                    pushWithProgress("/paciente/consultas/historico")
-                  }
-                />
-              )}
-            </TabPanel>
-          </Box>
+          <DataTable<UIAppointment>
+            title="Próximas Consultas"
+            subtitle="Suas consultas agendadas"
+            headers={[...nextHeaders]}
+            data={nextAppointments}
+            renderCell={(a, id) =>
+              renderAppointmentCell(a, id as NextHeaderId)
+            }
+            rowKeyExtractor={(a) => a.id}
+            onViewAllClick={() => pushWithProgress("/paciente/consultas")}
+          />
 
           {/* FAB móvel */}
           {isMobile && (
