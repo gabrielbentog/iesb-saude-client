@@ -1,8 +1,7 @@
 // src/app/(main)/paciente/consultas/page.tsx
 "use client";
 
-import type React from "react";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Container,
@@ -19,7 +18,6 @@ import { alpha } from "@mui/material/styles";
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ScheduleIcon from "@mui/icons-material/Schedule";
 // more icon removed for estagiario view
 import PersonIcon from "@mui/icons-material/Person";
 
@@ -137,6 +135,9 @@ export default function AppointmentPatientScreen() {
   // Menu (não usado para estagiário)
 
   // ───────────── Fetch paginado ─────────────
+  const showToastRef = React.useRef(showToast);
+  useEffect(() => { showToastRef.current = showToast }, [showToast]);
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -151,20 +152,28 @@ export default function AppointmentPatientScreen() {
       console.error("Falha ao buscar consultas", err);
       const message = err instanceof Error ? err.message : "Não foi possível buscar suas consultas.";
       setError(message);
-      showToast({ message: `Erro: ${message}`, severity: "error" });
+      try { showToastRef.current({ message: `Erro: ${message}`, severity: "error" }) } catch { /* swallow */ }
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, showToast]);
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     fetchAppointments();
-  }, [fetchAppointments]);
+    // only re-run when page or rowsPerPage change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage]);
 
-  // ───────────── KPIs dinâmicos ─────────────
-  const upcomingCount = appointments.filter((a) => ["Confirmada", "Aguardando aprovação"].includes(a.status)).length;
-  const completedCount = appointments.filter((a) => a.status === "Concluída").length;
-  const pendingCount = appointments.filter((a) => a.status === "Aguardando aprovação").length;
+  // ───────────── KPIs dinâmicos (prefira valores do meta quando disponíveis) ─────────────
+  const upcomingCount =
+    typeof metaInfo?.nextAppointmentCount === "number"
+      ? metaInfo.nextAppointmentCount
+      : appointments.filter((a) => ["Confirmada", "Aguardando aprovação"].includes(a.status)).length;
+
+  const completedCount =
+    typeof metaInfo?.completedAppointmentsCount === "number"
+      ? metaInfo.completedAppointmentsCount
+      : appointments.filter((a) => a.status === "Concluída").length;
 
   // ───────────── Handlers de paginação ─────────────
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
@@ -212,7 +221,7 @@ export default function AppointmentPatientScreen() {
 
       {/* KPI Cards */}
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={6}>
           <StatCard
             title="Próximas Consultas"
             value={upcomingCount}
@@ -221,22 +230,13 @@ export default function AppointmentPatientScreen() {
             iconBgColor={alpha(theme.palette.primary.main, 0.1)}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={6}>
           <StatCard
             title="Consultas Concluídas"
             value={completedCount}
             subtitle="Finalizadas"
             icon={<CheckCircleIcon sx={{ color: theme.palette.success.main }} />}
             iconBgColor={alpha(theme.palette.success.main, 0.1)}
-          />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4}>
-          <StatCard
-            title="Pendentes"
-            value={pendingCount}
-            subtitle="Aguardando confirmação"
-            icon={<ScheduleIcon sx={{ color: theme.palette.warning.main }} />}
-            iconBgColor={alpha(theme.palette.warning.main, 0.1)}
           />
         </Grid>
       </Grid>

@@ -1,8 +1,7 @@
 // src/app/(main)/paciente/consultas/page.tsx
 "use client";
 
-import type React from "react";
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Button,
@@ -146,6 +145,9 @@ export default function AppointmentPatientScreen() {
   const [selectedAppointment, setSelectedAppointment] = useState<UIAppointment | null>(null);
 
   // ───────────── Fetch paginado ─────────────
+  const showToastRef = React.useRef(showToast);
+  useEffect(() => { showToastRef.current = showToast }, [showToast]);
+
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -160,20 +162,35 @@ export default function AppointmentPatientScreen() {
       console.error("Falha ao buscar consultas", err);
       const message = err instanceof Error ? err.message : "Não foi possível buscar suas consultas.";
       setError(message);
-      showToast({ message: `Erro: ${message}`, severity: "error" });
+      // use ref to avoid triggering effects that depend on showToast
+      try { showToastRef.current({ message: `Erro: ${message}`, severity: "error" }) } catch { /* swallow */ }
     } finally {
       setLoading(false);
     }
-  }, [page, rowsPerPage, showToast]);
+  }, [page, rowsPerPage]);
 
   useEffect(() => {
     fetchAppointments();
-  }, [fetchAppointments]);
+    // only re-run when page or rowsPerPage change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page, rowsPerPage]);
 
-  // ───────────── KPIs dinâmicos ─────────────
-  const upcomingCount = appointments.filter((a) => ["Confirmada", "Aguardando aprovação"].includes(a.status)).length;
-  const completedCount = appointments.filter((a) => a.status === "Concluída").length;
-  const pendingCount = appointments.filter((a) => a.status === "Aguardando aprovação").length;
+  // ───────────── KPIs dinâmicos (prefira valores do meta quando disponíveis) ─────────────
+  const upcomingCount =
+    typeof metaInfo?.nextAppointmentCount === "number"
+      ? metaInfo.nextAppointmentCount
+      : appointments.filter((a) => ["Confirmada", "Aguardando aprovação"].includes(a.status)).length;
+
+  const completedCount =
+    typeof metaInfo?.completedAppointmentsCount === "number"
+      ? metaInfo.completedAppointmentsCount
+      : appointments.filter((a) => a.status === "Concluída").length;
+
+  const pendingCount =
+    typeof metaInfo?.nextAppointmentCount === "number"
+      ? // when API provides nextAppointmentCount, derive pending as difference if possible
+        Math.max(0, (metaInfo.pagination?.totalCount ?? 0) - (metaInfo.nextAppointmentCount ?? 0))
+      : appointments.filter((a) => a.status === "Aguardando aprovação").length;
 
   // ───────────── Handlers de paginação ─────────────
   const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);

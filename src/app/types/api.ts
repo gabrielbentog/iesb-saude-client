@@ -5,6 +5,9 @@ export type MetaWithPagination = {
     currentPage: number;
     totalPages: number;
   };
+  // optional KPI counts returned by some endpoints
+  nextAppointmentCount?: number;
+  completedAppointmentsCount?: number;
   [key: string]: unknown;
 };
 

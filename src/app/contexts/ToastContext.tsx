@@ -18,9 +18,9 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children, anchorOr
     severity: 'success',
   });
 
-  const showToast = ({ message, severity = 'success' }: ToastOptions) => {
+  const showToast = React.useCallback(({ message, severity = 'success' }: ToastOptions) => {
     setToast({ open: true, message, severity });
-  };
+  }, []);
 
   const handleClose = (
     _event?: React.SyntheticEvent | Event,
@@ -30,8 +30,10 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children, anchorOr
     setToast((prev) => ({ ...prev, open: false }));
   };
 
+  const value = React.useMemo(() => ({ showToast }), [showToast]);
+
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={value}>
       {children}
       <Snackbar
         anchorOrigin={anchorOrigin || { vertical: 'top', horizontal: 'right' }} // Usa a posição passada ou o valor padrão
