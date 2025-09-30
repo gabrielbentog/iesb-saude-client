@@ -115,6 +115,7 @@ export function DataTable<T extends { id: string | number }>({
   actionsColumnLabel = '', // Prop para o rótulo da coluna de ações, com valor padrão vazio
   emptyMessage = 'Nenhum registro encontrado.', // Prop para mensagem de vazio, com valor padrão
   rowsPerPageOptions = [5, 10, 25, { label: 'Todas', value: -1 }],
+  rowOnClick,
 }: DataTableProps<T>) {
 
   const showActionsColumn = typeof actions === 'function'; // Verifica se a prop actions foi fornecida
@@ -165,9 +166,11 @@ export function DataTable<T extends { id: string | number }>({
               data.map((row) => (
                 <TableRow
                   key={rowKeyExtractor(row)}
+                  onClick={rowOnClick ? () => rowOnClick(row) : undefined}
                   sx={{
                     borderLeft: getPriorityBorderColor ? getPriorityBorderColor(row) : 'none',
                     "&:last-child td, &:last-child th": { border: 0 },
+                    cursor: rowOnClick ? 'pointer' : 'default',
                   }}
                 >
                   {headers.map((header) => (

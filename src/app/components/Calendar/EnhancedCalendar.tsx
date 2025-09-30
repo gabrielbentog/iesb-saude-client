@@ -208,19 +208,31 @@ export default function EnhancedCalendar({
   };
 
   const handleEventClick = (event: CalendarEvent) => {
+    // Estagiário: não deve disparar nenhuma ação ao clicar
+    if (profileNormalized === 'estagiário') {
+      if (event.type === 'busy') {
+        pushWithProgress(`/gestor/consultas/${event.appointmentId}`);
+      }
+      return;
+    }
+
     // Paciente: só permite booking em slots free
     if (profileNormalized === 'paciente') {
       if (event.type === 'free') setSelectedSlotForBooking(event);
       // if it's a busy slot that belongs to the user (compare by id), open detail
       if (event.type === 'busy' && event.patientId && sessionUserId && event.patientId === sessionUserId) {
-        pushWithProgress(`/gestor/consultas/${event.appointmentId}`)
+        pushWithProgress(`/gestor/consultas/${event.appointmentId}`);
       }
       return;
     }
 
     // Gestor: pode ver detalhes mesmo para slots 'busy'
     if (profileNormalized === 'gestor') {
-        pushWithProgress(`/gestor/consultas/${event.appointmentId}`)
+      if (event.type === 'free') {
+        setSelectedEventForDetail(event); // abre modal para apagar horários livres
+      } else {
+        pushWithProgress(`/gestor/consultas/${event.appointmentId}`);
+      }
       return;
     }
 

@@ -1,240 +1,238 @@
 "use client"
 
-import React, { useState } from "react"
+import type React from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Box,
   Typography,
   Button,
-  Card,
-  Tabs,
-  Tab,
+  CardContent,
+  Grid,
+  Paper,
+  Container,
+  CircularProgress,
   useMediaQuery,
-  Chip,
+  Fab,
+  useTheme,
 } from "@mui/material"
-import { useTheme } from "@mui/material/styles"
+import { alpha } from "@mui/material/styles"
+
+// Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth"
+import AssignmentIcon from "@mui/icons-material/Assignment"
+import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline"
 import AccessTimeIcon from "@mui/icons-material/AccessTime"
-import LocalHospitalIcon from "@mui/icons-material/LocalHospital"
+import InfoIcon from "@mui/icons-material/Info"
 
-export default function PatientDashboard() {
+import { StatCard } from "@/app/components/ui/StatCard"
+import { DataTable, IconContainer, StyledBadge } from "@/app/components/DataTable"
+import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
+import { apiFetch } from "@/app/lib/api"
+import { mapRaw } from "@/app/utils/appointment-mapper"
+import type { RawAppointment, PaginatedResponse, UIAppointment } from "@/app/types"
+
+interface InternDashboardStats {
+  nextAppointment: string | null
+  completedToday: number
+  scheduledThisWeek: number
+  pendingApprovals: number
+}
+
+const nextHeaders = [
+  { id: "patient", label: "Paciente" },
+  { id: "specialty", label: "Especialidade" },
+  { id: "location", label: "Local" },
+  { id: "room", label: "Sala" },
+  { id: "dateTime", label: "Data/Hora" },
+  { id: "status", label: "Status" },
+] as const
+
+type NextHeaderId = (typeof nextHeaders)[number]["id"]
+
+const renderAppointmentCell = (a: UIAppointment, id: NextHeaderId) => {
+  switch (id) {
+    case "patient":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {/* avatar and name */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <Box component="div" sx={{ width: 32, height: 32, borderRadius: "50%", bgcolor: "grey.200", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              {a.patientName ? a.patientName.split(" ").map(n => n[0]).join("") : ""}
+            </Box>
+            <Typography fontWeight={500}>{a.patientName}</Typography>
+          </Box>
+        </Box>
+      )
+    case "specialty":
+      return (
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconContainer>{a.icon}</IconContainer>
+          {a.specialty}
+        </Box>
+      )
+    case "location":
+      return a.location
+    case "room":
+      return a.room
+    case "dateTime":
+      return `${a.date} às ${a.time}`
+    case "status":
+      return <StyledBadge label={a.status} badgeType={a.status} />
+    default:
+      return null
+  }
+}
+
+export default function InternDashboard() {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
-  const [tabValue, setTabValue] = useState(0)
+  const pushWithProgress = usePushWithProgress()
 
-  const handleTabChange = (_: React.SyntheticEvent, newValue: number) => {
-    setTabValue(newValue)
+  const [stats, setStats] = useState<InternDashboardStats | null>(null)
+  const [loadingStats, setLoadingStats] = useState(true)
+  const [errorStats, setErrorStats] = useState(false)
+
+  const [nextAppointments, setNextAppointments] = useState<UIAppointment[]>([])
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"))
+
+  const fetchKpis = useCallback(async () => {
+    setLoadingStats(true)
+    setErrorStats(false)
+    try {
+      // tentativa de endpoint específico para estagiário; se não existir, fallback será mostrado
+      const res = await apiFetch<{ data: { nextAppointment: string | null; completedToday: number; scheduledThisWeek: number; pendingApprovals: number } }>(
+        "/api/dashboard/intern_kpis",
+      )
+      const data = res.data ?? {}
+      setStats({
+        nextAppointment: data.nextAppointment ?? null,
+        completedToday: data.completedToday ?? 0,
+        scheduledThisWeek: data.scheduledThisWeek ?? 0,
+        pendingApprovals: data.pendingApprovals ?? 0,
+      })
+    } catch (e) {
+      console.warn("KPIs para estagiário indisponíveis", e)
+      setErrorStats(true)
+    } finally {
+      setLoadingStats(false)
+    }
+  }, [])
+
+  const fetchNext = useCallback(async () => {
+    try {
+      const res = await apiFetch<PaginatedResponse<RawAppointment>>(
+        "/api/appointments/next?page[number]=1&page[size]=5",
+      )
+      const raw = res.data ?? []
+      setNextAppointments((raw as RawAppointment[]).map(mapRaw))
+    } catch (e) {
+      console.error("Falha ao carregar próximas consultas (estagiário)", e)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchKpis()
+  }, [fetchKpis])
+
+  useEffect(() => {
+    fetchNext()
+  }, [fetchNext])
+
+  if (loadingStats) {
+    return (
+      <Box sx={{ p: 4, display: "flex", justifyContent: "center" }}>
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  if (errorStats || !stats) {
+    // mostra um banner simples mas continua tentando carregar próximas consultas
+    return (
+      <Box sx={{ minHeight: "100vh", bgcolor: theme.palette.background.default, py: 6 }}>
+        <Container maxWidth="xl">
+          <Paper sx={{ p: 4, bgcolor: "warning.light", color: "warning.contrastText" }} elevation={0}>
+            <Typography variant="h6" fontWeight={700}>Painel do Estagiário</Typography>
+            <Typography variant="body2">Dados do painel não estão disponíveis no momento.</Typography>
+          </Paper>
+        </Container>
+      </Box>
+    )
   }
 
   return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        bgcolor: theme.palette.mode === "dark" ? "#111" : "#fafafa",
-        color: theme.palette.text.primary,
-        px: { xs: 2, md: 6 },
-        py: { xs: 4, md: 6 },
-      }}
-    >
-      {/* Header */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          flexWrap: "wrap",
-          mb: 5,
-          gap: 2,
-        }}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight={600}>
-            Olá, João Paulo
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Terça-feira, 19 de Março
-          </Typography>
-        </Box>
-
-        <Button
-          variant="outlined"
-          sx={{
-            borderRadius: "999px",
-            textTransform: "none",
-            px: 3,
-            py: 1,
-            fontWeight: 500,
-            borderColor: theme.palette.divider,
-            color: theme.palette.text.primary,
-            "&:hover": {
-              backgroundColor: theme.palette.action.hover,
-            },
-          }}
-        >
-          Agendar Consulta
-        </Button>
-      </Box>
-
-      {/* Cards (substituindo Grid) */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-          gap: 4,
-        }}
-      >
-        {/* Card 1 - Próxima Consulta */}
-        <Box>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-              height: "100%",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-              <LocalHospitalIcon fontSize="small" color="primary" sx={{ mr: 1 }} />
-              <Typography variant="subtitle1" fontWeight={600}>
-                Próxima Consulta
+    <Box sx={{ minHeight: "100vh", bgcolor: theme.palette.background.default, py: 6 }}>
+      <Container maxWidth="xl">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <Paper sx={{ overflow: "hidden", border: "none", bgcolor: "primary.main", color: "white", position: "relative" }} elevation={0}>
+            <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+              <Typography variant="h4" fontWeight={700} gutterBottom>Painel do Estagiário</Typography>
+              <Typography variant="body1" sx={{ mb: 3, maxWidth: "80%", color: "rgba(255,255,255,0.9)" }}>
+                Acompanhe suas próximas consultas, compromissos e métricas de desempenho.
               </Typography>
-              <Chip
-                label="Confirmada"
-                color="success"
-                size="small"
-                sx={{ ml: "auto", fontWeight: 500 }}
-              />
-            </Box>
-
-            <Typography variant="body1" fontWeight={500}>
-              Clínica Mais Saúde
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Avenida Paulista, 1234 • São Paulo
-            </Typography>
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <AccessTimeIcon fontSize="small" color="action" />
-              <Typography variant="body2">Hoje às 14:00</Typography>
-              <Chip
-                label="4h restantes"
-                size="small"
-                sx={{
-                  ml: "auto",
-                  bgcolor: theme.palette.primary.light,
-                  color: theme.palette.primary.contrastText,
-                  fontWeight: 500,
-                }}
-              />
-            </Box>
-          </Card>
-        </Box>
-
-        {/* Card 2 - Acesso Rápido */}
-        <Box>
-          <Card
-            sx={{
-              p: 3,
-              borderRadius: 3,
-              backgroundColor: theme.palette.background.paper,
-              border: `1px solid ${theme.palette.divider}`,
-              height: "100%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box>
-              <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                <CalendarMonthIcon fontSize="small" color="secondary" sx={{ mr: 1 }} />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Acesso Rápido
-                </Typography>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button variant="contained" sx={{ bgcolor: "white", color: "primary.main" }} startIcon={<AddCircleOutlineIcon />} onClick={() => pushWithProgress("/estagiario/calendario")}>Ver Calendário</Button>
+                <Button variant="outlined" sx={{ borderColor: "white", color: "white" }} startIcon={<AccessTimeIcon />} onClick={() => pushWithProgress("/estagiario/horarios")}>Meus Horários</Button>
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                Visualize e gerencie suas consultas através do calendário interativo.
-              </Typography>
-            </Box>
+            </CardContent>
+          </Paper>
 
-            <Button
-              startIcon={<CalendarMonthIcon fontSize="small" />}
-              variant="text"
-              sx={{
-                mt: 3,
-                textTransform: "none",
-                fontWeight: 500,
-                alignSelf: "flex-start",
-                px: 0,
-                color: theme.palette.secondary.main,
-                "&:hover": {
-                  textDecoration: "underline",
-                },
-              }}
-            >
-              Ver Calendário
-            </Button>
-          </Card>
-        </Box>
-      </Box>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Próxima Consulta"
+                value={stats.nextAppointment ?? "--"}
+                subtitle="Data/Hora"
+                icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Concluídas Hoje"
+                value={stats.completedToday}
+                subtitle="Consultas finalizadas"
+                icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Agendadas na Semana"
+                value={stats.scheduledThisWeek}
+                subtitle="Semana atual"
+                icon={<InfoIcon sx={{ color: "warning.main" }} />}
+                iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+              />
+            </Grid>
+            <Grid item xs={12} sm={6} md={3}>
+              <StatCard
+                title="Pendentes"
+                value={stats.pendingApprovals}
+                subtitle="Aprovações pendentes"
+                icon={<AccessTimeIcon sx={{ color: "success.main" }} />}
+                iconBgColor={alpha(theme.palette.success.main, 0.1)}
+              />
+            </Grid>
+          </Grid>
 
-      {/* Tabs */}
-      <Box sx={{ mt: 6 }}>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
-          Consultas
-        </Typography>
+          <DataTable<UIAppointment>
+            title="Próximas Consultas"
+            subtitle="Consultas atribuídas a você"
+            headers={[...nextHeaders]}
+            data={nextAppointments}
+            renderCell={(a, id) => renderAppointmentCell(a, id as NextHeaderId)}
+            rowKeyExtractor={(a) => a.id}
+            onViewAllClick={() => pushWithProgress("/estagiario/consultas")}
+          />
 
-        <Tabs
-          value={tabValue}
-          onChange={handleTabChange}
-          textColor="primary"
-          indicatorColor="primary"
-          sx={{
-            borderBottom: `1px solid ${theme.palette.divider}`,
-            mb: 2,
-            ".MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 500,
-              fontSize: "0.95rem",
-              px: 2,
-            },
-          }}
-        >
-          <Tab label="Próximas" />
-          <Tab label="Histórico" />
-        </Tabs>
-
-        <Box sx={{ py: 2 }}>
-          {tabValue === 0 ? (
-            <Typography variant="body2" color="text.secondary">
-              Você tem 1 consulta agendada para hoje.
-            </Typography>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              Nenhum histórico encontrado.
-            </Typography>
+          {isMobile && (
+            <Fab color="primary" sx={{ position: "fixed", bottom: 24, right: 24 }} onClick={() => pushWithProgress("/estagiario/calendario") }>
+              <AddCircleOutlineIcon />
+            </Fab>
           )}
         </Box>
-      </Box>
-
-      {/* Floating Button - Mobile */}
-      {isMobile && (
-        <Button
-          variant="contained"
-          sx={{
-            position: "fixed",
-            bottom: 16,
-            right: 16,
-            borderRadius: "999px",
-            px: 4,
-            py: 1.25,
-            textTransform: "none",
-            fontWeight: 500,
-            boxShadow: theme.shadows[4],
-          }}
-        >
-          Agendar
-        </Button>
-      )}
+      </Container>
     </Box>
   )
 }

@@ -82,7 +82,13 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [mounted, setMounted] = useState(false);
   const pushWithProgress = usePushWithProgress();
   const session = Cookies.get("session");
-  const profile = session ? (JSON.parse(session).profile?.toLowerCase() as keyof typeof menuItemsByProfile) : null;
+  const removeAccents = (str: string) =>
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const profile = session
+    ? (removeAccents(JSON.parse(session).profile || "")
+        .toLowerCase() as keyof typeof menuItemsByProfile)
+    : null;
   const { showToast } = useToast();
   const { themePreference, setThemePreference, isDark } = useThemeContext()
   const currentSession = useCurrentUser()
@@ -128,7 +134,9 @@ const Sidebar: React.FC<SidebarProps> = ({
       { icon: <PersonIcon />, text: "Estagiários", path: "/gestor/gestao-de-estagiarios" },
     ],
     estagiario: [
-      { icon: <MedicationIcon />, text: "Consultas", path: "/paciente/consultas" },
+      { icon: <DashboardIcon />, text: "Dashboard", path: "/estagiario/dashboard" },
+      { icon: <CalendarIcon />, text: "Calendário", path: "/estagiario/calendario" },
+      { icon: <MedicationIcon />, text: "Consultas", path: "/estagiario/consultas" },
     ],
   };
 

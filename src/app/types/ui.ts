@@ -60,6 +60,7 @@ export interface DataTableProps<T> {
   actions?: (row: T) => React.ReactNode;
   actionsColumnLabel?: string;
   emptyMessage?: string;
+  rowOnClick?: (row: T) => void;
 }
 
 export interface ScheduleItemProps {
@@ -68,6 +69,7 @@ export interface ScheduleItemProps {
   repeatType: number;
   onRemoveDay: () => void;
   disableRemoveDay: boolean;
+  allowEdit?: boolean;
 }
 export interface TabPanelProps {
   children?: React.ReactNode;

@@ -495,9 +495,14 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                 </Typography>
               </Box>
               <Box sx={{ ml: "auto", display: "flex", gap: 1 }}>
-                {btnCfg.primary && <ActionButton {...btnCfg.primary} />}
-                {btnCfg.secondary && <ActionButton {...btnCfg.secondary} />}
-                {btnCfg.tertiary && <ActionButton {...btnCfg.tertiary} />}
+                {/* Somente exibimos botões de ação quando o usuário não for Estagiário */}
+                {role !== "Estagiário" && (
+                  <>
+                    {btnCfg.primary && <ActionButton {...btnCfg.primary} />}
+                    {btnCfg.secondary && <ActionButton {...btnCfg.secondary} />}
+                    {btnCfg.tertiary && <ActionButton {...btnCfg.tertiary} />}
+                  </>
+                )}
               </Box>
             </Box>
           </CardContent>
@@ -638,6 +643,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                       <Typography variant="h6" fontWeight={700} mb={3}>
                         Estagiário Designados
                       </Typography>
+                      {/* Apenas gestores podem designar/alterar estagiários */}
                       {role === "Gestor" && (
                         <Tooltip
                           title={appointment.interns && appointment.interns.length ? "Alterar estagiários" : "Designar estagiários"}
@@ -792,7 +798,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
         )}
       </Container>
 
-      {/* FAB mobile */}
+      {/* FAB mobile — apenas gestores */}
       {isMobile && role === "Gestor" && (
         <Fab
           color="primary"
@@ -804,8 +810,9 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
       )}
 
       {/* Dialog assign intern */}
+      {/* Dialog assign intern — apenas gestores */}
       <Dialog
-        open={assignDialogOpen}
+        open={assignDialogOpen && role === "Gestor"}
         onClose={() => setAssignDialogOpen(false)}
         fullWidth
         maxWidth="sm"

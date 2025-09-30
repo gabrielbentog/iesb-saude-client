@@ -26,6 +26,7 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
   repeatType,
   onRemoveDay,
   disableRemoveDay,
+  allowEdit = true,
 }) => {
   const { fields: timeFields, append, remove } = useFieldArray({
     control,
@@ -112,12 +113,16 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
             />
           )}
         />
-        <IconButton size="small" sx={{ p: 0.5 }} onClick={() => append({ start_time: dayjs().hour(9), end_time: dayjs().hour(10) })}>
-          <AddIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" disabled={disableRemoveDay} onClick={onRemoveDay}>
-          <DeleteIcon fontSize="small" />
-        </IconButton>
+        {allowEdit && (
+          <>
+            <IconButton size="small" sx={{ p: 0.5 }} onClick={() => append({ start_time: dayjs().hour(9), end_time: dayjs().hour(10) })}>
+              <AddIcon fontSize="small" />
+            </IconButton>
+            <IconButton size="small" disabled={disableRemoveDay} onClick={onRemoveDay}>
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </>
+        )}
       </Box>
 
       {/* intervalos extras */}
@@ -141,9 +146,11 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
               )}
             />
             <span />
-            <IconButton size="small" onClick={() => remove(i)}>
-              <DeleteIcon fontSize="small" />
-            </IconButton>
+            {allowEdit && (
+              <IconButton size="small" onClick={() => remove(i)}>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
+            )}
           </Box>
         );
       })}
