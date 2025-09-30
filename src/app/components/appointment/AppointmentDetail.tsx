@@ -44,6 +44,7 @@ import AssignmentIndIcon from "@mui/icons-material/AssignmentInd";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EditIcon from "@mui/icons-material/Edit";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import CancelIcon from "@mui/icons-material/Cancel";
 import PendingIcon from "@mui/icons-material/Pending";
@@ -420,12 +421,19 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
 
   const handleAssignIntern = useCallback(async () => {
     if (!selectedInternIds || !appointment) return;
-    // limite de 3
-    const ids = selectedInternIds.slice(0, 3);
+    // normalize & limite de 3 — filtra strings vazias
+    const ids = selectedInternIds
+      .map((s) => (s ?? "").toString().trim())
+      .filter((s) => s.length > 0)
+      .slice(0, 3);
     try {
+      // IDs are UUID strings in this system — send strings, not numbers
+      const stringIds = ids.slice(0, 3);
+      const payload = { appointment: { intern_ids: stringIds.length ? stringIds : [] } } as const;
+      console.debug("PATCH /api/appointments payload:", payload);
       await apiFetch(`/api/appointments/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ appointment: { intern_ids: ids } }),
+        body: JSON.stringify(payload),
       });
       showToast({ message: "Estagiários atualizados", severity: "success" });
       setAssignDialogOpen(false);
@@ -435,6 +443,10 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
       showToast({ message: "Erro ao atualizar estagiários", severity: "error" });
     }
   }, [appointment, id, selectedInternIds, loadData, showToast]);
+
+  const handleRemoveSelectedIntern = useCallback((idToRemove: string) => {
+    setSelectedInternIds((prev) => prev.filter((s) => s !== idToRemove));
+  }, []);
 
   // prefill selection when opening dialog
   useEffect(() => {
@@ -860,12 +872,26 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
               </MenuItem>
             ))}
           </TextField>
+          {/* Selected interns displayed as chips with delete icon */}
+          <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {selectedInternIds.map((sid) => {
+              const intern = interns.find((i) => String(i.id) === sid);
+              return (
+                <Chip
+                  key={sid}
+                  label={intern ? intern.name : sid}
+                  onDelete={() => handleRemoveSelectedIntern(sid)}
+                  deleteIcon={<DeleteOutlineIcon />}
+                  sx={{ mr: 1, mb: 1 }}
+                />
+              );
+            })}
+          </Box>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 1 }}>
           <Button onClick={() => setAssignDialogOpen(false)}>Cancelar</Button>
           <Button
             variant="contained"
-            disabled={!selectedInternIds || selectedInternIds.length === 0}
             onClick={handleAssignIntern}
           >
             Salvar
