@@ -8,6 +8,7 @@ export type MetaWithPagination = {
   // optional KPI counts returned by some endpoints
   nextAppointmentCount?: number;
   completedAppointmentsCount?: number;
+  pendingConfirmation?: number;
   [key: string]: unknown;
 };
 

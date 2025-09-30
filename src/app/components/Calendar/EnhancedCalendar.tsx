@@ -39,6 +39,7 @@ import type {
   EnhancedCalendarProps,
 } from '@/app/types';
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
+import { apiFetch } from "@/app/lib/api";
 import { useApi } from "@/app/hooks/useApi";
 import { useToast } from "@/app/contexts/ToastContext"; // For booking confirmation
 
@@ -60,6 +61,35 @@ const rangeFor = (v: ViewMode, ref: Date) =>
     : { start: format(ref, "yyyy-MM-dd"), end: format(ref, "yyyy-MM-dd") };
 
 /* ---------- tipos ---------- */
+
+// Helpers to format date/time in a specific timezone (São Paulo)
+const TZ = 'America/Sao_Paulo';
+const formatDateYMDInTZ = (iso: string) => {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(d);
+  const y = parts.find((p) => p.type === 'year')?.value ?? '';
+  const m = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
+  return `${y}-${m}-${day}`;
+};
+
+const formatTimeHMInTZ = (iso: string) => {
+  const d = new Date(iso);
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: TZ,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  }).formatToParts(d);
+  const hh = parts.find((p) => p.type === 'hour')?.value ?? '00';
+  const mm = parts.find((p) => p.type === 'minute')?.value ?? '00';
+  return `${hh}:${mm}`;
+};
 
 export default function EnhancedCalendar({
   showScheduleButton,
@@ -211,7 +241,7 @@ export default function EnhancedCalendar({
     // Estagiário: não deve disparar nenhuma ação ao clicar
     if (profileNormalized === 'estagiário') {
       if (event.type === 'busy') {
-        pushWithProgress(`/gestor/consultas/${event.appointmentId}`);
+        pushWithProgress(`/estagiario/consultas/${event.appointmentId}`);
       }
       return;
     }
@@ -221,7 +251,7 @@ export default function EnhancedCalendar({
       if (event.type === 'free') setSelectedSlotForBooking(event);
       // if it's a busy slot that belongs to the user (compare by id), open detail
       if (event.type === 'busy' && event.patientId && sessionUserId && event.patientId === sessionUserId) {
-        pushWithProgress(`/gestor/consultas/${event.appointmentId}`);
+        pushWithProgress(`/paciente/consultas/${event.appointmentId}`);
       }
       return;
     }
@@ -332,25 +362,55 @@ export default function EnhancedCalendar({
           event={selectedSlotForBooking}
           onClose={() => setSelectedSlotForBooking(null)}
           onSubmitBooking={async (bookingData) => {
-            // Here you would typically make an API call to book the appointment
-            console.log("Booking Submitted:", bookingData, "for slot:", selectedSlotForBooking);
-            // Example:
-            // try {
-            //   await apiFetch('/api/appointments', {
-            //     method: 'POST',
-            //     body: JSON.stringify({
-            //       slotId: selectedSlotForBooking.id, // or timeSlotId if it's a recurring slot
-            //       objective: bookingData.objective,
-            //       date: selectedSlotForBooking.date,
-            //     }),
-            //   });
-            //   showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
-            //   // Optionally, refetch events here or update local state
-            // } catch (error) {
-            //   showToast({ message: "Falha ao agendar consulta.", severity: "error" });
-            // }
-            showToast({ message: "Agendamento solicitado! (Simulação)", severity: "success" });
-            setSelectedSlotForBooking(null); // Close dialog
+            // Real booking flow: find the original ApiSlot from calApi.free to get start/end/timeSlotId
+            try {
+              if (!sessionUserId) {
+                showToast({ message: "Usuário não autenticado.", severity: "error" });
+                return;
+              }
+
+              // extract UUID slot id from event.id using regex to avoid date parts being included
+              const uuidMatch = selectedSlotForBooking.id.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+              const slotId = uuidMatch ? uuidMatch[0] : selectedSlotForBooking.id;
+
+              // try to find the original ApiSlot by id or timeSlotId and by the selected date
+              const selectedDayYMD = formatDateYMDInTZ(selectedSlotForBooking.date.toISOString());
+              const found = (calApi?.free ?? []).find((s) => {
+                const matchesId = String(s.id) === String(slotId) || String(s.timeSlotId) === String(slotId);
+                const sameDay = formatDateYMDInTZ(s.startAt) === selectedDayYMD;
+                // prefer exact id+day match (handles recurring timeSlotId across dates)
+                return matchesId && sameDay;
+              }) || (calApi?.free ?? []).find((s) => String(s.id) === String(slotId) || String(s.timeSlotId) === String(slotId));
+
+              const dateIso = found?.startAt ?? selectedSlotForBooking.date.toISOString();
+              const start = new Date(dateIso);
+              const end = new Date(start.getTime() + 30 * 60 * 1000); // fallback 30m
+
+              const timeSlotVal = found?.timeSlotId ?? found?.id ?? slotId;
+              const payload = {
+                appointment: {
+                  timeSlotId: timeSlotVal,
+                  userId: sessionUserId,
+                  date: formatDateYMDInTZ(dateIso), // YYYY-MM-DD in Sao Paulo tz
+                  startTime: formatTimeHMInTZ(start.toISOString()), // HH:mm in Sao Paulo tz
+                  endTime: formatTimeHMInTZ(end.toISOString()),
+                  status: "pending",
+                  notes: bookingData.objective?.trim() ?? "",
+                },
+              } as const;
+
+              await apiFetch('/api/appointments', {
+                method: 'POST',
+                body: JSON.stringify(payload),
+              });
+
+              showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
+              // optionally remove selected and let calendar refetch on next range change
+              setSelectedSlotForBooking(null);
+            } catch (err) {
+              console.error('Erro ao agendar via calendar booking:', err);
+              showToast({ message: 'Falha ao agendar consulta.', severity: 'error' });
+            }
           }}
         />
       )}

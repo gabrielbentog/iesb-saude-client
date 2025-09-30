@@ -187,7 +187,10 @@ export default function AppointmentPatientScreen() {
       : appointments.filter((a) => a.status === "Concluída").length;
 
   const pendingCount =
-    typeof metaInfo?.nextAppointmentCount === "number"
+    // prefer explicit pendingConfirmation from meta when available
+    typeof metaInfo?.pendingConfirmation === "number"
+      ? metaInfo.pendingConfirmation
+      : typeof metaInfo?.nextAppointmentCount === "number"
       ? // when API provides nextAppointmentCount, derive pending as difference if possible
         Math.max(0, (metaInfo.pagination?.totalCount ?? 0) - (metaInfo.nextAppointmentCount ?? 0))
       : appointments.filter((a) => a.status === "Aguardando aprovação").length;
@@ -299,7 +302,7 @@ export default function AppointmentPatientScreen() {
           <StatCard
             title="Pendentes"
             value={pendingCount}
-            subtitle="Aguardando confirmação"
+            subtitle="Aguardando sua confirmação"
             icon={<ScheduleIcon sx={{ color: theme.palette.warning.main }} />}
             iconBgColor={alpha(theme.palette.warning.main, 0.1)}
           />
