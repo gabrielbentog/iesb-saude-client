@@ -100,6 +100,17 @@ const saveUserToLocalStorage = (user: User) => {
   } catch (e) {
     console.error("Failed to save user to localStorage", e);
   }
+  // notify other tabs/listeners
+  try { window.dispatchEvent(new Event('sessionUpdated')); } catch {}
+};
+
+// monta a URL pública do avatar: se o backend retornar caminho relativo (ex: /uploads/abc.jpg)
+// então prefixamos com NEXT_PUBLIC_API_HOST; se já for URL absoluta, usamos como está.
+const getAvatarFullUrl = (raw?: string | null) => {
+  if (!raw) return undefined;
+  if (/^https?:\/\//.test(raw)) return raw;
+  const base = process.env.NEXT_PUBLIC_API_HOST ?? '';
+  return `${base}${raw}`;
 };
 
 const applyBackendErrorsToForm = <
@@ -172,11 +183,13 @@ const ProfileHeader: FC<{
     mode: 'view' | 'edit';
     avatarPreview: string | null;
     setAvatarFile: (file: File | null) => void;
-    onSave: () => void;
+  onSave: () => void;
     onCancel: () => void;
     onEdit: () => void;
+  onClear?: () => void;
+  avatarRemoved?: boolean;
     isSaving: boolean;
-}> = ({ user, mode, avatarPreview, setAvatarFile, onSave, onCancel, onEdit, isSaving }) => (
+}> = ({ user, mode, avatarPreview, setAvatarFile, onSave, onCancel, onEdit, onClear, avatarRemoved, isSaving }) => (
     <CardHeader
       sx={{
         // eixo Y primeiro, depois eixo X
@@ -189,9 +202,17 @@ const ProfileHeader: FC<{
           <Stack direction="row" spacing={3} alignItems="center">
             <ProfileAvatarUploader
                 mode={mode}
-                avatarUrl={avatarPreview || user.image} 
+                avatarUrl={
+                  // if user opted to remove avatar, force no image shown until save
+                  (mode === 'edit' && avatarRemoved) ? undefined : (avatarPreview || getAvatarFullUrl(
+                    (user.image as string | undefined) ?? ((user as unknown as Record<string, unknown>)['avatarUrl'] as string | undefined) ?? ((user as unknown as Record<string, unknown>)['avatar'] as string | undefined)
+                  ))
+                }
                 name={user.name ?? undefined}
-                onClear={() => setAvatarFile(null)}
+                onClear={() => {
+                  if (typeof onClear === 'function') onClear();
+                  setAvatarFile(null);
+                }}
                 onChangeFile={setAvatarFile}
                 loading={isSaving}
             />
@@ -422,6 +443,7 @@ export default function ProfilePage() {
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+    const [avatarRemoved, setAvatarRemoved] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const cpfPersisted = !!user?.cpf;
 
@@ -438,6 +460,8 @@ export default function ProfilePage() {
       if (!avatarFile) { setAvatarPreview(null); return; }
       const url = URL.createObjectURL(avatarFile);
       setAvatarPreview(url);
+      // selecting a new file cancels any previous removal intent
+      setAvatarRemoved(false);
       return () => URL.revokeObjectURL(url);
     }, [avatarFile]);
 
@@ -455,19 +479,40 @@ export default function ProfilePage() {
       try {
           // normalize phone: send only digits or null
           const phoneDigits = values.phone ? String(values.phone).replace(/\D/g, '') : null;
-          const body = { user: { 
-            name: values.name, 
-            cpf: values.cpf || null, 
-            phone: phoneDigits || null 
-          }};
-          const response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
+
+          let response: UserApiResponse;
+          if (avatarFile) {
+            const form = new FormData();
+            form.append('user[avatar]', avatarFile);
+            form.append('user[name]', values.name);
+            form.append('user[cpf]', values.cpf || '');
+            form.append('user[phone]', phoneDigits || '');
+
+            response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: 'PUT', body: form });
+          } else if (avatarRemoved) {
+            // user requested removal of avatar
+            const body = { user: { name: values.name, cpf: values.cpf || null, phone: phoneDigits || null, avatar: null }};
+            response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
+          } else {
+            const body = { user: { 
+              name: values.name, 
+              cpf: values.cpf || null, 
+              phone: phoneDigits || null 
+            }};
+            response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
+          }
+
           const updatedUser = response.data;
+
+          // Persist updated user (including avatarUrl) in the existing session object in localStorage
           saveUserToLocalStorage(updatedUser);
+
           setMode('view');
           showToast({ message: "Perfil atualizado!", severity: "success" });
           setUser(updatedUser);
+          setAvatarRemoved(false);
           window.dispatchEvent(new CustomEvent("profileUpdated"));
-          
+
       } catch (err: unknown) {
           applyBackendErrorsToForm(err, form.setError);
           showToast({ message: "Erro ao salvar.", severity: "error" });
@@ -479,6 +524,7 @@ export default function ProfilePage() {
     const handleCancel = () => {
         if (user) form.reset(mapUserToForm(user));
         setAvatarFile(null);
+  setAvatarRemoved(false);
         setMode('view');
     }
     
@@ -506,16 +552,18 @@ export default function ProfilePage() {
       >
           <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
           <Card>
-              <ProfileHeader 
+          <ProfileHeader 
                   user={user} 
                   mode={mode}
                   avatarPreview={avatarPreview}
-                  setAvatarFile={setAvatarFile}
+            setAvatarFile={(f) => { setAvatarFile(f); if (f) setAvatarRemoved(false); }}
                   onSave={handleSave} 
                   onCancel={handleCancel} 
                   onEdit={() => setMode('edit')}
+            onClear={() => { setAvatarFile(null); setAvatarRemoved(true); }}
+            avatarRemoved={avatarRemoved}
                   isSaving={isSaving}
-              />
+                />
               <CardContent
                   sx={{
                     // eixo Y primeiro, depois eixo X

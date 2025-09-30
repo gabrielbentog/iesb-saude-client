@@ -71,7 +71,11 @@ const renderAppointmentCell = (a: UIAppointment, id: NextHeaderId) => {
         const first = a.interns[0]
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar src={first.avatarUrl} sx={{ width: 32, height: 32 }}>
+            <Avatar src={((): string | undefined => {
+              const raw = first.avatarUrl;
+              if (!raw) return undefined;
+              return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+            })()} sx={{ width: 32, height: 32 }}>
               {first.name ? first.name.split(" ").map((n) => n[0]).join("") : ""}
             </Avatar>
             <Typography fontWeight={500}>{first.name}</Typography>
@@ -128,10 +132,8 @@ export default function PatientDashboard() {
 
   // Próximas consultas
   const [nextAppointments, setNextAppointments] = useState<UIAppointment[]>([]);
-  const [loadingNext, setLoadingNext] = useState(true);
-  const [errorNext, setErrorNext] = useState(false);
 
-
+  // Responsividade
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   // ───────────── Fetch KPIs ─────────────
@@ -172,8 +174,6 @@ export default function PatientDashboard() {
 
   // ───────────── Fetch Próximas ─────────────
   const fetchNext = async () => {
-    setLoadingNext(true);
-    setErrorNext(false);
     try {
       const res = await apiFetch<PaginatedResponse<RawAppointment>>(
         "/api/appointments/next?page[number]=1&page[size]=5",
@@ -182,9 +182,6 @@ export default function PatientDashboard() {
       setNextAppointments(raw.map(mapRaw));
     } catch (e) {
       console.error("Falha ao carregar próximas consultas", e);
-      setErrorNext(true);
-    } finally {
-      setLoadingNext(false);
     }
   };
 

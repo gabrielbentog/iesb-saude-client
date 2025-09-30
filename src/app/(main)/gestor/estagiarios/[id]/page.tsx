@@ -125,7 +125,11 @@ export default function InternDetailPage() {
         <Card>
           <CardHeader
             sx={{ py: { xs: 3, md: 4 }, px: { xs: 2, md: 4 } }}
-            avatar={<Avatar src={intern.avatar ?? undefined} sx={{ width: 96, height: 96 }}>{intern.name?.[0]}</Avatar>}
+      avatar={<Avatar src={((): string | undefined => {
+        const raw = (intern as unknown as Record<string, unknown>)['avatar'] as string | undefined;
+        if (!raw) return undefined;
+        return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+      })()} sx={{ width: 96, height: 96 }}>{intern.name?.[0]}</Avatar>}
             disableTypography
             title={
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center" justifyContent="space-between">

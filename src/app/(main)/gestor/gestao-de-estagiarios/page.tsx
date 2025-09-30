@@ -50,7 +50,13 @@ const renderInternCell = (intern: Intern, headerId: string) => {
     case "name":
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar src={intern.avatar ?? undefined} sx={{ width: 32, height: 32 }}>
+       <Avatar src={((): string | undefined => {
+          const rec = intern as unknown as Record<string, unknown>;
+          const raw = (rec['avatarUrl'] as string | undefined) ?? (rec['avatar'] as string | undefined);
+          if (!raw) return undefined;
+          return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+        })()}
+        sx={{ width: 32, height: 32 }}>
             {intern.name[0]}
           </Avatar>
           <Typography fontWeight={500}>{intern.name}</Typography>

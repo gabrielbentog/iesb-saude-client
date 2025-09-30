@@ -68,7 +68,11 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
         const first = a.interns[0]
         return (
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            <Avatar src={first.avatarUrl} sx={{ width: 32, height: 32 }}>
+            <Avatar src={((): string | undefined => {
+              const raw = first.avatarUrl;
+              if (!raw) return undefined;
+              return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+            })()} sx={{ width: 32, height: 32 }}>
               {first.name ? first.name.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
             </Avatar>
             <Typography variant="body2" fontWeight={500} noWrap>

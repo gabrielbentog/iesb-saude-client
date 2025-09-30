@@ -44,11 +44,17 @@ export const mapRaw = (a: RawAppointment): UIAppointment => {
     interns.push({ id: a.intern.id, name: a.intern.name, avatarUrl: a.intern.avatarUrl })
   }
 
+  const makeFull = (raw?: string | undefined) => {
+    if (!raw) return undefined;
+    if (/^https?:\/\//.test(raw)) return raw;
+    return `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+  }
+
   return {
     id: a.id,
     patientName: a.user.name,
-    patientAvatar: "",
-    interns: interns.length ? interns : undefined,
+    patientAvatar: makeFull(a.user.avatarUrl) ?? "",
+    interns: interns.length ? interns.map(i => ({ ...i, avatarUrl: makeFull(i.avatarUrl ?? undefined) })) : undefined,
     specialty,
     location,
     room: a.consultationRoom?.name ?? "-",

@@ -159,6 +159,13 @@ const Header: React.FC<HeaderProps> = ({
 
 
   const avatarUrl = user?.avatar && !useFallback ? user.avatar : undefined;
+  // compose full url: prefer avatarUrl, then image, then avatar
+  const rawAvatar = user
+    ? ((user as unknown as Record<string, unknown>)['avatarUrl'] as string | undefined) ?? ((user as unknown as Record<string, unknown>)['image'] as string | undefined) ?? ((user as unknown as Record<string, unknown>)['avatar'] as string | undefined)
+    : undefined;
+  const avatarSrc = rawAvatar
+    ? (/^https?:\/\//.test(rawAvatar) ? rawAvatar : `${process.env.NEXT_PUBLIC_API_HOST}${rawAvatar}`)
+    : undefined;
 
   const initials = user?.name
     ? user.name
@@ -256,7 +263,7 @@ const Header: React.FC<HeaderProps> = ({
             onClick={(e) => setAnchorEl(e.currentTarget)}
           >
             <Avatar
-              src={avatarUrl}
+              src={avatarSrc}
               alt={user?.name || "Usuário"}
               onError={() => setUseFallback(true)}
               sx={{

@@ -100,7 +100,11 @@ const renderAppointmentCell = (a: UIAppointment, id: AppointmentHeaderId) => {
     case "patient": {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar src={a.patientAvatar} sx={{ width: 32, height: 32 }}>
+          <Avatar src={((): string | undefined => {
+            const raw = a.patientAvatar;
+            if (!raw) return undefined;
+            return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+          })()} sx={{ width: 32, height: 32 }}>
             {a.patientName.split(" ").map((n) => n[0]).join("")}
           </Avatar>
           <Typography fontWeight={500}>{a.patientName}</Typography>
@@ -142,7 +146,11 @@ const renderInternCell = (intern: Intern, id: InternHeaderId) => {
     case "name": {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar src={intern.avatar} sx={{ width: 32, height: 32 }}>
+          <Avatar src={((): string | undefined => {
+            const raw = (intern as unknown as Record<string, unknown>)['avatar'] as string | undefined;
+            if (!raw) return undefined;
+            return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+          })()} sx={{ width: 32, height: 32 }}>
             {intern.name.split(" ").map((n) => n[0]).join("")}
           </Avatar>
           <Typography fontWeight={500}>{intern.name}</Typography>

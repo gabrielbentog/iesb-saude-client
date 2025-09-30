@@ -89,7 +89,11 @@ interface Appointment {
 const adapt = (raw: RawAppointment): Appointment => ({
   id: String(raw.id),
   patientName: raw.user.name,
-  patientAvatar: raw.user.avatarUrl ?? "",
+  patientAvatar: ((): string => {
+    const rawAv = raw.user.avatarUrl ?? "";
+    if (!rawAv) return "";
+    return /^https?:\/\//.test(rawAv) ? rawAv : `${process.env.NEXT_PUBLIC_API_HOST}${rawAv}`;
+  })(),
   patientCpf: raw.user.cpf ?? undefined,
   patientPhone: raw.user.phone ?? undefined,
   patientEmail: raw.user.email ?? undefined,
@@ -674,7 +678,7 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                           severity="info"
                           sx={{ borderRadius: 2, alignItems: "center" }}
                         >
-                          Nenhum estagiário designados.
+                          Nenhum estagiário designado.
                         </Alert>
                       )}
                     </CardContent>

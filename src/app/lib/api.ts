@@ -21,14 +21,21 @@ export async function apiFetch<T = unknown>(
     token = undefined;
   }
 
+  // If the caller passed a FormData body, do not set Content-Type so the browser
+  // can add the correct multipart boundary. Otherwise default to application/json.
+  const isFormData = options.body instanceof FormData;
+
+  const headers: Record<string, string> = {
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    // allow callers to override or add headers
+    ...(options.headers as Record<string, string> | undefined),
+  };
+
   const res = await fetch(`${baseUrl}${url}`, {
     ...options,
     cache,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
+    headers,
   });
 
     if (!res.ok) {
