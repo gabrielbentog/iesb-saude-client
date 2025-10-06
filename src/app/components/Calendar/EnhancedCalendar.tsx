@@ -144,7 +144,7 @@ export default function EnhancedCalendar({
   const campusStatic = (campusRes?.data ?? []).map((c) => c.name);
 
   const { start, end } = rangeFor(view, currentDate);
-  const { data: calApi, loading } = useApi<CalendarApi>(
+  const { data: calApi, loading, refetch } = useApi<CalendarApi>(
     `/api/calendar?start=${start}&end=${end}`
   );
 
@@ -405,7 +405,12 @@ export default function EnhancedCalendar({
               });
 
               showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
-              // optionally remove selected and let calendar refetch on next range change
+              
+              // Recarregar os dados do calendário para mostrar a consulta marcada
+              if (refetch) {
+                await refetch();
+              }
+              
               setSelectedSlotForBooking(null);
             } catch (err) {
               console.error('Erro ao agendar via calendar booking:', err);
