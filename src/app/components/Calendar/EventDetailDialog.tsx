@@ -42,7 +42,7 @@ export function EventDetailDialog({
           await apiFetch("/api/time_slot_exceptions", {
             method: "POST",
             body: JSON.stringify({
-              timeSlotException: {
+              time_slot_exception: {
                 timeSlotId: event.timeSlotId,
                 date: format(event.date, "yyyy-MM-dd"),
               },
