@@ -1,11 +1,30 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/app/lib/api';
 
-export function useApi<T = unknown>(url: string) {
+export function useApi<T = unknown>(url: string): {
+  data: T | null;
+  loading: boolean;
+  refetch: () => Promise<void>;
+} {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch<T>(url);
+      setData(res as T);
+    } catch (err: unknown) {
+      const maybeErr = err as { name?: string } | undefined;
+      if (maybeErr?.name !== "AbortError") {
+        console.error(err);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [url]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -34,5 +53,9 @@ export function useApi<T = unknown>(url: string) {
     };
   }, [url]);
 
-  return { data, loading };
+  const refetch = useCallback(async () => {
+    await fetchData();
+  }, [fetchData]);
+
+  return { data, loading, refetch };
 }
