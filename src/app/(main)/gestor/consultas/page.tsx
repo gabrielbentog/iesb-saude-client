@@ -199,10 +199,6 @@ export default function AppointmentManagementScreen() {
     };
   }, []);
 
-  // ───────────── KPIs dinâmicos (baseados no slice atual) ─────────────
-  const todayISO = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
-  const todayCount = appointments.filter((a) => a.date === todayISO).length
-
   // ───────────── Manipulação de menu ─────────────
   const handleMenuClick = (e: React.MouseEvent<HTMLElement>, appt: UIAppointment) => {
     setAnchorEl(e.currentTarget)
@@ -281,7 +277,7 @@ export default function AppointmentManagementScreen() {
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
               title="Consultas Hoje"
-              value={todayCount || '-'}
+              value={stats?.appointmentsToday || '-'}
               subtitle="Agendadas para hoje"
               icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
               iconBgColor={alpha(theme.palette.primary.main, 0.1)}
