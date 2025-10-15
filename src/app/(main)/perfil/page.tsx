@@ -56,6 +56,18 @@ const emailChangeSchema = z.object({
 });
 type EmailChangeFormValues = z.infer<typeof emailChangeSchema>;
 
+const deleteAccountSchema = z.object({
+  currentPassword: z.string().min(1, "Senha atual é obrigatória para deletar a conta."),
+  confirmText: z.string().refine((val) => val === "DELETAR", {
+    message: "Digite 'DELETAR' para confirmar.",
+  }),
+});
+
+interface DeleteAccountFormValues {
+  currentPassword: string;
+  confirmText: string;
+}
+
 
 interface UserApiResponse {
     data: User;
@@ -296,7 +308,7 @@ const ProfileForm: FC<{
   </Section>
 );
 
-const SecuritySettings: FC<{ onOpenChangePassword: () => void; onOpenChangeEmail: () => void; }> = ({ onOpenChangePassword, onOpenChangeEmail }) => (
+const SecuritySettings: FC<{ onOpenChangePassword: () => void; onOpenChangeEmail: () => void; onOpenDeleteAccount: () => void; }> = ({ onOpenChangePassword, onOpenChangeEmail, onOpenDeleteAccount }) => (
     <Section title={<><Security /> <Typography variant="h6">Segurança</Typography></>}>
         <Stack spacing={2} divider={<Divider />}>
             <Stack direction="row" justifyContent="space-between" alignItems="center">
@@ -306,6 +318,10 @@ const SecuritySettings: FC<{ onOpenChangePassword: () => void; onOpenChangeEmail
             <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="body2" color="text.secondary">Alterar sua senha de acesso.</Typography>
                 <Button variant="outlined" size="small" onClick={onOpenChangePassword} startIcon={<Password />}>Alterar Senha</Button>
+            </Stack>
+            <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">Deletar permanentemente sua conta e todos os dados.</Typography>
+                <Button variant="outlined" size="small" color="error" onClick={onOpenDeleteAccount} startIcon={<DeleteOutline />}>Deletar Conta</Button>
             </Stack>
         </Stack>
     </Section>
@@ -433,6 +449,100 @@ const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string
     );
 };
 
+const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
+    const { showToast } = useToast();
+    
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting }, setError } = useForm<DeleteAccountFormValues>({
+        resolver: zodResolver(deleteAccountSchema),
+        defaultValues: { currentPassword: "", confirmText: "" },
+    });
+
+    const onSubmit = handleSubmit(async (values) => {
+        try {
+            await apiFetch(`/api/users/${userId}`, {
+                method: "DELETE",
+                body: JSON.stringify({ currentPassword: values.currentPassword }),
+            });
+            
+            // Logout completo: limpar todos os dados locais
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Limpar todos os cookies
+            document.cookie.split(";").forEach((c) => {
+                const eqPos = c.indexOf("=");
+                const name = eqPos > -1 ? c.substr(0, eqPos) : c;
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
+                document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
+            });
+            
+            showToast({ message: "Conta deletada com sucesso. Você será redirecionado.", severity: "success" });
+            
+            // Redirecionar imediatamente para a tela de login
+            setTimeout(() => {
+                window.location.replace("/auth/login");
+            }, 1500);
+            
+        } catch (err) {
+            applyBackendErrorsToForm(err, setError);
+            showToast({ message: "Erro ao deletar conta. Verifique sua senha.", severity: "error" });
+        }
+    });
+
+    return (
+        <Dialog open={open} onClose={onClose} onTransitionExited={reset} fullWidth maxWidth="xs">
+            <DialogTitle sx={{ color: 'error.main' }}>
+                <DeleteOutline sx={{ mr: 1, verticalAlign: 'middle' }} />
+                Deletar Conta
+            </DialogTitle>
+            <form onSubmit={onSubmit}>
+                <DialogContent dividers>
+                    <Typography variant="body2" color="error" sx={{ mb: 2, fontWeight: 500 }}>
+                        ⚠️ Esta ação é irreversível. Todos os seus dados serão permanentemente removidos.
+                    </Typography>
+                    <Stack spacing={2} sx={{ pt: 1 }}>
+                        <Controller 
+                            name="currentPassword" 
+                            control={control} 
+                            render={({ field }) => 
+                                <TextField 
+                                    {...field} 
+                                    type="password" 
+                                    label="Senha Atual" 
+                                    fullWidth 
+                                    error={!!errors.currentPassword} 
+                                    helperText={errors.currentPassword?.message} 
+                                />
+                            } 
+                        />
+                        <Controller 
+                            name="confirmText" 
+                            control={control} 
+                            render={({ field }) => 
+                                <TextField 
+                                    {...field} 
+                                    label="Digite 'DELETAR' para confirmar" 
+                                    fullWidth 
+                                    error={!!errors.confirmText} 
+                                    helperText={errors.confirmText?.message || "Digite exatamente 'DELETAR' (maiúsculas)"} 
+                                    placeholder="DELETAR"
+                                />
+                            } 
+                        />
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
+                    <Button type="submit" variant="contained" color="error" disabled={isSubmitting}>
+                        {isSubmitting ? <CircularProgress size={24} /> : "Deletar Conta"}
+                    </Button>
+                </DialogActions>
+            </form>
+        </Dialog>
+    );
+};
+
 
 export default function ProfilePage() {
     const { data: apiResponse, loading } = useApi<UserApiResponse>('/api/users/me');    
@@ -441,6 +551,7 @@ export default function ProfilePage() {
     const [isSaving, setIsSaving] = useState(false);
     const [pwDialogOpen, setPwDialogOpen] = useState(false);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+    const [deleteAccountDialogOpen, setDeleteAccountDialogOpen] = useState(false);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
     const [avatarRemoved, setAvatarRemoved] = useState(false);
@@ -581,6 +692,7 @@ export default function ProfilePage() {
                       <SecuritySettings 
                           onOpenChangePassword={() => setPwDialogOpen(true)} 
                           onOpenChangeEmail={() => setEmailDialogOpen(true)}
+                          onOpenDeleteAccount={() => setDeleteAccountDialogOpen(true)}
                       />
                   </Stack>
               </CardContent>
@@ -589,6 +701,7 @@ export default function ProfilePage() {
       
       <ChangePasswordDialog open={pwDialogOpen} onClose={() => setPwDialogOpen(false)} userId={user.id} />
       <EmailChangeDialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} userId={user.id} />
+      <DeleteAccountDialog open={deleteAccountDialogOpen} onClose={() => setDeleteAccountDialogOpen(false)} userId={user.id} />
     </Box>
   );
 }
