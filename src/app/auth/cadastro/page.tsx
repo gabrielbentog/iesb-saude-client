@@ -29,6 +29,26 @@ import Cookies from "js-cookie";
 import { useToast } from "@/app/contexts/ToastContext";
 import { updateSessionInStorage } from '@/app/hooks/useCurrentUser'
 
+// Função para aplicar máscara de CPF
+const formatCPF = (value: string) => {
+  // Remove tudo que não é número
+  const numbers = value.replace(/\D/g, '');
+  
+  // Aplica a máscara progressivamente
+  if (numbers.length <= 3) return numbers;
+  if (numbers.length <= 6) return `${numbers.slice(0, 3)}.${numbers.slice(3)}`;
+  if (numbers.length <= 9) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6)}`;
+  if (numbers.length <= 11) return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9)}`;
+  
+  // Limita a 11 dígitos
+  return `${numbers.slice(0, 3)}.${numbers.slice(3, 6)}.${numbers.slice(6, 9)}-${numbers.slice(9, 11)}`;
+};
+
+// Função para remover máscara e retornar apenas números
+const cleanCPF = (value: string) => {
+  return value.replace(/\D/g, '');
+};
+
 export default function RegisterPage() {
   const theme = useTheme();
   const pushWithProgress = usePushWithProgress();
@@ -39,6 +59,7 @@ export default function RegisterPage() {
 
   const [formData, setFormData] = useState({
     name: "",
+    cpf: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -56,7 +77,12 @@ export default function RegisterPage() {
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked } = event.target;
-    const updatedValue = name === "agreeTerms" ? checked : value;
+    let updatedValue: string | boolean = name === "agreeTerms" ? checked : value;
+
+    // Aplica máscara no CPF
+    if (name === "cpf") {
+      updatedValue = formatCPF(value);
+    }
 
     setFormData((prev) => ({ ...prev, [name]: updatedValue }));
 
@@ -97,6 +123,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           user: {
             name: formData.name,
+            cpf: cleanCPF(formData.cpf),
             email: formData.email,
             password: formData.password,
             passwordConfirmation: formData.confirmPassword,
@@ -229,6 +256,17 @@ export default function RegisterPage() {
                 autoComplete="name"
                 autoFocus
                 value={formData.name}
+                onChange={handleChange}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                required
+                fullWidth
+                id="cpf"
+                label="CPF"
+                name="cpf"
+                autoComplete="off"
+                value={formData.cpf}
                 onChange={handleChange}
                 sx={{ mb: 2 }}
               />
