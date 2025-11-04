@@ -74,7 +74,7 @@ interface Appointment {
   patientName: string;
   patientAvatar: string;
   patientCpf?: string;
-  patientPhone?: string;
+  phone?: string;
   patientEmail?: string;
   specialty: string;
   location: string;
@@ -96,7 +96,7 @@ const adapt = (raw: RawAppointment): Appointment => ({
     return /^https?:\/\//.test(rawAv) ? rawAv : `${process.env.NEXT_PUBLIC_API_HOST}${rawAv}`;
   })(),
   patientCpf: raw.user.cpf ?? undefined,
-  patientPhone: raw.user.phone ?? undefined,
+  phone: raw.user.phone ?? undefined,
   patientEmail: raw.user.email ?? undefined,
   specialty:
     raw.consultationRoom?.specialtyName ?? raw.timeSlot?.specialtyName ?? "",
@@ -560,25 +560,40 @@ const AppointmentDetail: React.FC<AppointmentDetailProps> = ({
                     <Typography variant="body2" color="text.secondary">
                       Paciente
                     </Typography>
+                    {appointment.phone && (
+                      <Box
+                        sx={{
+                          mt: 1,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 1,
+                          p: 1,
+                          bgcolor: alpha(theme.palette.success.main, 0.1),
+                          borderRadius: 1,
+                        }}
+                      >
+                        <PhoneIcon sx={{ color: "success.main", fontSize: "1rem" }} />
+                        <Typography variant="body2" fontWeight={600} color="success.main">
+                          {appointment.phone}
+                        </Typography>
+                      </Box>
+                    )}
                   </Box>
                   <Divider sx={{ my: 2 }} />
                   <Stack spacing={0}>
-                    {appointment.patientPhone && (
-                      <InfoRow
-                        icon={<PhoneIcon sx={{ color: "success.main" }} />}
-                        label="Telefone"
-                        value={appointment.patientPhone}
-                        iconBgColor={alpha(theme.palette.success.main, 0.1)}
-                      />
-                    )}
-                    {appointment.patientEmail && (
-                      <InfoRow
-                        icon={<EmailIcon sx={{ color: "info.main" }} />}
-                        label="E-mail"
-                        value={appointment.patientEmail}
-                        iconBgColor={alpha(theme.palette.info.main, 0.1)}
-                      />
-                    )}
+                    <InfoRow
+                      icon={<PhoneIcon sx={{ color: "success.main" }} />}
+                      label="Telefone"
+                      value={appointment.phone || '-'}
+                      iconBgColor={alpha(theme.palette.success.main, 0.1)}
+                    />
+                    <InfoRow
+                      icon={<EmailIcon sx={{ color: "info.main" }} />}
+                      label="E-mail"
+                      value={appointment.patientEmail || '-'}
+                      iconBgColor={alpha(theme.palette.info.main, 0.1)}
+                    />
                     {appointment.patientCpf && (
                       <InfoRow
                         icon={<AssignmentIndIcon sx={{ color: "warning.main" }} />}
