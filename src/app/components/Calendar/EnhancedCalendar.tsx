@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Box,
   CssBaseline,
@@ -148,8 +148,22 @@ export default function EnhancedCalendar({
     `/api/calendar?start=${start}&end=${end}`
   );
 
+  // Estado adicional para controlar o loading quando os dados estão sendo processados
+  const [isProcessingData, setIsProcessingData] = useState(false);
+  const isLoading = loading || isProcessingData;
+
+  // Resetar o estado de loading quando a view ou data mudarem
+  useEffect(() => {
+    setIsProcessingData(true);
+  }, [currentDate, view]);
+
   const [campusDyn, specDyn] = useMemo<[string[], string[]]>(() => {
-    if (!calApi) return [[], []];
+    setIsProcessingData(true);
+    
+    if (!calApi) {
+      setIsProcessingData(false);
+      return [[], []];
+    }
 
     const campusSet = new Set<string>();
     const specSet = new Set<string>();
@@ -196,6 +210,7 @@ export default function EnhancedCalendar({
 
     setEvents(raw);
     setColorMap(cmap);
+    setIsProcessingData(false);
 
     return [Array.from(campusSet), Array.from(specSet)];
   }, [calApi, sessionUserId, profileNormalized]);
@@ -325,7 +340,7 @@ export default function EnhancedCalendar({
         />
 
         <Box sx={{ flex: 1, position: "relative" }}>
-          {loading ? (
+          {isLoading && (
             <Box
               sx={{
                 position: "absolute",
@@ -333,14 +348,27 @@ export default function EnhancedCalendar({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexDirection: "column",
+                backgroundColor: "rgba(255, 255, 255, 0.9)",
+                backdropFilter: "blur(2px)",
+                zIndex: 10,
               }}
             >
-              <CircularProgress />
-              <Typography sx={{ ml: 2 }}>Carregando…</Typography>
+              <CircularProgress size={48} thickness={4} />
+              <Typography 
+                sx={{ 
+                  mt: 2, 
+                  color: "text.secondary",
+                  fontWeight: 500 
+                }}
+              >
+                Carregando calendário…
+              </Typography>
             </Box>
-          ) : (
-            body
           )}
+          <Box sx={{ opacity: isLoading ? 0.3 : 1, transition: "opacity 0.2s" }}>
+            {body}
+          </Box>
         </Box>
       </Paper>
 
