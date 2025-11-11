@@ -236,6 +236,8 @@ export default function AgendarConsultaPage() {
                     fullWidth
                     value={selectedEspecialidadeId}
                     onChange={(e) => setSelectedEspecialidadeId(e.target.value)}
+                    disabled={!selectedCampusId}
+                    helperText={!selectedCampusId ? "Selecione um campus primeiro" : ""}
                   >
                     {especialidades.map((e) => (
                       <MenuItem key={e.id} value={e.id}>{e.name}</MenuItem>

@@ -64,7 +64,6 @@ const formSchema = z.object({
     invalid_type_error: "Selecione o campus",
   }),
   periodo: z.string().min(1, "Informe o período"),
-  observacoes: z.string().optional(),
   avatarUrl: z.string().optional(),
 });
 
@@ -163,7 +162,6 @@ export default function RegisterInternPage() {
     registration_code: "",
       college_location_id: "", // coerção
       periodo: "",
-      observacoes: "",
       avatarUrl: "",
     },
   });
@@ -367,13 +365,6 @@ export default function RegisterInternPage() {
               <Grid item xs={12} md={6}>
                 <Controller name="registration_code" control={control} render={({ field }) => (
                   <TextField {...field} label="Matrícula" fullWidth placeholder="Ex: 202134567" error={!!errors.registration_code} helperText={errors.registration_code?.message} />
-                )} />
-              </Grid>
-
-              {/* Observações */}
-              <Grid item xs={12}>
-                <Controller name="observacoes" control={control} render={({ field }) => (
-                  <TextField {...field} label="Observações" fullWidth multiline rows={4} placeholder="Informações adicionais sobre o estagiário..." />
                 )} />
               </Grid>
             </Grid>

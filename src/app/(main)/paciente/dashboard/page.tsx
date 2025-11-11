@@ -17,8 +17,11 @@ import {
   Fab,
   useTheme,
   Tooltip,
+  IconButton,
+  Pagination,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
@@ -132,9 +135,11 @@ export default function PatientDashboard() {
 
   // Próximas consultas
   const [nextAppointments, setNextAppointments] = useState<UIAppointment[]>([]);
+  const [page, setPage] = useState(0);
+  const itemsPerPage = 5;
 
   // Responsividade
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // ───────────── Fetch KPIs ─────────────
   interface PatientKpisResponse {
@@ -221,61 +226,97 @@ export default function PatientDashboard() {
   if (!stats)
     return <Typography>Não foi possível carregar o painel.</Typography>;
 
+  const paginatedAppointments = nextAppointments.slice(
+    page * itemsPerPage,
+    (page + 1) * itemsPerPage
+  );
+  const totalPages = Math.ceil(nextAppointments.length / itemsPerPage);
+
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: 'background.default', py: 6 }}>
-      <Container maxWidth="xl">
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {/* Banner */}
-          <Paper
-            sx={{
-              overflow: "hidden",
-              border: "none",
-              bgcolor: "primary.main",
-              color: "white",
-              position: "relative",
-            }}
-            elevation={0}
-          >
-            <CardContent sx={{ p: 4 }}>
-              <Typography variant="h4" fontWeight={700} gutterBottom>
-                Painel do Paciente
+    <Box sx={{ minHeight: "100vh", bgcolor: 'background.default', py: { xs: 3, sm: 6 } }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 1.5, sm: 3 }, pb: { xs: 6, sm: 8 } }}>
+        <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2, sm: 3 } }}>
+          {/* Banner - compacto no mobile */}
+          {!isMobile && (
+            <Paper
+              sx={{
+                overflow: "hidden",
+                border: "none",
+                bgcolor: "primary.main",
+                color: "white",
+                position: "relative",
+              }}
+              elevation={0}
+            >
+              <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
+                <Typography variant="h5" fontWeight={700} gutterBottom>
+                  Painel do Paciente
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mb: 2,
+                    maxWidth: "80%",
+                    color: "rgba(255,255,255,0.9)",
+                  }}
+                >
+                  Acompanhe suas consultas e tratamentos
+                </Typography>
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    sx={{ bgcolor: "white", color: "primary.main" }}
+                    startIcon={<AddCircleOutlineIcon />}
+                    onClick={() => pushWithProgress("/paciente/agendamento")}
+                  >
+                    Agendar Consulta
+                  </Button>
+                </Box>
+              </CardContent>
+            </Paper>
+          )}
+
+          {/* Header mobile */}
+          {isMobile && (
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                mb: 1,
+              }}
+            >
+              <Typography variant="h6" fontWeight={700}>
+                Dashboard
               </Typography>
-              <Typography
-                variant="body1"
-                sx={{
-                  mb: 3,
-                  maxWidth: "80%",
-                  color: "rgba(255,255,255,0.9)",
-                }}
+              <Button
+                variant="contained"
+                size="small"
+                startIcon={<AddCircleOutlineIcon />}
+                onClick={() => pushWithProgress("/paciente/agendamento")}
               >
-                Acompanhe suas consultas, histórico e tratamentos em um só lugar.
-              </Typography>
-              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                <Button
-                  variant="contained"
-                  sx={{ bgcolor: "white", color: "primary.main" }}
-                  startIcon={<AddCircleOutlineIcon />}
-                  onClick={() =>
-                    pushWithProgress("/paciente/agendamento")
-                  }
-                >
-                  Agendar Consulta
-                </Button>
-                {/* <Button
-                  variant="outlined"
-                  sx={{ borderColor: "white", color: "white" }}
-                  startIcon={<LocalHospitalIcon />}
-                  onClick={() => pushWithProgress("/paciente/prescricoes")}
-                >
-                  Ver Prescrições
-                </Button> */}
-              </Box>
-            </CardContent>
-          </Paper>
+                Agendar
+              </Button>
+            </Box>
+          )}
 
           {/* KPIs */}
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={4}>
+          {isMobile ? (
+            <Box
+              sx={{
+                display: "flex",
+                overflowX: "auto",
+                gap: 2,
+                pb: 1,
+                scrollSnapType: "x mandatory",
+                "& > *": {
+                  flex: "0 0 85%",
+                  scrollSnapAlign: "start",
+                },
+                mb: 2,
+              }}
+            >
               <StatCard
                 title="Próxima Consulta"
                 value={stats.nextAppointment ?? "--"}
@@ -283,8 +324,6 @@ export default function PatientDashboard() {
                 icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
               <StatCard
                 title="Consultas Concluídas"
                 value={stats.completedAppointments}
@@ -292,8 +331,6 @@ export default function PatientDashboard() {
                 icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
               />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
               <StatCard
                 title="Pendente confirmação"
                 value={stats.pendingConfirm}
@@ -301,31 +338,138 @@ export default function PatientDashboard() {
                 icon={<InfoIcon sx={{ color: "warning.main" }} />}
                 iconBgColor={alpha(theme.palette.warning.main, 0.1)}
               />
+            </Box>
+          ) : (
+            <Grid container spacing={3} mb={3}>
+              <Grid item xs={12} sm={6} md={4}>
+                <StatCard
+                  title="Próxima Consulta"
+                  value={stats.nextAppointment ?? "--"}
+                  subtitle="Data/Hora"
+                  icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                  iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <StatCard
+                  title="Consultas Concluídas"
+                  value={stats.completedAppointments}
+                  subtitle="Total até hoje"
+                  icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                  iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+                />
+              </Grid>
+              <Grid item xs={12} sm={6} md={4}>
+                <StatCard
+                  title="Pendente confirmação"
+                  value={stats.pendingConfirm}
+                  subtitle="Aguardando sua confirmação"
+                  icon={<InfoIcon sx={{ color: "warning.main" }} />}
+                  iconBgColor={alpha(theme.palette.warning.main, 0.1)}
+                />
+              </Grid>
             </Grid>
-          </Grid>
-
-          <DataTable<UIAppointment>
-            title="Próximas Consultas"
-            subtitle="Suas consultas agendadas"
-            headers={[...nextHeaders]}
-            data={nextAppointments}
-            renderCell={(a, id) =>
-              renderAppointmentCell(a, id as NextHeaderId)
-            }
-            rowKeyExtractor={(a) => a.id}
-            onViewAllClick={() => pushWithProgress("/paciente/consultas")}
-          />
-
-          {/* FAB móvel */}
-          {isMobile && (
-            <Fab
-              color="primary"
-              sx={{ position: "fixed", bottom: 24, right: 24 }}
-              onClick={() => pushWithProgress("/paciente/calendario/agendar")}
-            >
-              <AddCircleOutlineIcon />
-            </Fab>
           )}
+
+          {/* Próximas Consultas */}
+          {isMobile ? (
+            <>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
+                Próximas Consultas
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {paginatedAppointments.map((a) => {
+                  const professional = a.interns?.[0] || null;
+                  return (
+                    <Box
+                      key={a.id}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        boxShadow: 1,
+                        bgcolor: "background.paper",
+                        cursor: "pointer",
+                        transition: "transform 0.2s, box-shadow 0.2s",
+                        "&:active": {
+                          transform: "scale(0.98)",
+                        },
+                      }}
+                      onClick={() => pushWithProgress(`/paciente/consultas/${a.id}`)}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Avatar
+                            src={professional?.avatarUrl ? 
+                              (/^https?:\/\//.test(professional.avatarUrl) 
+                                ? professional.avatarUrl 
+                                : `${process.env.NEXT_PUBLIC_API_HOST}${professional.avatarUrl}`)
+                              : undefined
+                            }
+                            sx={{ width: 32, height: 32 }}
+                          >
+                            {professional?.name?.[0] || "?"}
+                          </Avatar>
+                          <Box>
+                            <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
+                              {professional?.name || "Não designado"}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {a.specialty}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {a.date} às {a.time}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {a.location} — {a.room}
+                      </Typography>
+                      <StyledBadge 
+                        label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
+                        badgeType={a.status} 
+                        sx={{ mt: 1 }} 
+                      />
+                    </Box>
+                  );
+                })}
+              </Box>
+
+              {/* Paginação mobile */}
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                <Pagination
+                  count={totalPages}
+                  page={page + 1}
+                  onChange={(_, newPage) => setPage(newPage - 1)}
+                  color="primary"
+                  size="small"
+                  shape="rounded"
+                />
+              </Box>
+
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => pushWithProgress("/paciente/consultas")}
+                sx={{ mt: 1 }}
+              >
+                Ver Todas
+              </Button>
+            </>
+          ) : (
+            <DataTable<UIAppointment>
+              title="Próximas Consultas"
+              subtitle="Suas consultas agendadas"
+              headers={[...nextHeaders]}
+              data={nextAppointments}
+              renderCell={(a, id) =>
+                renderAppointmentCell(a, id as NextHeaderId)
+              }
+              rowKeyExtractor={(a) => a.id}
+              onViewAllClick={() => pushWithProgress("/paciente/consultas")}
+            />
+          )}
+
         </Box>
       </Container>
     </Box>

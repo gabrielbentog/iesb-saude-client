@@ -74,14 +74,20 @@ export const StyledBadge = styled(Chip, {
     backgroundColor: cfg.bg,
     color: cfg.fg,
     fontWeight: 600,
-    fontSize: "0.75rem",
-    height: 28,
+    fontSize: "0.7rem",
+    height: 24,
     borderRadius: 4,
-    padding: '0 8px',
+    padding: '0 6px',
     textTransform: 'none',
-    "& .MuiChip-icon": { color: cfg.fg },
+    "& .MuiChip-icon": { color: cfg.fg, fontSize: 14 },
     "&:hover": {
       backgroundColor: alpha(cfg.bg, 0.8),
+    },
+    [theme.breakpoints.up('sm')]: {
+      fontSize: "0.75rem",
+      height: 28,
+      padding: '0 8px',
+      "& .MuiChip-icon": { fontSize: 16 },
     },
   };
 });
@@ -122,32 +128,62 @@ export function DataTable<T extends { id: string | number }>({
 
   return (
     <Card>
-      <Box sx={{ p: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <Box sx={{ 
+        p: { xs: 2, sm: 3 }, 
+        display: "flex", 
+        flexDirection: { xs: "column", sm: "row" },
+        justifyContent: "space-between", 
+        alignItems: { xs: "flex-start", sm: "center" },
+        gap: 2
+      }}>
         <Box>
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" fontWeight={600} sx={{ fontSize: { xs: "1rem", sm: "1.25rem" } }}>
             {title}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
             {subtitle}
           </Typography>
         </Box>
         {onAddClick && (
-          <Button variant="outlined" size="small" startIcon={<AddIcon />} onClick={onAddClick}>
+          <Button 
+            variant="outlined" 
+            size="small" 
+            startIcon={<AddIcon />} 
+            onClick={onAddClick}
+            fullWidth={{ xs: true, sm: false } as any}
+          >
             Adicionar Novo
           </Button>
         )}
       </Box>
-      <TableContainer>
-        <Table>
+      <TableContainer sx={{ overflowX: "auto" }}>
+        <Table sx={{ minWidth: { xs: 650, md: 750 } }}>
           <TableHead>
             <TableRow>
               {headers.map((header) => (
-                <TableCell key={header.id} align={header.align || 'left'} sx={{ width: header.width }}>
+                <TableCell 
+                  key={header.id} 
+                  align={header.align || 'left'} 
+                  sx={{ 
+                    width: header.width,
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    py: { xs: 1, sm: 2 },
+                    px: { xs: 1, sm: 2 }
+                  }}
+                >
                   {header.label}
                 </TableCell>
               ))}
               {showActionsColumn && (
-                <TableCell width={50} align="right">
+                <TableCell 
+                  width={50} 
+                  align="right"
+                  sx={{ 
+                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                    py: { xs: 1, sm: 2 },
+                    px: { xs: 1, sm: 2 }
+                  }}
+                >
                   {actionsColumnLabel}
                 </TableCell>
               )}
@@ -156,8 +192,15 @@ export function DataTable<T extends { id: string | number }>({
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={headers.length + (showActionsColumn ? 1 : 0)} sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="body1" color="text.secondary">
+                <TableCell 
+                  colSpan={headers.length + (showActionsColumn ? 1 : 0)} 
+                  sx={{ 
+                    textAlign: 'center', 
+                    py: { xs: 3, sm: 4 },
+                    px: { xs: 1, sm: 2 }
+                  }}
+                >
+                  <Typography variant="body1" color="text.secondary" sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}>
                     {emptyMessage}
                   </Typography>
                 </TableCell>
@@ -174,12 +217,24 @@ export function DataTable<T extends { id: string | number }>({
                   }}
                 >
                   {headers.map((header) => (
-                    <TableCell key={`${rowKeyExtractor(row)}-${header.id}`}>
+                    <TableCell 
+                      key={`${rowKeyExtractor(row)}-${header.id}`}
+                      sx={{ 
+                        py: { xs: 1, sm: 2 },
+                        px: { xs: 1, sm: 2 }
+                      }}
+                    >
                       {renderCell(row, header.id)}
                     </TableCell>
                   ))}
                   {showActionsColumn && (
-                    <TableCell align="right">
+                    <TableCell 
+                      align="right"
+                      sx={{ 
+                        py: { xs: 1, sm: 2 },
+                        px: { xs: 1, sm: 2 }
+                      }}
+                    >
                       {actions && actions(row)}
                     </TableCell>
                   )}
@@ -195,7 +250,13 @@ export function DataTable<T extends { id: string | number }>({
       typeof totalCount === 'number' &&
       onPageChange &&
       onRowsPerPageChange && data.length > 0 && ( // Adicionado data.length > 0 para não exibir paginação em tabela vazia
-        <Box sx={{ px: 3, py: 2, display: "flex", justifyContent: "flex-end" }}>
+        <Box sx={{ 
+          px: { xs: 1, sm: 2, md: 3 }, 
+          py: { xs: 1, sm: 2 }, 
+          display: "flex", 
+          justifyContent: { xs: "center", sm: "flex-end" },
+          overflowX: "auto"
+        }}>
           <TablePagination
             component="div"
             count={totalCount}
@@ -208,15 +269,41 @@ export function DataTable<T extends { id: string | number }>({
               `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
             }
             rowsPerPageOptions={rowsPerPageOptions}
-
+            sx={{
+              "& .MuiTablePagination-toolbar": {
+                flexWrap: { xs: "wrap", sm: "nowrap" },
+                minHeight: { xs: 48, sm: 52 },
+                px: { xs: 0, sm: 2 }
+              },
+              "& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows": {
+                fontSize: { xs: "0.75rem", sm: "0.875rem" },
+                mb: { xs: 0.5, sm: 0 }
+              },
+              "& .MuiTablePagination-select": {
+                fontSize: { xs: "0.75rem", sm: "0.875rem" }
+              }
+            }}
           />
         </Box>
       )}
 
       {/* Botão "Ver todos" */}
       {onViewAllClick && data.length > 0 && ( // Adicionado data.length > 0 para não exibir o botão em tabela vazia
-        <Box sx={{ p: 2, display: "flex", justifyContent: "flex-end" }}>
-          <Button variant="text" color="primary" endIcon={<ArrowRightAltIcon />} sx={{ fontWeight: 600 }} onClick={onViewAllClick}>
+        <Box sx={{ 
+          p: { xs: 1, sm: 2 }, 
+          display: "flex", 
+          justifyContent: { xs: "center", sm: "flex-end" } 
+        }}>
+          <Button 
+            variant="text" 
+            color="primary" 
+            endIcon={<ArrowRightAltIcon />} 
+            sx={{ 
+              fontWeight: 600,
+              fontSize: { xs: "0.875rem", sm: "1rem" }
+            }} 
+            onClick={onViewAllClick}
+          >
             Ver todos
           </Button>
         </Box>
