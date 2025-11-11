@@ -8,7 +8,7 @@ import AssignmentIcon from "@mui/icons-material/Assignment"
 import { RawAppointment, UIAppointment, STATUS_LABEL, RawAppointmentStatus } from "@/app/types"
 
 export const statusPriority = (raw: string): UIAppointment["priority"] =>
-  raw === "pending" ? "high" :
+  raw === "pending" || raw === "expired" ? "high" :
   raw === "rescheduled" ? "low" : "normal"
 
 export const humanDate = (iso: string) => {

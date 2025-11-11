@@ -62,6 +62,12 @@ export const StyledBadge = styled(Chip, {
           fg: theme.palette.error.main,
           icon: <CancelIcon sx={{ fontSize: 16 }} />,
         };
+      case "Expirado":
+        return {
+          bg: alpha(theme.palette.grey[600], 0.15),
+          fg: theme.palette.grey[700],
+          icon: <CancelIcon sx={{ fontSize: 16 }} />,
+        };
       default:
         return {
           bg: alpha(theme.palette.grey[500], 0.1),
@@ -150,7 +156,7 @@ export function DataTable<T extends { id: string | number }>({
             size="small" 
             startIcon={<AddIcon />} 
             onClick={onAddClick}
-            fullWidth={{ xs: true, sm: false } as any}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Adicionar Novo
           </Button>

@@ -156,6 +156,12 @@ const StyledBadge = styled(Chip, {
           fg: theme.palette.error.main,
           icon: <CancelIcon sx={{ fontSize: 16 }} />,
         };
+      case "Expirado":
+        return {
+          bg: alpha(theme.palette.grey[600], 0.15),
+          fg: theme.palette.grey[700],
+          icon: <CancelIcon sx={{ fontSize: 16 }} />,
+        };
       default:
         return {
           bg: alpha(theme.palette.grey[500], 0.1),

@@ -16,8 +16,6 @@ import {
   addMonths,
   startOfWeek,
   endOfWeek,
-  startOfMonth,
-  endOfMonth,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import AddIcon from "@mui/icons-material/Add";
@@ -33,7 +31,6 @@ import type {
   CollegeLocation,
   SimpleSpec,
   ApiSlot,
-  CalendarApi,
   ViewMode,
   ColorMap,
   EnhancedCalendarProps,
@@ -41,24 +38,13 @@ import type {
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
 import { apiFetch } from "@/app/lib/api";
 import { useApi } from "@/app/hooks/useApi";
+import { useCalendarCache } from "@/app/hooks/useCalendarCache";
 import { useToast } from "@/app/contexts/ToastContext"; // For booking confirmation
 
 /* ---------- helpers ---------- */
 const toLocalDate = (isoUtcZ: string) => new Date(isoUtcZ.replace(/Z$/, ""));
 const hueFor = (s: string) =>
   `hsl(${[...s].reduce((h, c) => c.charCodeAt(0) + ((h << 5) - h), 0) % 360},65%,50%)`;
-const rangeFor = (v: ViewMode, ref: Date) =>
-  v === "month"
-    ? {
-        start: format(startOfWeek(startOfMonth(ref)), "yyyy-MM-dd"),
-        end: format(endOfWeek(endOfMonth(ref)), "yyyy-MM-dd"),
-      }
-    : v === "week"
-    ? {
-        start: format(startOfWeek(ref), "yyyy-MM-dd"),
-        end: format(endOfWeek(ref), "yyyy-MM-dd"),
-      }
-    : { start: format(ref, "yyyy-MM-dd"), end: format(ref, "yyyy-MM-dd") };
 
 /* ---------- tipos ---------- */
 
@@ -101,6 +87,7 @@ export default function EnhancedCalendar({
   const [specFilters, setSpecFilters] = useState<string[]>([]);
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [colorMap, setColorMap] = useState<ColorMap>({});
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false); // Controle de lazy loading
   const pushWithProgress = usePushWithProgress();
   const { showToast } = useToast();
 
@@ -143,19 +130,34 @@ export default function EnhancedCalendar({
 
   const campusStatic = (campusRes?.data ?? []).map((c) => c.name);
 
-  const { start, end } = rangeFor(view, currentDate);
-  const { data: calApi, loading, refetch } = useApi<CalendarApi>(
-    `/api/calendar?start=${start}&end=${end}`
-  );
+  // Usa hook de cache para gerenciar dados por mês
+  const { 
+    data: calApi, 
+    loading: cacheLoading, 
+    fetchMonth, 
+    refetch 
+  } = useCalendarCache({ enabled: hasLoadedOnce });
 
   // Estado adicional para controlar o loading quando os dados estão sendo processados
   const [isProcessingData, setIsProcessingData] = useState(false);
-  const isLoading = loading || isProcessingData;
+  const isLoading = cacheLoading || isProcessingData;
 
-  // Resetar o estado de loading quando a view ou data mudarem
+  // Carrega dados quando o mês muda (lazy loading com cache)
   useEffect(() => {
-    setIsProcessingData(true);
-  }, [currentDate, view]);
+    if (hasLoadedOnce && view === 'month') {
+      setIsProcessingData(true);
+      fetchMonth(currentDate);
+    }
+  }, [currentDate, view, fetchMonth, hasLoadedOnce]);
+
+  // Inicializa o carregamento na primeira vez que o componente monta
+  useEffect(() => {
+    if (!hasLoadedOnce) {
+      setHasLoadedOnce(true);
+      setIsProcessingData(true);
+      fetchMonth(new Date());
+    }
+  }, [hasLoadedOnce, fetchMonth]);
 
   const [campusDyn, specDyn] = useMemo<[string[], string[]]>(() => {
     setIsProcessingData(true);

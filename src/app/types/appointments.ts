@@ -88,6 +88,7 @@ export type RawAppointmentStatus =
   | 'patient_cancelled'
   | 'rejected'
   | 'completed'
+  | 'expired'
 
 /* Mapeia status enum->texto */
 export const STATUS_LABEL: Record<RawAppointmentStatus, string> = {
@@ -98,6 +99,7 @@ export const STATUS_LABEL: Record<RawAppointmentStatus, string> = {
   patient_cancelled:  'Cancelada pelo paciente',
   rejected:           'Rejeitada',
   completed:          'Concluída',
+  expired:            'Expirado',
 }
 
 export type AppointmentStatus =
