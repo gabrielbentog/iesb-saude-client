@@ -324,71 +324,108 @@ export default function AppointmentPatientScreen() {
       {/* Cards no mobile / Tabela no desktop */}
       {isMobile ? (
         <>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            {appointments.map((a) => (
-              <Box
-                key={a.id}
-                onClick={() => pushWithProgress(`/estagiario/consultas/${a.id}`)}
+          {appointments.length === 0 ? (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                py: 6,
+                px: 2,
+                textAlign: "center",
+              }}
+            >
+              <CalendarMonthIcon
                 sx={{
-                  p: 2,
-                  borderRadius: 2,
-                  boxShadow: 1,
-                  borderLeft: borderColor(a),
-                  bgcolor: "background.paper",
-                  cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  "&:active": {
-                    transform: "scale(0.98)",
-                  },
+                  fontSize: 64,
+                  color: "text.disabled",
+                  mb: 2,
                 }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Avatar 
-                    src={(() => {
-                      const raw = a.patientAvatar;
-                      if (!raw) return undefined;
-                      return /^https?:\/\//.test(raw) 
-                        ? raw 
-                        : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
-                    })()}
-                    sx={{ width: 28, height: 28 }}
-                  >
-                    {a.patientName ? a.patientName.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
-                  </Avatar>
-                  <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
-                    {a.patientName}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  {a.specialty}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                  {a.date} às {a.time}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {a.location}
-                </Typography>
-                <StyledBadge 
-                  label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
-                  badgeType={a.status} 
-                  sx={{ mt: 1 }} 
-                />
-              </Box>
-            ))}
-          </Box>
-
-          {/* Paginação mobile */}
-          {totalPages > 1 && (
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-              <Pagination
-                count={totalPages}
-                page={page + 1}
-                onChange={handlePageChange}
-                color="primary"
-                size="small"
-                shape="rounded"
               />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                Nenhuma consulta encontrada
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                Você ainda não possui consultas agendadas.
+              </Typography>
+              <Button
+                variant="contained"
+                onClick={() => pushWithProgress("/estagiario/calendario")}
+                startIcon={<CalendarMonthIcon />}
+              >
+                Ver Calendário
+              </Button>
             </Box>
+          ) : (
+            <>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {appointments.map((a) => (
+                  <Box
+                    key={a.id}
+                    onClick={() => pushWithProgress(`/estagiario/consultas/${a.id}`)}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      boxShadow: 1,
+                      borderLeft: borderColor(a),
+                      bgcolor: "background.paper",
+                      cursor: "pointer",
+                      transition: "transform 0.2s, box-shadow 0.2s",
+                      "&:active": {
+                        transform: "scale(0.98)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <Avatar 
+                        src={(() => {
+                          const raw = a.patientAvatar;
+                          if (!raw) return undefined;
+                          return /^https?:\/\//.test(raw) 
+                            ? raw 
+                            : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+                        })()}
+                        sx={{ width: 28, height: 28 }}
+                      >
+                        {a.patientName ? a.patientName.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
+                      </Avatar>
+                      <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
+                        {a.patientName}
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                      {a.specialty}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                      {a.date} às {a.time}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {a.location}
+                    </Typography>
+                    <StyledBadge 
+                      label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
+                      badgeType={a.status} 
+                      sx={{ mt: 1 }} 
+                    />
+                  </Box>
+                ))}
+              </Box>
+
+              {/* Paginação mobile */}
+              {totalPages > 1 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={page + 1}
+                    onChange={handlePageChange}
+                    color="primary"
+                    size="small"
+                    shape="rounded"
+                  />
+                </Box>
+              )}
+            </>
           )}
         </>
       ) : (

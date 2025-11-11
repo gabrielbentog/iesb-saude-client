@@ -377,84 +377,121 @@ export default function PatientDashboard() {
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
                 Próximas Consultas
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {paginatedAppointments.map((a) => {
-                  const professional = a.interns?.[0] || null;
-                  return (
-                    <Box
-                      key={a.id}
-                      sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        boxShadow: 1,
-                        bgcolor: "background.paper",
-                        cursor: "pointer",
-                        transition: "transform 0.2s, box-shadow 0.2s",
-                        "&:active": {
-                          transform: "scale(0.98)",
-                        },
-                      }}
-                      onClick={() => pushWithProgress(`/paciente/consultas/${a.id}`)}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Avatar
-                            src={professional?.avatarUrl ? 
-                              (/^https?:\/\//.test(professional.avatarUrl) 
-                                ? professional.avatarUrl 
-                                : `${process.env.NEXT_PUBLIC_API_HOST}${professional.avatarUrl}`)
-                              : undefined
-                            }
-                            sx={{ width: 32, height: 32 }}
-                          >
-                            {professional?.name?.[0] || "?"}
-                          </Avatar>
-                          <Box>
-                            <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
-                              {professional?.name || "Não designado"}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {a.specialty}
-                            </Typography>
+              {nextAppointments.length === 0 ? (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    py: 6,
+                    px: 2,
+                    textAlign: "center",
+                  }}
+                >
+                  <CalendarMonthIcon
+                    sx={{
+                      fontSize: 64,
+                      color: "text.disabled",
+                      mb: 2,
+                    }}
+                  />
+                  <Typography variant="h6" color="text.secondary" gutterBottom>
+                    Nenhuma consulta próxima
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Você não possui consultas agendadas.
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    onClick={() => pushWithProgress("/paciente/agendamento")}
+                    startIcon={<AddCircleOutlineIcon />}
+                  >
+                    Agendar Consulta
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                    {paginatedAppointments.map((a) => {
+                      const professional = a.interns?.[0] || null;
+                      return (
+                        <Box
+                          key={a.id}
+                          sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            boxShadow: 1,
+                            bgcolor: "background.paper",
+                            cursor: "pointer",
+                            transition: "transform 0.2s, box-shadow 0.2s",
+                            "&:active": {
+                              transform: "scale(0.98)",
+                            },
+                          }}
+                          onClick={() => pushWithProgress(`/paciente/consultas/${a.id}`)}
+                        >
+                          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                              <Avatar
+                                src={professional?.avatarUrl ? 
+                                  (/^https?:\/\//.test(professional.avatarUrl) 
+                                    ? professional.avatarUrl 
+                                    : `${process.env.NEXT_PUBLIC_API_HOST}${professional.avatarUrl}`)
+                                  : undefined
+                                }
+                                sx={{ width: 32, height: 32 }}
+                              >
+                                {professional?.name?.[0] || "?"}
+                              </Avatar>
+                              <Box>
+                                <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
+                                  {professional?.name || "Não designado"}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {a.specialty}
+                                </Typography>
+                              </Box>
+                            </Box>
                           </Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            {a.date} às {a.time}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            {a.location} — {a.room}
+                          </Typography>
+                          <StyledBadge 
+                            label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
+                            badgeType={a.status} 
+                            sx={{ mt: 1 }} 
+                          />
                         </Box>
-                      </Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        {a.date} às {a.time}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {a.location} — {a.room}
-                      </Typography>
-                      <StyledBadge 
-                        label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
-                        badgeType={a.status} 
-                        sx={{ mt: 1 }} 
-                      />
-                    </Box>
-                  );
-                })}
-              </Box>
+                      );
+                    })}
+                  </Box>
 
-              {/* Paginação mobile */}
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page + 1}
-                  onChange={(_, newPage) => setPage(newPage - 1)}
-                  color="primary"
-                  size="small"
-                  shape="rounded"
-                />
-              </Box>
+                  {/* Paginação mobile */}
+                  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                    <Pagination
+                      count={totalPages}
+                      page={page + 1}
+                      onChange={(_, newPage) => setPage(newPage - 1)}
+                      color="primary"
+                      size="small"
+                      shape="rounded"
+                    />
+                  </Box>
 
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => pushWithProgress("/paciente/consultas")}
-                sx={{ mt: 1 }}
-              >
-                Ver Todas
-              </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => pushWithProgress("/paciente/consultas")}
+                    sx={{ mt: 1 }}
+                  >
+                    Ver Todas
+                  </Button>
+                </>
+              )}
             </>
           ) : (
             <DataTable<UIAppointment>
