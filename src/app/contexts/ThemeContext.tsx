@@ -74,7 +74,6 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   }
 
   if (!mounted) {
-    // Ainda não aplicamos CssBaseline / MUI Theme, mas garantimos que o contexto exista
     return <ThemeContext.Provider value={providerValue}>{children}</ThemeContext.Provider>
   }
 

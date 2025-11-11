@@ -33,7 +33,6 @@ export const mapRaw = (a: RawAppointment): UIAppointment => {
   const specialty = a.timeSlot?.specialtyName ?? "-"
   const location = a.consultationRoom?.collegeLocationName ?? a.timeSlot?.collegeLocationName ?? "-"
 
-  // normalize interns: support legacy `intern` and new `interns[]`
   const interns: { id: string; name: string; avatarUrl?: string }[] = []
   const maybeInterns = (a as RawAppointment & { interns?: RawAppointment["intern"][] | undefined }).interns
   if (Array.isArray(maybeInterns) && maybeInterns.length) {

@@ -7,10 +7,9 @@ interface SessionSchema {
     name: string
     email: string
     profile: { id: string; name: string }
-    // opcional, pode vir do backend
     themePreference?: 'system' | 'light' | 'dark'
   }
-  token: string       // "Bearer …"
+  token: string
   loggedIn: boolean
 }
 

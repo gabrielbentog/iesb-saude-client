@@ -17,16 +17,14 @@ export function BookingDialog({ open, event, onClose, onSubmitBooking }: Booking
   if (!event) return null;
 
   const handleSubmit = async () => {
-    if (!objective.trim()) return; // Basic validation
+    if (!objective.trim()) return;
 
     setIsLoading(true);
     try {
       await onSubmitBooking({ objective });
-      setObjective(''); // Reset objective after successful submission
-      // onClose(); // Parent will handle closing by setting selectedSlotForBooking to null
+      setObjective('');
     } catch (error) {
       console.error("Booking submission failed:", error);
-      // Error handling (e.g., show a toast) can be done here or in the parent
     } finally {
       setIsLoading(false);
     }

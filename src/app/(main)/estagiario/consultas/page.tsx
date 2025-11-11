@@ -263,8 +263,8 @@ export default function AppointmentPatientScreen() {
             pb: 1,
             mb: 3,
             scrollSnapType: "x mandatory",
-            width: "100%",            // 👈 volta pro tamanho normal
-            px: 1.5,                  // 👈 padding interno MUI (≈12px)
+            width: "100%",
+            px: 1.5,
             boxSizing: "border-box",
             "&::-webkit-scrollbar": { display: "none" },
             "& > *": {
@@ -273,7 +273,7 @@ export default function AppointmentPatientScreen() {
             },
           }}
         >
-          <Box sx={{ pl: 0.5 }}>     {/* 👈 garante 4px extras visuais na esquerda */}
+          <Box sx={{ pl: 0.5 }}>
             <StatCard
               title="Próximas Consultas"
               value={upcomingCount}

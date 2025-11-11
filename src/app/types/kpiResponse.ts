@@ -8,8 +8,6 @@ export interface KpiResponse {
   }
 }
 
-// Estrutura já adaptada aos nomes que sua UI usa.
-// (mantive o que o componente espera para não reescrever tudo)
 export interface DashboardStats {
   appointmentsToday: number
   appointmentsTrend: number

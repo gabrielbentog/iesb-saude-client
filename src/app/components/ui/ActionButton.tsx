@@ -1,4 +1,3 @@
-// src/app/components/ui/ActionButton.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -13,7 +12,7 @@ import { alpha }     from "@mui/material/styles";
 /* Ícones */
 import CheckIcon from "@mui/icons-material/Check";
 import CloseIcon from "@mui/icons-material/Close";
-import EditIcon  from "@mui/icons-material/Edit"; // exemplo extra
+import EditIcon  from "@mui/icons-material/Edit";
 
 /* ------------------------------------------------------------------ */
 /* Tipagens                                                           */
@@ -33,7 +32,7 @@ export interface ActionButtonProps {
   onClick: () => void;
   disabled?: boolean;
   iconType: IconKind;
-  confirm?: ConfirmConfig;      // ← NOVO (opcional)
+  confirm?: ConfirmConfig;
 }
 
 /* Mapeamento simplificado de ícones */

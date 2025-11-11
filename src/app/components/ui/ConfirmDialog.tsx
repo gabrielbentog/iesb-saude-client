@@ -1,4 +1,3 @@
-// src/app/components/ui/ConfirmDialog.tsx
 "use client";
 
 import React from "react";

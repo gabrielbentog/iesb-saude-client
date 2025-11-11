@@ -1,5 +1,5 @@
 export interface PaginationMeta {
-  totalCount: number;      // total de registros
+  totalCount: number;
   perPage:    number;
   currentPage:number;
   totalPages: number;

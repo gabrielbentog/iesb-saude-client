@@ -1,4 +1,3 @@
-// src/app/components/Calendar/CalendarMonthView.tsx
 "use client";
 
 import React, { useMemo } from "react";
@@ -91,7 +90,7 @@ export function CalendarMonthView({
                       isCurrentMonth={sameMonth}
                       isToday={isToday(day)}
                       isWeekend={isWeekend(day)}
-                      hasEvents={hasUpcomingOrFreeSlots} // Atualizado para refletir free slots também
+                      hasEvents={hasUpcomingOrFreeSlots}
                     >
                       <DayNumber isToday={isToday(day)} isCurrentMonth={sameMonth}>
                         {format(day, "d")}

@@ -264,7 +264,6 @@ export default function EnhancedCalendar({
     // Paciente: só permite booking em slots free
     if (profileNormalized === 'paciente') {
       if (event.type === 'free') setSelectedSlotForBooking(event);
-      // if it's a busy slot that belongs to the user (compare by id), open detail
       if (event.type === 'busy' && event.patientId && sessionUserId && event.patientId === sessionUserId) {
         pushWithProgress(`/paciente/consultas/${event.appointmentId}`);
       }
@@ -281,7 +280,6 @@ export default function EnhancedCalendar({
       return;
     }
 
-    // Outros perfis: abrir detalhes para free, ignorar busy
     if (event.type === 'free') setSelectedEventForDetail(event);
   };
 
@@ -419,8 +417,8 @@ export default function EnhancedCalendar({
                 appointment: {
                   timeSlotId: timeSlotVal,
                   userId: sessionUserId,
-                  date: formatDateYMDInTZ(dateIso), // YYYY-MM-DD in Sao Paulo tz
-                  startTime: formatTimeHMInTZ(start.toISOString()), // HH:mm in Sao Paulo tz
+                  date: formatDateYMDInTZ(dateIso),
+                  startTime: formatTimeHMInTZ(start.toISOString()),
                   endTime: formatTimeHMInTZ(end.toISOString()),
                   status: "pending",
                   notes: bookingData.objective?.trim() ?? "",
@@ -434,7 +432,6 @@ export default function EnhancedCalendar({
 
               showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
               
-              // Recarregar os dados do calendário para mostrar a consulta marcada
               if (refetch) {
                 await refetch();
               }
@@ -462,7 +459,6 @@ export default function EnhancedCalendar({
             } else if (userProfile === 'gestor' && showScheduleButton) {
                  pushWithProgress("/gestor/calendario/agendamento");
             }
-            // Add other profiles or default behavior if needed
         }}
       >
         <AddIcon />
