@@ -39,69 +39,48 @@ import { mapRaw } from "@/app/utils/appointment-mapper";
 import { apiFetch } from "@/app/lib/api";
 
 // ────────────────────────────────────────────────────────────────────────────────
-// Cabeçalhos da Tabela (Visão Paciente)
+// Cabeçalhos da Tabela (Visão Estagiário)
 // ────────────────────────────────────────────────────────────────────────────────
-const patientHeaders = [
-  { id: "intern", label: "Profissional/Estagiário" },
+const internHeaders = [
+  { id: "patient", label: "Paciente" },
   { id: "specialty", label: "Especialidade" },
   { id: "location", label: "Local" },
   { id: "dateTime", label: "Data/Hora" },
   { id: "status", label: "Status" },
 ] as const;
 
-type PatientHeaderId = (typeof patientHeaders)[number]["id"];
+type InternHeaderId = (typeof internHeaders)[number]["id"];
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Renderização de células
 // ────────────────────────────────────────────────────────────────────────────────
-const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
+const renderInternCell = (a: UIAppointment, id: InternHeaderId) => {
   switch (id) {
-    case "intern": {
-      if (a.interns && a.interns.length) {
-        const first = a.interns[0]
-        return (
-          <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
-            <Avatar src={((): string | undefined => {
-              const raw = first.avatarUrl;
-              if (!raw) return undefined;
-              return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
-            })()} sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}>
-              {first.name ? first.name.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
-            </Avatar>
-            <Typography 
-              variant="body2" 
-              fontWeight={500}
-              sx={{
-                fontSize: { xs: "0.875rem", sm: "1rem" },
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                maxWidth: { xs: "120px", sm: "none" }
-              }}
-            >
-              {first.name}
-            </Typography>
-            {a.interns.length > 1 && (
-              <Tooltip title={a.interns.slice(1).map(i => i.name).join(', ')}>
-                <Typography variant="caption" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-                  +{a.interns.length - 1}
-                </Typography>
-              </Tooltip>
-            )}
-          </Box>
-        )
-      }
+    case "patient": {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
-          <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}>
-            <PersonIcon fontSize="small" />
+          <Avatar 
+            src={((): string | undefined => {
+              const raw = a.patientAvatar;
+              if (!raw) return undefined;
+              return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+            })()} 
+            sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}
+          >
+            {a.patientName ? a.patientName.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
           </Avatar>
           <Typography 
             variant="body2" 
             fontWeight={500}
-            sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
+            sx={{
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+              maxWidth: { xs: "120px", sm: "none" }
+            }}
           >
-            Não designado
+            {a.patientName}
           </Typography>
         </Box>
       )
@@ -278,18 +257,31 @@ export default function AppointmentPatientScreen() {
         <Box
           sx={{
             display: "flex",
-            flexDirection: "column",
+            overflowX: "auto",
+            overflowY: "hidden",
             gap: 2,
+            pb: 1,
             mb: 3,
+            scrollSnapType: "x mandatory",
+            width: "100%",            // 👈 volta pro tamanho normal
+            px: 1.5,                  // 👈 padding interno MUI (≈12px)
+            boxSizing: "border-box",
+            "&::-webkit-scrollbar": { display: "none" },
+            "& > *": {
+              flex: "0 0 85%",
+              scrollSnapAlign: "start",
+            },
           }}
         >
-          <StatCard
-            title="Próximas Consultas"
-            value={upcomingCount}
-            subtitle="Agendadas ou confirmadas"
-            icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
-            iconBgColor={alpha(theme.palette.primary.main, 0.1)}
-          />
+          <Box sx={{ pl: 0.5 }}>     {/* 👈 garante 4px extras visuais na esquerda */}
+            <StatCard
+              title="Próximas Consultas"
+              value={upcomingCount}
+              subtitle="Agendadas ou confirmadas"
+              icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
+              iconBgColor={alpha(theme.palette.primary.main, 0.1)}
+            />
+          </Box>
           <StatCard
             title="Concluídas"
             value={completedCount}
@@ -351,22 +343,20 @@ export default function AppointmentPatientScreen() {
                 }}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {a.interns && a.interns.length > 0 && (
-                    <Avatar 
-                      src={(() => {
-                        const raw = a.interns[0].avatarUrl;
-                        if (!raw) return undefined;
-                        return /^https?:\/\//.test(raw) 
-                          ? raw 
-                          : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
-                      })()}
-                      sx={{ width: 28, height: 28 }}
-                    >
-                      {a.interns[0].name ? a.interns[0].name.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
-                    </Avatar>
-                  )}
+                  <Avatar 
+                    src={(() => {
+                      const raw = a.patientAvatar;
+                      if (!raw) return undefined;
+                      return /^https?:\/\//.test(raw) 
+                        ? raw 
+                        : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
+                    })()}
+                    sx={{ width: 28, height: 28 }}
+                  >
+                    {a.patientName ? a.patientName.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
+                  </Avatar>
                   <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
-                    {a.interns && a.interns.length > 0 ? a.interns[0].name : "Não designado"}
+                    {a.patientName}
                   </Typography>
                 </Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
@@ -403,11 +393,11 @@ export default function AppointmentPatientScreen() {
         </>
       ) : (
         <DataTable<UIAppointment>
-          title="Meus Agendamentos"
-          subtitle="Acompanhe seus compromissos de saúde"
-          headers={[...patientHeaders]}
+          title="Minhas Consultas"
+          subtitle="Acompanhe suas consultas agendadas"
+          headers={[...internHeaders]}
           data={appointments}
-          renderCell={(a, id) => renderPatientCell(a, id as PatientHeaderId)}
+          renderCell={(a, id) => renderInternCell(a, id as InternHeaderId)}
           rowKeyExtractor={(a) => a.id}
           getPriorityBorderColor={borderColor}
           totalCount={totalCount}

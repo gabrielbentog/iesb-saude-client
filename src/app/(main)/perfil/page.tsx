@@ -329,10 +329,19 @@ const SecuritySettings: FC<{ onOpenChangePassword: () => void; onOpenChangeEmail
 
 const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
     const { showToast } = useToast();
-    const { control, handleSubmit, reset, formState: { errors, isSubmitting }, setError } = useForm<ChangePasswordFormValues>({
+    const { control, handleSubmit, reset, formState: { errors, isSubmitting }, setError, watch } = useForm<ChangePasswordFormValues>({
         resolver: zodResolver(changePasswordSchema),
         defaultValues: { currentPassword: "", newPassword: "", confirmPassword: "" },
     });
+
+    const newPassword = watch("newPassword");
+
+    const passwordRequirements = [
+        { label: "Mínimo de 8 caracteres", met: newPassword.length >= 8 },
+        { label: "Contém letra maiúscula", met: /[A-Z]/.test(newPassword) },
+        { label: "Contém letra minúscula", met: /[a-z]/.test(newPassword) },
+        { label: "Contém número", met: /[0-9]/.test(newPassword) },
+    ];
 
     const onSubmit = handleSubmit(async (values) => {
         try {
@@ -349,17 +358,115 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
     });
 
     return (
-        <Dialog open={open} onClose={onClose} onTransitionExited={reset} fullWidth maxWidth="xs">
-            <DialogTitle>Alterar Senha</DialogTitle>
+        <Dialog open={open} onClose={onClose} onTransitionExited={reset} fullWidth maxWidth="sm">
+            <DialogTitle sx={{ pb: 1 }}>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <Password />
+                    <Typography variant="h6">Alterar Senha</Typography>
+                </Stack>
+            </DialogTitle>
             <form onSubmit={onSubmit}>
                 <DialogContent dividers>
-                    <Stack spacing={2} sx={{ pt: 1 }}>
-                        <Controller name="currentPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Senha Atual" fullWidth error={!!errors.currentPassword} helperText={errors.currentPassword?.message} />} />
-                        <Controller name="newPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Nova Senha" fullWidth error={!!errors.newPassword} helperText={errors.newPassword?.message} />} />
-                        <Controller name="confirmPassword" control={control} render={({ field }) => <TextField {...field} type="password" label="Confirmar Nova Senha" fullWidth error={!!errors.confirmPassword} helperText={errors.confirmPassword?.message} />} />
+                    <Stack spacing={3} sx={{ pt: 1 }}>
+                        <Controller 
+                            name="currentPassword" 
+                            control={control} 
+                            render={({ field }) => (
+                                <TextField 
+                                    {...field} 
+                                    type="password" 
+                                    label="Senha Atual" 
+                                    fullWidth 
+                                    error={!!errors.currentPassword} 
+                                    helperText={errors.currentPassword?.message}
+                                    autoComplete="current-password"
+                                />
+                            )} 
+                        />
+                        
+                        <Divider>Nova Senha</Divider>
+                        
+                        <Controller 
+                            name="newPassword" 
+                            control={control} 
+                            render={({ field }) => (
+                                <TextField 
+                                    {...field} 
+                                    type="password" 
+                                    label="Nova Senha" 
+                                    fullWidth 
+                                    error={!!errors.newPassword} 
+                                    helperText={errors.newPassword?.message}
+                                    autoComplete="new-password"
+                                />
+                            )} 
+                        />
+
+                        {newPassword && (
+                            <Box 
+                                sx={{ 
+                                    p: 2, 
+                                    bgcolor: 'background.default', 
+                                    borderRadius: 1,
+                                    border: '1px solid',
+                                    borderColor: 'divider'
+                                }}
+                            >
+                                <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', fontWeight: 600 }}>
+                                    Requisitos da senha:
+                                </Typography>
+                                <Stack spacing={0.5}>
+                                    {passwordRequirements.map((req, index) => (
+                                        <Stack key={index} direction="row" spacing={1} alignItems="center">
+                                            <Box 
+                                                sx={{ 
+                                                    width: 16, 
+                                                    height: 16, 
+                                                    borderRadius: '50%', 
+                                                    bgcolor: req.met ? 'success.main' : 'grey.300',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    transition: 'background-color 0.3s'
+                                                }}
+                                            >
+                                                {req.met && (
+                                                    <Box component="span" sx={{ color: 'white', fontSize: '10px' }}>✓</Box>
+                                                )}
+                                            </Box>
+                                            <Typography 
+                                                variant="caption" 
+                                                sx={{ 
+                                                    color: req.met ? 'success.main' : 'text.secondary',
+                                                    transition: 'color 0.3s'
+                                                }}
+                                            >
+                                                {req.label}
+                                            </Typography>
+                                        </Stack>
+                                    ))}
+                                </Stack>
+                            </Box>
+                        )}
+                        
+                        <Controller 
+                            name="confirmPassword" 
+                            control={control} 
+                            render={({ field }) => (
+                                <TextField 
+                                    {...field} 
+                                    type="password" 
+                                    label="Confirmar Nova Senha" 
+                                    fullWidth 
+                                    error={!!errors.confirmPassword} 
+                                    helperText={errors.confirmPassword?.message}
+                                    autoComplete="new-password"
+                                />
+                            )} 
+                        />
                     </Stack>
                 </DialogContent>
-                <DialogActions>
+                <DialogActions sx={{ px: 3, py: 2 }}>
                     <Button onClick={onClose} disabled={isSubmitting}>Cancelar</Button>
                     <Button type="submit" variant="contained" disabled={isSubmitting}>
                         {isSubmitting ? <CircularProgress size={24} /> : "Alterar Senha"}

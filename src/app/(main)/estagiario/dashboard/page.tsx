@@ -212,14 +212,25 @@ export default function InternDashboard() {
           )}
 
           {/* KPIs */}
-          {isMobile ? (
+          {loadingStats ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+              <CircularProgress />
+            </Box>
+          ) : isMobile ? (
             <Box
               sx={{
                 display: "flex",
                 overflowX: "auto",
+                overflowY: "hidden",
                 gap: 2,
                 pb: 1,
+                mb: 3,
                 scrollSnapType: "x mandatory",
+                width: "100vw",
+                ml: "-16px", // compensa padding do Container
+                px: "16px",
+                boxSizing: "border-box",
+                "&::-webkit-scrollbar": { display: "none" },
                 "& > *": {
                   flex: "0 0 85%",
                   scrollSnapAlign: "start",
@@ -230,28 +241,28 @@ export default function InternDashboard() {
                 title="Próxima Consulta"
                 value={stats.nextAppointment ?? "--"}
                 subtitle="Data/Hora"
-                icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
               />
               <StatCard
                 title="Concluídas Hoje"
                 value={stats.completedToday}
                 subtitle="Consultas finalizadas"
-                icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                icon={<AssignmentIcon sx={{ color: theme.palette.primary.main }} />}
                 iconBgColor={alpha(theme.palette.primary.main, 0.1)}
               />
               <StatCard
                 title="Agendadas na Semana"
                 value={stats.scheduledThisWeek}
                 subtitle="Semana atual"
-                icon={<InfoIcon sx={{ color: "warning.main" }} />}
+                icon={<InfoIcon sx={{ color: theme.palette.warning.main }} />}
                 iconBgColor={alpha(theme.palette.warning.main, 0.1)}
               />
               <StatCard
                 title="Pendentes"
                 value={stats.pendingApprovals}
                 subtitle="Aprovações pendentes"
-                icon={<AccessTimeIcon sx={{ color: "success.main" }} />}
+                icon={<AccessTimeIcon sx={{ color: theme.palette.success.main }} />}
                 iconBgColor={alpha(theme.palette.success.main, 0.1)}
               />
             </Box>
@@ -262,7 +273,7 @@ export default function InternDashboard() {
                   title="Próxima Consulta"
                   value={stats.nextAppointment ?? "--"}
                   subtitle="Data/Hora"
-                  icon={<CalendarMonthIcon sx={{ color: "primary.main" }} />}
+                  icon={<CalendarMonthIcon sx={{ color: theme.palette.primary.main }} />}
                   iconBgColor={alpha(theme.palette.primary.main, 0.1)}
                 />
               </Grid>
@@ -271,7 +282,7 @@ export default function InternDashboard() {
                   title="Concluídas Hoje"
                   value={stats.completedToday}
                   subtitle="Consultas finalizadas"
-                  icon={<AssignmentIcon sx={{ color: "primary.main" }} />}
+                  icon={<AssignmentIcon sx={{ color: theme.palette.primary.main }} />}
                   iconBgColor={alpha(theme.palette.primary.main, 0.1)}
                 />
               </Grid>
@@ -280,7 +291,7 @@ export default function InternDashboard() {
                   title="Agendadas na Semana"
                   value={stats.scheduledThisWeek}
                   subtitle="Semana atual"
-                  icon={<InfoIcon sx={{ color: "warning.main" }} />}
+                  icon={<InfoIcon sx={{ color: theme.palette.warning.main }} />}
                   iconBgColor={alpha(theme.palette.warning.main, 0.1)}
                 />
               </Grid>
@@ -289,7 +300,7 @@ export default function InternDashboard() {
                   title="Pendentes"
                   value={stats.pendingApprovals}
                   subtitle="Aprovações pendentes"
-                  icon={<AccessTimeIcon sx={{ color: "success.main" }} />}
+                  icon={<AccessTimeIcon sx={{ color: theme.palette.success.main }} />}
                   iconBgColor={alpha(theme.palette.success.main, 0.1)}
                 />
               </Grid>
@@ -302,69 +313,104 @@ export default function InternDashboard() {
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
                 Próximas Consultas
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {paginatedAppointments.map((a) => (
-                  <Box
-                    key={a.id}
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      boxShadow: 1,
-                      bgcolor: "background.paper",
-                      cursor: "pointer",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                      "&:active": {
-                        transform: "scale(0.98)",
-                      },
-                    }}
-                    onClick={() => pushWithProgress(`/estagiario/consultas/${a.id}`)}
+              {nextAppointments.length === 0 ? (
+                <Box
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    bgcolor: "background.paper",
+                    boxShadow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1.5,
+                    textAlign: "center",
+                  }}
+                >
+                  <CalendarMonthIcon sx={{ fontSize: 48, color: "text.secondary", opacity: 0.5 }} />
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Nenhuma consulta agendada
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Você não possui consultas próximas no momento
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<CalendarMonthIcon />}
+                    onClick={() => pushWithProgress("/estagiario/consultas")}
+                    sx={{ mt: 0.5, fontSize: "0.75rem" }}
                   >
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Avatar sx={{ width: 32, height: 32, bgcolor: "grey.200" }}>
-                          {a.patientName?.[0] || "?"}
-                        </Avatar>
-                        <Box>
-                          <Typography fontWeight={600} sx={{ fontSize: "0.95rem" }}>
-                            {a.patientName}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {a.specialty}
-                          </Typography>
+                    Ver Histórico
+                  </Button>
+                </Box>
+              ) : (
+                <>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    {paginatedAppointments.map((a) => (
+                      <Box
+                        key={a.id}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          boxShadow: 1,
+                          bgcolor: "background.paper",
+                          cursor: "pointer",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          "&:active": {
+                            transform: "scale(0.98)",
+                          },
+                        }}
+                        onClick={() => pushWithProgress(`/estagiario/consultas/${a.id}`)}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 0.5 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Avatar sx={{ width: 28, height: 28, bgcolor: "grey.200", fontSize: "0.875rem" }}>
+                              {a.patientName?.[0] || "?"}
+                            </Avatar>
+                            <Box>
+                              <Typography fontWeight={600} sx={{ fontSize: "0.875rem" }}>
+                                {a.patientName}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.7rem" }}>
+                                {a.specialty}
+                              </Typography>
+                            </Box>
+                          </Box>
                         </Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                          {a.date} às {a.time}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          {a.location} — {a.room}
+                        </Typography>
+                        <StyledBadge label={a.status} badgeType={a.status} sx={{ mt: 0.75, fontSize: "0.7rem" }} />
                       </Box>
-                    </Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                      {a.date} às {a.time}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      {a.location} — {a.room}
-                    </Typography>
-                    <StyledBadge label={a.status} badgeType={a.status} sx={{ mt: 1 }} />
+                    ))}
                   </Box>
-                ))}
-              </Box>
 
-              {/* Paginação mobile */}
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-                <Pagination
-                  count={totalPages}
-                  page={page + 1}
-                  onChange={(_, newPage) => setPage(newPage - 1)}
-                  color="primary"
-                  size="small"
-                  shape="rounded"
-                />
-              </Box>
+                  {/* Paginação mobile */}
+                  <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+                    <Pagination
+                      count={totalPages}
+                      page={page + 1}
+                      onChange={(_, newPage) => setPage(newPage - 1)}
+                      color="primary"
+                      size="small"
+                      shape="rounded"
+                    />
+                  </Box>
 
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => pushWithProgress("/estagiario/consultas")}
-                sx={{ mt: 1 }}
-              >
-                Ver Todas
-              </Button>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={() => pushWithProgress("/estagiario/consultas")}
+                    sx={{ mt: 1 }}
+                  >
+                    Ver Todas
+                  </Button>
+                </>
+              )}
             </>
           ) : (
             <DataTable<UIAppointment>
