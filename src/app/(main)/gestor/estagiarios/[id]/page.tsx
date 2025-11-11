@@ -33,6 +33,7 @@ interface InternDetail {
   email?: string | null;
   phone?: string | null;
   status?: string | null;
+  registrationNumber?: string | null;
   appointmentsCompleted?: number;
   appointmentsScheduled?: number;
 }
@@ -83,6 +84,7 @@ export default function InternDetailPage() {
           email: (u["email"] as string | undefined) ?? null,
           phone: (u["phone"] as string | undefined) ?? null,
           status: (u["status"] as string | undefined) ?? null,
+          registrationNumber: (u["registrationNumber"] as string | undefined) ?? null,
           appointmentsCompleted: Number((u["appointmentsCompleted"] as number | undefined) ?? 0),
           appointmentsScheduled: Number((u["appointmentsScheduled"] as number | undefined) ?? 0),
         };
@@ -151,8 +153,20 @@ export default function InternDetailPage() {
 
           <CardContent sx={{ py: { xs: 3, md: 4 }, px: { xs: 2, md: 4 } }}>
             <Stack spacing={4}>
-              <Section title={<><EmailIcon /> <Typography variant="h6">Contato</Typography></>}>
+              <Section title={<><EmailIcon /> <Typography variant="h6">Informações</Typography></>}>
                 <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <Stack spacing={1}>
+                      <Typography color="text.secondary">Matrícula</Typography>
+                      <Typography fontWeight={500}>{intern.registrationNumber ?? '—'}</Typography>
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Stack spacing={1}>
+                      <Typography color="text.secondary">Status</Typography>
+                      <Typography fontWeight={500}>{intern.status ?? '—'}</Typography>
+                    </Stack>
+                  </Grid>
                   <Grid item xs={12} sm={6}>
                     <Stack spacing={1}>
                       <Typography color="text.secondary">Email</Typography>
@@ -163,27 +177,6 @@ export default function InternDetailPage() {
                     <Stack spacing={1}>
                       <Typography color="text.secondary">Telefone</Typography>
                       <Typography>{formatPhone(intern.phone) || '—'}</Typography>
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </Section>
-
-              <Section title={<><Typography variant="h6">Dados</Typography></>}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <Stack spacing={1}>
-                      <Typography color="text.secondary">Status</Typography>
-                      <Typography><strong>{intern.status || '—'}</strong></Typography>
-                    </Stack>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Stack spacing={1}>
-                      <Typography color="text.secondary">Consultas realizadas</Typography>
-                      <Typography><strong>{intern.appointmentsCompleted}</strong></Typography>
-                    </Stack>
-                    <Stack spacing={1} mt={2}>
-                      <Typography color="text.secondary">Consultas agendadas</Typography>
-                      <Typography><strong>{intern.appointmentsScheduled}</strong></Typography>
                     </Stack>
                   </Grid>
                 </Grid>

@@ -31,12 +31,19 @@ import EditIcon from "@mui/icons-material/Edit"
 
 import { fetchInterns } from "@/app/lib/api/interns"
 import { deleteIntern } from "@/app/lib/api/interns"
+import { apiFetch } from "@/app/lib/api"
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress"
 import { useToast } from "@/app/contexts/ToastContext"
 import { ConfirmDialog } from "@/app/components/ui/ConfirmDialog"
 import { StatCard } from "@/app/components/ui/StatCard"
 import { DataTable, StyledBadge } from "@/app/components/DataTable"
 import type { Intern } from "@/app/types"
+
+interface InternsKPIs {
+  activeInternsCount: number
+  completedAppointmentsCount: number
+  averageAppointmentsPerIntern: number
+}
 
 const internHeaders = [
   { id: "name",                  label: "Estagiário"          },
@@ -109,14 +116,36 @@ export default function InternManagementScreen() {
   const [interns,     setInterns]     = useState<Intern[]>([])
   const [totalCount,  setTotalCount]  = useState(0)
 
+  // KPIs da API
+  const [kpis, setKpis] = useState<InternsKPIs>({
+    activeInternsCount: 0,
+    completedAppointmentsCount: 0,
+    averageAppointmentsPerIntern: 0,
+  })
+
   // estados auxiliares
   const [loading,     setLoading]     = useState(false)
+  const [loadingKPIs, setLoadingKPIs] = useState(false)
   const [error,       setError]       = useState<string | null>(null)
 
   // menu de ações
   const [anchorEl,        setAnchorEl]   = useState<null | HTMLElement>(null)
   const [selectedIntern,  setSelectedIntern] = useState<Intern | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
+
+  // Carrega KPIs da API
+  const loadKPIs = useCallback(async () => {
+    setLoadingKPIs(true)
+    try {
+      const response = await apiFetch<{ data: InternsKPIs }>('/api/users/interns/kpis')
+      setKpis(response.data)
+    } catch (e) {
+      console.error('Erro ao carregar KPIs:', e)
+      // Mantém valores zerados em caso de erro
+    } finally {
+      setLoadingKPIs(false)
+    }
+  }, [])
 
   const loadInterns = useCallback(async () => {
     setLoading(true);
@@ -131,14 +160,14 @@ export default function InternManagementScreen() {
     }
   }, [page, rowsPerPage]);
 
+  // Carrega KPIs na montagem do componente
+  useEffect(() => {
+    loadKPIs()
+  }, [loadKPIs])
+
   useEffect(() => {
     loadInterns()
   }, [loadInterns])
-
-  // KPIs
-  const activeInterns              = interns.filter((i) => i.status === "Ativo").length
-  const totalAppointmentsCompleted = interns.reduce((sum, i) => sum + i.appointmentsCompleted, 0)
-  const averageAppointments        = activeInterns ? Math.round(totalAppointmentsCompleted / activeInterns) : 0
 
   const totalPages = Math.ceil(totalCount / rowsPerPage)
 
@@ -175,6 +204,7 @@ export default function InternManagementScreen() {
     try {
       await deleteIntern(selectedIntern.id)
       await loadInterns()
+      await loadKPIs() // Recarrega KPIs após deletar
       showToast({ message: `Estagiário "${selectedIntern.name}" apagado com sucesso.`, severity: 'success' })
     } catch (e) {
       setError((e as Error).message)
@@ -218,7 +248,11 @@ export default function InternManagementScreen() {
       </Box>
 
       {/* KPIs */}
-      {isMobile ? (
+      {loadingKPIs ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress size={32} />
+        </Box>
+      ) : isMobile ? (
         <Box
           sx={{
             display: "flex",
@@ -235,22 +269,22 @@ export default function InternManagementScreen() {
         >
           <StatCard
             title="Estagiários Ativos"
-            value={activeInterns}
-            subtitle="Total de estagiários ativos"
+            value={kpis.activeInternsCount}
+            subtitle="Total de estagiários ativos (últimos 30 dias)"
             icon={<PeopleAltIcon sx={{ color: theme.palette.primary.main }} />}
             iconBgColor={alpha(theme.palette.primary.main, 0.1)}
           />
           <StatCard
             title="Consultas Realizadas"
-            value={totalAppointmentsCompleted}
+            value={kpis.completedAppointmentsCount}
             subtitle="Total de consultas concluídas"
             icon={<AssignmentTurnedInIcon sx={{ color: theme.palette.primary.main }} />}
             iconBgColor={alpha(theme.palette.primary.main, 0.1)}
           />
           <StatCard
             title="Média por Estagiário"
-            value={averageAppointments}
-            subtitle="Média de consultas por estagiário ativo"
+            value={kpis.averageAppointmentsPerIntern.toFixed(1)}
+            subtitle="Média de consultas por estagiário"
             icon={<TrendingUpIcon sx={{ color: theme.palette.success.main }} />}
             iconBgColor={alpha(theme.palette.success.main, 0.1)}
           />
@@ -260,8 +294,8 @@ export default function InternManagementScreen() {
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
               title="Estagiários Ativos"
-              value={activeInterns}
-              subtitle="Total de estagiários ativos"
+              value={kpis.activeInternsCount}
+              subtitle="Total de estagiários ativos (últimos 30 dias)"
               icon={<PeopleAltIcon sx={{ color: theme.palette.primary.main }} />}
               iconBgColor={alpha(theme.palette.primary.main, 0.1)}
             />
@@ -269,7 +303,7 @@ export default function InternManagementScreen() {
           <Grid item xs={12} sm={6} md={4}>
             <StatCard
               title="Consultas Realizadas"
-              value={totalAppointmentsCompleted}
+              value={kpis.completedAppointmentsCount}
               subtitle="Total de consultas concluídas"
               icon={<AssignmentTurnedInIcon sx={{ color: theme.palette.primary.main }} />}
               iconBgColor={alpha(theme.palette.primary.main, 0.1)}
@@ -278,8 +312,8 @@ export default function InternManagementScreen() {
           <Grid item xs={12} sm={12} md={4}>
             <StatCard
               title="Média por Estagiário"
-              value={averageAppointments}
-              subtitle="Média de consultas por estagiário ativo"
+              value={kpis.averageAppointmentsPerIntern.toFixed(1)}
+              subtitle="Média de consultas por estagiário"
               icon={<TrendingUpIcon sx={{ color: theme.palette.success.main }} />}
               iconBgColor={alpha(theme.palette.success.main, 0.1)}
             />

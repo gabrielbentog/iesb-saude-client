@@ -126,7 +126,7 @@ export function DataTable<T extends { id: string | number }>({
   actions, // Prop de ações
   actionsColumnLabel = '', // Prop para o rótulo da coluna de ações, com valor padrão vazio
   emptyMessage = 'Nenhum registro encontrado.', // Prop para mensagem de vazio, com valor padrão
-  rowsPerPageOptions = [5, 10, 25, { label: 'Todas', value: -1 }],
+  rowsPerPageOptions = [5, 10, 25, 50],
   rowOnClick,
 }: DataTableProps<T>) {
 
