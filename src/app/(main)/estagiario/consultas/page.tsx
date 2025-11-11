@@ -324,7 +324,7 @@ export default function AppointmentPatientScreen() {
       {/* Cards no mobile / Tabela no desktop */}
       {isMobile ? (
         <>
-          {appointments.length === 0 ? (
+          {!loading && appointments.length === 0 ? (
             <Box
               sx={{
                 display: "flex",

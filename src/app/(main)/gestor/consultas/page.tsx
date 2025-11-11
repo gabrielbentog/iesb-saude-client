@@ -384,7 +384,7 @@ export default function AppointmentManagementScreen() {
       {/* Cards no mobile */}
       {isMobile ? (
         <>
-          {appointments.length === 0 ? (
+          {!loading && appointments.length === 0 ? (
             <Box
               sx={{
                 display: "flex",

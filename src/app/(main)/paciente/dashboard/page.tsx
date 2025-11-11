@@ -377,7 +377,7 @@ export default function PatientDashboard() {
               <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1.5 }}>
                 Próximas Consultas
               </Typography>
-              {nextAppointments.length === 0 ? (
+              {!loadingStats && nextAppointments.length === 0 ? (
                 <Box
                   sx={{
                     display: "flex",
