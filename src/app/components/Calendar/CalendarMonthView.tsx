@@ -22,6 +22,7 @@ import {
   isWeekend,
   isSameMonth,
   isBefore,
+  isSameDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, DayCell, DayNumber, EventChip } from "./Calendar.styles";
@@ -54,10 +55,7 @@ export function CalendarMonthView({
     return weeks;
   }, [calStart, calEnd]);
 
-  const eventsForDay = (day: Date) =>
-    events.filter(
-      (ev) => format(ev.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd")
-    );
+  const eventsForDay = (day: Date) => events.filter((ev) => isSameDay(ev.date, day));
 
   const weekDays = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 

@@ -42,7 +42,9 @@ import { useCalendarCache } from "@/app/hooks/useCalendarCache";
 import { useToast } from "@/app/contexts/ToastContext"; // For booking confirmation
 
 /* ---------- helpers ---------- */
-const toLocalDate = (isoUtcZ: string) => new Date(isoUtcZ.replace(/Z$/, ""));
+// Parse ISO strings preserving timezone information. Avoid removing the trailing Z,
+// which caused dates to be interpreted incorrectly in some locales.
+const toLocalDate = (isoUtcZ: string) => new Date(isoUtcZ);
 const hueFor = (s: string) =>
   `hsl(${[...s].reduce((h, c) => c.charCodeAt(0) + ((h << 5) - h), 0) % 360},65%,50%)`;
 
@@ -131,11 +133,11 @@ export default function EnhancedCalendar({
   const campusStatic = (campusRes?.data ?? []).map((c) => c.name);
 
   // Usa hook de cache para gerenciar dados por mês
-  const { 
-    data: calApi, 
-    loading: cacheLoading, 
-    fetchMonth, 
-    refetch 
+  const {
+    data: calApi,
+    loading: cacheLoading,
+    fetchMonth,
+    refetch
   } = useCalendarCache({ enabled: hasLoadedOnce });
 
   // Estado adicional para controlar o loading quando os dados estão sendo processados
@@ -161,7 +163,7 @@ export default function EnhancedCalendar({
 
   const [campusDyn, specDyn] = useMemo<[string[], string[]]>(() => {
     setIsProcessingData(true);
-    
+
     if (!calApi) {
       setIsProcessingData(false);
       return [[], []];
@@ -171,9 +173,17 @@ export default function EnhancedCalendar({
     const specSet = new Set<string>();
     const raw: CalendarEvent[] = [];
     const cmap: ColorMap = {};
+    const seen = new Set<string>();
 
     const pushEv = (slot: ApiSlot, kind: "free" | "busy") => {
       const date = toLocalDate(slot.startAt);
+      // deterministic key to dedupe events that may appear duplicated
+      const keyId = String(slot.timeSlotId ?? slot.id ?? '');
+      const dayYMD = formatDateYMDInTZ(slot.startAt);
+      const timeHM = formatTimeHMInTZ(slot.startAt);
+      const dedupeKey = `${kind}-${keyId}-${dayYMD}T${timeHM}`;
+      if (seen.has(dedupeKey)) return; // already added
+      seen.add(dedupeKey);
       campusSet.add(slot.campusName);
       specSet.add(slot.specialtyName);
       let title = slot.specialtyName;
@@ -190,7 +200,7 @@ export default function EnhancedCalendar({
       }
 
       raw.push({
-        id: `${kind}-${slot.id}-${date.toISOString()}`,
+        id: `${kind}-${keyId}-${dayYMD}T${timeHM}`,
         date,
         title,
         description: `${slot.specialtyName} • ${slot.campusName}`,
@@ -355,11 +365,11 @@ export default function EnhancedCalendar({
               }}
             >
               <CircularProgress size={48} thickness={4} />
-              <Typography 
-                sx={{ 
-                  mt: 2, 
+              <Typography
+                sx={{
+                  mt: 2,
                   color: "text.secondary",
-                  fontWeight: 500 
+                  fontWeight: 500
                 }}
               >
                 Carregando calendário…
@@ -433,11 +443,11 @@ export default function EnhancedCalendar({
               });
 
               showToast({ message: "Consulta agendada com sucesso!", severity: "success" });
-              
+
               if (refetch) {
                 await refetch();
               }
-              
+
               setSelectedSlotForBooking(null);
             } catch (err) {
               console.error('Erro ao agendar via calendar booking:', err);

@@ -18,6 +18,7 @@ import {
   format,
   startOfDay,
   isBefore,
+  isSameDay,
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { HeaderCell, EventChip } from "./Calendar.styles";
@@ -36,11 +37,7 @@ export function CalendarWeekView({
   const todayStart = startOfDay(new Date());
 
   const getEventsFor = (day: Date, hour: number) =>
-    events.filter(
-      (ev) =>
-        format(ev.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd") &&
-        ev.date.getHours() === hour
-    );
+    events.filter((ev) => isSameDay(ev.date, day) && ev.date.getHours() === hour);
 
   return (
     <>

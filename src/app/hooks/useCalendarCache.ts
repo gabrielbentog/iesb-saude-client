@@ -40,12 +40,12 @@ interface UseCalendarCacheReturn {
 export function useCalendarCache(
   options: UseCalendarCacheOptions = {}
 ): UseCalendarCacheReturn {
-  const { enabled = true, cacheTimeout = 5 * 60 * 1000 } = options; // 5 minutos default
+  const { cacheTimeout = 5 * 60 * 1000 } = options; // 5 minutos default
 
   const [data, setData] = useState<CalendarApi | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  
+
   // Cache em memória: key = "YYYY-MM", value = { data, timestamp }
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
   const currentMonthRef = useRef<string>('');
@@ -55,7 +55,7 @@ export function useCalendarCache(
    * Verifica cache antes de fazer requisição
    */
   const fetchMonth = useCallback(async (date: Date) => {
-    if (!enabled) return;
+
 
     const monthKey = format(date, 'yyyy-MM');
     currentMonthRef.current = monthKey;
@@ -104,7 +104,7 @@ export function useCalendarCache(
     } finally {
       setLoading(false);
     }
-  }, [enabled, cacheTimeout]);
+  }, [cacheTimeout]);
 
   /**
    * Limpa todo o cache
@@ -118,14 +118,14 @@ export function useCalendarCache(
    */
   const refetch = useCallback(async () => {
     if (!currentMonthRef.current) return;
-    
+
     // Remove do cache
     cacheRef.current.delete(currentMonthRef.current);
-    
+
     // Reconstrói a data do mês atual
     const [year, month] = currentMonthRef.current.split('-').map(Number);
     const date = new Date(year, month - 1, 1);
-    
+
     await fetchMonth(date);
   }, [fetchMonth]);
 
