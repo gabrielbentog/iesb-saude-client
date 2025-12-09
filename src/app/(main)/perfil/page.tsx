@@ -93,8 +93,8 @@ const formatPhoneInput = (raw?: string) => {
 }
 
 const mapUserToForm = (user: User): Omit<ProfileFormValues, 'currentPassword'> => ({
-  id: user.id, 
-  name: user.name ?? "", 
+  id: user.id,
+  name: user.name ?? "",
   email: user.email ?? "",
   phone: user.phone ?? "",
   cpf: user.cpf ?? "",
@@ -368,45 +368,45 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
             <form onSubmit={onSubmit}>
                 <DialogContent dividers>
                     <Stack spacing={3} sx={{ pt: 1 }}>
-                        <Controller 
-                            name="currentPassword" 
-                            control={control} 
+                        <Controller
+                            name="currentPassword"
+                            control={control}
                             render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    type="password" 
-                                    label="Senha Atual" 
-                                    fullWidth 
-                                    error={!!errors.currentPassword} 
+                                <TextField
+                                    {...field}
+                                    type="password"
+                                    label="Senha Atual"
+                                    fullWidth
+                                    error={!!errors.currentPassword}
                                     helperText={errors.currentPassword?.message}
                                     autoComplete="current-password"
                                 />
-                            )} 
+                            )}
                         />
-                        
+
                         <Divider>Nova Senha</Divider>
-                        
-                        <Controller 
-                            name="newPassword" 
-                            control={control} 
+
+                        <Controller
+                            name="newPassword"
+                            control={control}
                             render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    type="password" 
-                                    label="Nova Senha" 
-                                    fullWidth 
-                                    error={!!errors.newPassword} 
+                                <TextField
+                                    {...field}
+                                    type="password"
+                                    label="Nova Senha"
+                                    fullWidth
+                                    error={!!errors.newPassword}
                                     helperText={errors.newPassword?.message}
                                     autoComplete="new-password"
                                 />
-                            )} 
+                            )}
                         />
 
                         {newPassword && (
-                            <Box 
-                                sx={{ 
-                                    p: 2, 
-                                    bgcolor: 'background.default', 
+                            <Box
+                                sx={{
+                                    p: 2,
+                                    bgcolor: 'background.default',
                                     borderRadius: 1,
                                     border: '1px solid',
                                     borderColor: 'divider'
@@ -418,11 +418,11 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
                                 <Stack spacing={0.5}>
                                     {passwordRequirements.map((req, index) => (
                                         <Stack key={index} direction="row" spacing={1} alignItems="center">
-                                            <Box 
-                                                sx={{ 
-                                                    width: 16, 
-                                                    height: 16, 
-                                                    borderRadius: '50%', 
+                                            <Box
+                                                sx={{
+                                                    width: 16,
+                                                    height: 16,
+                                                    borderRadius: '50%',
                                                     bgcolor: req.met ? 'success.main' : 'grey.300',
                                                     display: 'flex',
                                                     alignItems: 'center',
@@ -434,9 +434,9 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
                                                     <Box component="span" sx={{ color: 'white', fontSize: '10px' }}>✓</Box>
                                                 )}
                                             </Box>
-                                            <Typography 
-                                                variant="caption" 
-                                                sx={{ 
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
                                                     color: req.met ? 'success.main' : 'text.secondary',
                                                     transition: 'color 0.3s'
                                                 }}
@@ -448,21 +448,21 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
                                 </Stack>
                             </Box>
                         )}
-                        
-                        <Controller 
-                            name="confirmPassword" 
-                            control={control} 
+
+                        <Controller
+                            name="confirmPassword"
+                            control={control}
                             render={({ field }) => (
-                                <TextField 
-                                    {...field} 
-                                    type="password" 
-                                    label="Confirmar Nova Senha" 
-                                    fullWidth 
-                                    error={!!errors.confirmPassword} 
+                                <TextField
+                                    {...field}
+                                    type="password"
+                                    label="Confirmar Nova Senha"
+                                    fullWidth
+                                    error={!!errors.confirmPassword}
                                     helperText={errors.confirmPassword?.message}
                                     autoComplete="new-password"
                                 />
-                            )} 
+                            )}
                         />
                     </Stack>
                 </DialogContent>
@@ -480,7 +480,7 @@ const ChangePasswordDialog: FC<{ open: boolean; onClose: () => void; userId: str
 const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
     const { showToast } = useToast();
     const [isSendingCode, setIsSendingCode] = useState(false);
-    
+
     const { control, handleSubmit, formState: { errors, isSubmitting }, setError, getValues } = useForm<EmailChangeFormValues>({
         resolver: zodResolver(emailChangeSchema),
         defaultValues: { newEmail: "", currentPassword: "", verificationCode: "" },
@@ -506,7 +506,7 @@ const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string
             setIsSendingCode(false);
         }
     };
-    
+
     const onSubmit = handleSubmit(async (values) => {
         try {
             await apiFetch(`/api/users/${userId}/verify-email-change`, {
@@ -528,15 +528,15 @@ const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string
             <form onSubmit={onSubmit}>
                 <DialogContent dividers>
                     <Stack spacing={2} sx={{ pt: 1 }}>
-                        <Controller name="newEmail" control={control} render={({ field }) => 
+                        <Controller name="newEmail" control={control} render={({ field }) =>
                             <TextField {...field} label="Novo Email" fullWidth type="email" error={!!errors.newEmail} helperText={errors.newEmail?.message} />
                         } />
-                        <Controller name="currentPassword" control={control} render={({ field }) => 
+                        <Controller name="currentPassword" control={control} render={({ field }) =>
                             <TextField {...field} label="Senha Atual" fullWidth type="password" error={!!errors.currentPassword} helperText={errors.currentPassword?.message} />
                         } />
                         <Divider>Verificação</Divider>
                         <Stack direction="row" spacing={1} alignItems="flex-start">
-                            <Controller name="verificationCode" control={control} render={({ field }) => 
+                            <Controller name="verificationCode" control={control} render={({ field }) =>
                                 <TextField {...field} label="Código de Verificação" fullWidth error={!!errors.verificationCode} helperText={errors.verificationCode?.message} />
                             } />
                             <Button onClick={handleRequestCode} disabled={isSendingCode}>
@@ -558,7 +558,7 @@ const EmailChangeDialog: FC<{ open: boolean; onClose: () => void; userId: string
 
 const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: string; }> = ({ open, onClose, userId }) => {
     const { showToast } = useToast();
-    
+
     const { control, handleSubmit, reset, formState: { errors, isSubmitting }, setError } = useForm<DeleteAccountFormValues>({
         resolver: zodResolver(deleteAccountSchema),
         defaultValues: { currentPassword: "", confirmText: "" },
@@ -570,11 +570,11 @@ const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: stri
                 method: "DELETE",
                 body: JSON.stringify({ currentPassword: values.currentPassword }),
             });
-            
+
             // Logout completo: limpar todos os dados locais
             localStorage.clear();
             sessionStorage.clear();
-            
+
             // Limpar todos os cookies
             document.cookie.split(";").forEach((c) => {
                 const eqPos = c.indexOf("=");
@@ -583,14 +583,14 @@ const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: stri
                 document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=" + window.location.hostname;
                 document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=." + window.location.hostname;
             });
-            
+
             showToast({ message: "Conta deletada com sucesso. Você será redirecionado.", severity: "success" });
-            
+
             // Redirecionar imediatamente para a tela de login
             setTimeout(() => {
                 window.location.replace("/auth/login");
             }, 1500);
-            
+
         } catch (err) {
             applyBackendErrorsToForm(err, setError);
             showToast({ message: "Erro ao deletar conta. Verifique sua senha.", severity: "error" });
@@ -609,33 +609,33 @@ const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: stri
                         ⚠️ Esta ação é irreversível. Todos os seus dados serão permanentemente removidos.
                     </Typography>
                     <Stack spacing={2} sx={{ pt: 1 }}>
-                        <Controller 
-                            name="currentPassword" 
-                            control={control} 
-                            render={({ field }) => 
-                                <TextField 
-                                    {...field} 
-                                    type="password" 
-                                    label="Senha Atual" 
-                                    fullWidth 
-                                    error={!!errors.currentPassword} 
-                                    helperText={errors.currentPassword?.message} 
+                        <Controller
+                            name="currentPassword"
+                            control={control}
+                            render={({ field }) =>
+                                <TextField
+                                    {...field}
+                                    type="password"
+                                    label="Senha Atual"
+                                    fullWidth
+                                    error={!!errors.currentPassword}
+                                    helperText={errors.currentPassword?.message}
                                 />
-                            } 
+                            }
                         />
-                        <Controller 
-                            name="confirmText" 
-                            control={control} 
-                            render={({ field }) => 
-                                <TextField 
-                                    {...field} 
-                                    label="Digite 'DELETAR' para confirmar" 
-                                    fullWidth 
-                                    error={!!errors.confirmText} 
-                                    helperText={errors.confirmText?.message || "Digite exatamente 'DELETAR' (maiúsculas)"} 
+                        <Controller
+                            name="confirmText"
+                            control={control}
+                            render={({ field }) =>
+                                <TextField
+                                    {...field}
+                                    label="Digite 'DELETAR' para confirmar"
+                                    fullWidth
+                                    error={!!errors.confirmText}
+                                    helperText={errors.confirmText?.message || "Digite exatamente 'DELETAR' (maiúsculas)"}
                                     placeholder="DELETAR"
                                 />
-                            } 
+                            }
                         />
                     </Stack>
                 </DialogContent>
@@ -652,7 +652,7 @@ const DeleteAccountDialog: FC<{ open: boolean; onClose: () => void; userId: stri
 
 
 export default function ProfilePage() {
-    const { data: apiResponse, loading } = useApi<UserApiResponse>('/api/users/me');    
+    const { data: apiResponse, loading } = useApi<UserApiResponse>('/api/users/me');
     const { showToast } = useToast();
     const [mode, setMode] = useState<'view' | 'edit'>('view');
     const [isSaving, setIsSaving] = useState(false);
@@ -673,12 +673,11 @@ export default function ProfilePage() {
     useEffect(() => {
       if (user) form.reset(mapUserToForm(user));
     }, [user, form]);
-    
+
     useEffect(() => {
       if (!avatarFile) { setAvatarPreview(null); return; }
       const url = URL.createObjectURL(avatarFile);
       setAvatarPreview(url);
-      // selecting a new file cancels any previous removal intent
       setAvatarRemoved(false);
       return () => URL.revokeObjectURL(url);
     }, [avatarFile]);
@@ -686,7 +685,7 @@ export default function ProfilePage() {
     useEffect(() => {
       if (apiResponse?.data) {
         const userData = apiResponse.data;
-        setUser(userData); // <-- Aqui eu guardo os dados do usuário no estado
+        setUser(userData);
         form.reset(mapUserToForm(userData));
       }
     }, [apiResponse, form]);
@@ -712,10 +711,10 @@ export default function ProfilePage() {
             const body = { user: { name: values.name, cpf: values.cpf || null, phone: phoneDigits || null, avatar: null }};
             response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
           } else {
-            const body = { user: { 
-              name: values.name, 
-              cpf: values.cpf || null, 
-              phone: phoneDigits || null 
+            const body = { user: {
+              name: values.name,
+              cpf: values.cpf || null,
+              phone: phoneDigits || null
             }};
             response = await apiFetch<UserApiResponse>(`/api/users/${user.id}`, { method: "PUT", body: JSON.stringify(body) });
           }
@@ -745,7 +744,7 @@ export default function ProfilePage() {
   setAvatarRemoved(false);
         setMode('view');
     }
-    
+
     if (loading) return <Container sx={{py: 4, textAlign: 'center'}}><CircularProgress /></Container>;
     if (!user) return <Container sx={{py: 4}}><Typography color="error">Falha ao carregar perfil.</Typography></Container>;
 
@@ -770,13 +769,13 @@ export default function ProfilePage() {
       >
           <Typography variant="h4" fontWeight={700} gutterBottom>Meu Perfil</Typography>
           <Card>
-          <ProfileHeader 
-                  user={user} 
+          <ProfileHeader
+                  user={user}
                   mode={mode}
                   avatarPreview={avatarPreview}
             setAvatarFile={(f) => { setAvatarFile(f); if (f) setAvatarRemoved(false); }}
-                  onSave={handleSave} 
-                  onCancel={handleCancel} 
+                  onSave={handleSave}
+                  onCancel={handleCancel}
                   onEdit={() => setMode('edit')}
             onClear={() => { setAvatarFile(null); setAvatarRemoved(true); }}
             avatarRemoved={avatarRemoved}
@@ -796,8 +795,8 @@ export default function ProfilePage() {
                         isLocked={mode === 'view' || isSaving}
                         cpfPersisted={cpfPersisted}
                       />
-                      <SecuritySettings 
-                          onOpenChangePassword={() => setPwDialogOpen(true)} 
+                      <SecuritySettings
+                          onOpenChangePassword={() => setPwDialogOpen(true)}
                           onOpenChangeEmail={() => setEmailDialogOpen(true)}
                           onOpenDeleteAccount={() => setDeleteAccountDialogOpen(true)}
                       />
@@ -805,7 +804,7 @@ export default function ProfilePage() {
               </CardContent>
           </Card>
       </Container>
-      
+
       <ChangePasswordDialog open={pwDialogOpen} onClose={() => setPwDialogOpen(false)} userId={user.id} />
       <EmailChangeDialog open={emailDialogOpen} onClose={() => setEmailDialogOpen(false)} userId={user.id} />
       <DeleteAccountDialog open={deleteAccountDialogOpen} onClose={() => setDeleteAccountDialogOpen(false)} userId={user.id} />

@@ -15,21 +15,23 @@ export function middleware(req: NextRequest) {
 
   const isProtectedRoute = !isExactAuthPage && !isStaticFile;
 
+  // Redireciona "/" para "/auth/login"
+  if (pathname === '/') {
+    return NextResponse.redirect(new URL('/auth/login', req.url));
+  }
+
   // Se o usuário está logado
   if (session) {
     const profile = JSON.parse(session)?.profile?.toLowerCase();
 
-    // Se estiver logado e tentando acessar página de login, redireciona pro dashboard
     if (isExactAuthPage) {
       return NextResponse.redirect(new URL(`/${profile}/dashboard`, req.url));
     }
 
-    // Redireciona para o dashboard correto caso vá para "/dashboard"
     if (pathname === '/dashboard') {
       return NextResponse.redirect(new URL(`/${profile}/dashboard`, req.url));
     }
 
-    // Permite continuar normalmente
     return NextResponse.next();
   }
 
@@ -41,7 +43,6 @@ export function middleware(req: NextRequest) {
   return NextResponse.next();
 }
 
-// Ativa o middleware para todas as rotas, exceto estáticos
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.svg$).*)'],
 };

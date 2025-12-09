@@ -7,8 +7,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import type { ScheduleItemProps } from '@/app/types';
 
-const GRID_SM = "240px 1fr 1fr auto auto";   // Data | Início | Fim | + | 🗑️
-const GRID_XS = "1fr";         // mobile (data quebra pra cima)
+const GRID_SM = "240px 1fr 1fr auto auto";
+const GRID_XS = "1fr";
 
 const weekDays = [
   { value: 0, label: "Domingo" },
@@ -85,7 +85,7 @@ export const ScheduleItem: React.FC<ScheduleItemProps> = ({
                 label="Data"
                 value={field.value ? dayjs(field.value) : null}
                 onChange={(d) => field.onChange(d?.toDate() || undefined)}
-                minDate={dayjs()} 
+                minDate={dayjs()}
                 slotProps={{ textField: { fullWidth: true, error: !!fieldState.error, helperText: fieldState.error?.message } }}
               />
             )}

@@ -14,20 +14,16 @@ import {
   Avatar,
   Alert,
   useMediaQuery,
-  Fab,
   useTheme,
   Tooltip,
-  IconButton,
   Pagination,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
-// History tab removed — HistoryIcon no longer needed
 import InfoIcon from "@mui/icons-material/Info";
 
 import { StatCard } from "@/app/components/ui/StatCard";
@@ -434,9 +430,9 @@ export default function PatientDashboard() {
                           <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                               <Avatar
-                                src={professional?.avatarUrl ? 
-                                  (/^https?:\/\//.test(professional.avatarUrl) 
-                                    ? professional.avatarUrl 
+                                src={professional?.avatarUrl ?
+                                  (/^https?:\/\//.test(professional.avatarUrl)
+                                    ? professional.avatarUrl
                                     : `${process.env.NEXT_PUBLIC_API_HOST}${professional.avatarUrl}`)
                                   : undefined
                                 }
@@ -460,10 +456,10 @@ export default function PatientDashboard() {
                           <Typography variant="body2" color="text.secondary">
                             {a.location} — {a.room}
                           </Typography>
-                          <StyledBadge 
-                            label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
-                            badgeType={a.status} 
-                            sx={{ mt: 1 }} 
+                          <StyledBadge
+                            label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status}
+                            badgeType={a.status}
+                            sx={{ mt: 1 }}
                           />
                         </Box>
                       );

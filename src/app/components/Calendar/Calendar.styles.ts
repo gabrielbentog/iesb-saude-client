@@ -1,4 +1,3 @@
-// Calendar.styles.ts – indicador de eventos agora aparece na célula do dia
 "use client";
 
 import { styled } from "@mui/material/styles";

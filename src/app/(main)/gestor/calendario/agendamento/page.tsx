@@ -39,8 +39,6 @@ import { ptBR } from "@mui/x-date-pickers/locales";
 import type { ApiResponse } from '@/app/types';
 import { useToast } from "@/app/contexts/ToastContext";
 
-// Defina um tipo para a resposta da API que inclui a propriedade 'data'
-
 export default function ScheduleFormPage() {
   const router = useRouter();
   const { showToast } = useToast();
@@ -57,7 +55,6 @@ export default function ScheduleFormPage() {
   } = methods;
 
   /* ---------- selects ---------- */
-  // Modificado para esperar ApiResponse contendo CollegeLocation[]
   const { data: locResponse, loading: loadingLocs } =
     useApi<ApiResponse<CollegeLocation[]>>("/api/college_locations");
 
@@ -182,7 +179,7 @@ export default function ScheduleFormPage() {
                     {...field}
                     value={field.value ?? ""}
                     onChange={(e) => {
-                      field.onChange(e.target.value); // Não converte mais para número
+                      field.onChange(e.target.value);
                     }}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
@@ -233,7 +230,7 @@ export default function ScheduleFormPage() {
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
                     format="DD/MM/YYYY"
-                    minDate={dayjs()} // <-- ADICIONE ESTA LINHA
+                    minDate={dayjs()}
                     slotProps={{
                       textField: {
                         fullWidth: true,
@@ -254,7 +251,7 @@ export default function ScheduleFormPage() {
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(d) => field.onChange(d?.toDate())}
                     format="DD/MM/YYYY"
-                    minDate={dayjs()} // <-- ADICIONE ESTA LINHA
+                    minDate={dayjs()}
                     slotProps={{
                       textField: {
                         fullWidth: true,

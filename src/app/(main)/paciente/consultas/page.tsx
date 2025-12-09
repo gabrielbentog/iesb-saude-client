@@ -1,4 +1,3 @@
-// src/app/(main)/paciente/consultas/page.tsx
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -76,8 +75,8 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
             })()} sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}>
               {first.name ? first.name.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
             </Avatar>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               fontWeight={500}
               sx={{
                 fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -104,8 +103,8 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
           <Avatar sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}>
             <PersonIcon fontSize="small" />
           </Avatar>
-          <Typography 
-            variant="body2" 
+          <Typography
+            variant="body2"
             fontWeight={500}
             sx={{ fontSize: { xs: "0.875rem", sm: "1rem" } }}
           >
@@ -126,8 +125,8 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
     }
     case "location":
       return (
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           title={a.location}
           sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -142,7 +141,7 @@ const renderPatientCell = (a: UIAppointment, id: PatientHeaderId) => {
       );
     case "dateTime":
       return (
-        <Typography sx={{ 
+        <Typography sx={{
           fontSize: { xs: "0.75rem", sm: "0.875rem" },
           whiteSpace: { xs: "normal", sm: "nowrap" }
         }}>
@@ -204,7 +203,6 @@ export default function AppointmentPatientScreen() {
       console.error("Falha ao buscar consultas", err);
       const message = err instanceof Error ? err.message : "Não foi possível buscar suas consultas.";
       setError(message);
-      // use ref to avoid triggering effects that depend on showToast
       try { showToastRef.current({ message: `Erro: ${message}`, severity: "error" }) } catch { /* swallow */ }
     } finally {
       setLoading(false);
@@ -213,7 +211,6 @@ export default function AppointmentPatientScreen() {
 
   useEffect(() => {
     fetchAppointments();
-    // only re-run when page or rowsPerPage change
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage]);
 
@@ -478,12 +475,12 @@ export default function AppointmentPatientScreen() {
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         {a.interns && a.interns.length > 0 && (
-                          <Avatar 
+                          <Avatar
                             src={(() => {
                               const raw = a.interns[0].avatarUrl;
                               if (!raw) return undefined;
-                              return /^https?:\/\//.test(raw) 
-                                ? raw 
+                              return /^https?:\/\//.test(raw)
+                                ? raw
                                 : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
                             })()}
                             sx={{ width: 28, height: 28 }}
@@ -495,8 +492,8 @@ export default function AppointmentPatientScreen() {
                           {a.interns && a.interns.length > 0 ? a.interns[0].name : "Não designado"}
                         </Typography>
                       </Box>
-                      <IconButton 
-                        size="small" 
+                      <IconButton
+                        size="small"
                         onClick={(e) => {
                           e.stopPropagation()
                           handleMenuClick(e, a)
@@ -514,10 +511,10 @@ export default function AppointmentPatientScreen() {
                     <Typography variant="body2" color="text.secondary">
                       {a.location}
                     </Typography>
-                    <StyledBadge 
-                      label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
-                      badgeType={a.status} 
-                      sx={{ mt: 1 }} 
+                    <StyledBadge
+                      label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status}
+                      badgeType={a.status}
+                      sx={{ mt: 1 }}
                     />
                   </Box>
                 ))}
@@ -574,9 +571,9 @@ export default function AppointmentPatientScreen() {
           }
         }}
       >
-        <MenuItem 
+        <MenuItem
           onClick={handleViewDetails}
-          sx={{ 
+          sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
             py: { xs: 1, sm: 1.5 }
           }}
@@ -584,9 +581,9 @@ export default function AppointmentPatientScreen() {
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} /> Ver Detalhes
         </MenuItem>
         {selectedAppointment && ["Confirmada", "Aguardando aprovação"].includes(selectedAppointment.status) && (
-          <MenuItem 
+          <MenuItem
             onClick={handleReschedule}
-            sx={{ 
+            sx={{
               fontSize: { xs: "0.875rem", sm: "1rem" },
               py: { xs: 1, sm: 1.5 }
             }}
@@ -595,9 +592,9 @@ export default function AppointmentPatientScreen() {
           </MenuItem>
         )}
         {selectedAppointment && ["Confirmada", "Aguardando aprovação"].includes(selectedAppointment.status) && (
-          <MenuItem 
-            onClick={handleCancel} 
-            sx={{ 
+          <MenuItem
+            onClick={handleCancel}
+            sx={{
               color: theme.palette.error.main,
               fontSize: { xs: "0.875rem", sm: "1rem" },
               py: { xs: 1, sm: 1.5 }

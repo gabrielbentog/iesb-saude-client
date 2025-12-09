@@ -14,16 +14,16 @@ export default function NProgressHandler() {
   useEffect(() => {
     console.log("NProgress start triggered", { pathname, searchParams: searchParams.toString() });
     NProgress.start();
-  
+
     const timeout = setTimeout(() => {
       NProgress.done();
     }, 300);
-  
+
     return () => {
       clearTimeout(timeout);
     };
   }, [pathname, searchParams]);
-  
+
 
   return null;
 }

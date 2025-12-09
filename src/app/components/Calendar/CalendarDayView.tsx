@@ -70,8 +70,8 @@ export function CalendarDayView({
                           <EventChip
                             past={past}
                             color={chipColor}
-                            isCurrentMonth={true} // Em DayView, sempre é o "mês corrente" do dia
-                            onClick={() => onEventClick(ev)} // Chama o handler do pai
+                            isCurrentMonth={true}
+                            onClick={() => onEventClick(ev)}
                           >
                             {format(ev.date, "HH:mm")} {ev.title}
                           </EventChip>
@@ -85,7 +85,6 @@ export function CalendarDayView({
           </TableBody>
         </Table>
       </TableContainer>
-      {/* Nenhum diálogo renderizado aqui */}
     </>
   );
 }

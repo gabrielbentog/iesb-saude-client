@@ -1,4 +1,3 @@
-// src/app/components/Calendar/BookingDialog.tsx
 "use client";
 
 import React, { useState } from 'react';
@@ -32,7 +31,7 @@ export function BookingDialog({ open, event, onClose, onSubmitBooking }: Booking
 
   const handleDialogClose = () => {
     if (!isLoading) {
-      setObjective(''); // Reset objective on close
+      setObjective('');
       onClose();
     }
   };

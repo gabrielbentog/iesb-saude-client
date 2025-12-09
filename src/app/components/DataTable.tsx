@@ -134,11 +134,11 @@ export function DataTable<T extends { id: string | number }>({
 
   return (
     <Card>
-      <Box sx={{ 
-        p: { xs: 2, sm: 3 }, 
-        display: "flex", 
+      <Box sx={{
+        p: { xs: 2, sm: 3 },
+        display: "flex",
         flexDirection: { xs: "column", sm: "row" },
-        justifyContent: "space-between", 
+        justifyContent: "space-between",
         alignItems: { xs: "flex-start", sm: "center" },
         gap: 2
       }}>
@@ -151,10 +151,10 @@ export function DataTable<T extends { id: string | number }>({
           </Typography>
         </Box>
         {onAddClick && (
-          <Button 
-            variant="outlined" 
-            size="small" 
-            startIcon={<AddIcon />} 
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<AddIcon />}
             onClick={onAddClick}
             sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
@@ -167,10 +167,10 @@ export function DataTable<T extends { id: string | number }>({
           <TableHead>
             <TableRow>
               {headers.map((header) => (
-                <TableCell 
-                  key={header.id} 
-                  align={header.align || 'left'} 
-                  sx={{ 
+                <TableCell
+                  key={header.id}
+                  align={header.align || 'left'}
+                  sx={{
                     width: header.width,
                     fontSize: { xs: "0.75rem", sm: "0.875rem" },
                     py: { xs: 1, sm: 2 },
@@ -181,10 +181,10 @@ export function DataTable<T extends { id: string | number }>({
                 </TableCell>
               ))}
               {showActionsColumn && (
-                <TableCell 
-                  width={50} 
+                <TableCell
+                  width={50}
                   align="right"
-                  sx={{ 
+                  sx={{
                     fontSize: { xs: "0.75rem", sm: "0.875rem" },
                     py: { xs: 1, sm: 2 },
                     px: { xs: 1, sm: 2 }
@@ -198,10 +198,10 @@ export function DataTable<T extends { id: string | number }>({
           <TableBody>
             {data.length === 0 ? (
               <TableRow>
-                <TableCell 
-                  colSpan={headers.length + (showActionsColumn ? 1 : 0)} 
-                  sx={{ 
-                    textAlign: 'center', 
+                <TableCell
+                  colSpan={headers.length + (showActionsColumn ? 1 : 0)}
+                  sx={{
+                    textAlign: 'center',
                     py: { xs: 3, sm: 4 },
                     px: { xs: 1, sm: 2 }
                   }}
@@ -223,9 +223,9 @@ export function DataTable<T extends { id: string | number }>({
                   }}
                 >
                   {headers.map((header) => (
-                    <TableCell 
+                    <TableCell
                       key={`${rowKeyExtractor(row)}-${header.id}`}
-                      sx={{ 
+                      sx={{
                         py: { xs: 1, sm: 2 },
                         px: { xs: 1, sm: 2 }
                       }}
@@ -234,9 +234,9 @@ export function DataTable<T extends { id: string | number }>({
                     </TableCell>
                   ))}
                   {showActionsColumn && (
-                    <TableCell 
+                    <TableCell
                       align="right"
-                      sx={{ 
+                      sx={{
                         py: { xs: 1, sm: 2 },
                         px: { xs: 1, sm: 2 }
                       }}
@@ -256,10 +256,10 @@ export function DataTable<T extends { id: string | number }>({
       typeof totalCount === 'number' &&
       onPageChange &&
       onRowsPerPageChange && data.length > 0 && ( // Adicionado data.length > 0 para não exibir paginação em tabela vazia
-        <Box sx={{ 
-          px: { xs: 1, sm: 2, md: 3 }, 
-          py: { xs: 1, sm: 2 }, 
-          display: "flex", 
+        <Box sx={{
+          px: { xs: 1, sm: 2, md: 3 },
+          py: { xs: 1, sm: 2 },
+          display: "flex",
           justifyContent: { xs: "center", sm: "flex-end" },
           overflowX: "auto"
         }}>
@@ -268,9 +268,9 @@ export function DataTable<T extends { id: string | number }>({
             count={totalCount}
             page={page}
             onPageChange={onPageChange}
-            rowsPerPage={rowsPerPage} // <--- Este valor é crucial
+            rowsPerPage={rowsPerPage}
             onRowsPerPageChange={onRowsPerPageChange}
-            labelRowsPerPage="Linhas por página:" // <--- Este label
+            labelRowsPerPage="Linhas por página:"
             labelDisplayedRows={({ from, to, count }) =>
               `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
             }
@@ -295,19 +295,19 @@ export function DataTable<T extends { id: string | number }>({
 
       {/* Botão "Ver todos" */}
       {onViewAllClick && data.length > 0 && ( // Adicionado data.length > 0 para não exibir o botão em tabela vazia
-        <Box sx={{ 
-          p: { xs: 1, sm: 2 }, 
-          display: "flex", 
-          justifyContent: { xs: "center", sm: "flex-end" } 
+        <Box sx={{
+          p: { xs: 1, sm: 2 },
+          display: "flex",
+          justifyContent: { xs: "center", sm: "flex-end" }
         }}>
-          <Button 
-            variant="text" 
-            color="primary" 
-            endIcon={<ArrowRightAltIcon />} 
-            sx={{ 
+          <Button
+            variant="text"
+            color="primary"
+            endIcon={<ArrowRightAltIcon />}
+            sx={{
               fontWeight: 600,
               fontSize: { xs: "0.875rem", sm: "1rem" }
-            }} 
+            }}
             onClick={onViewAllClick}
           >
             Ver todos

@@ -11,7 +11,6 @@ import {
   useMediaQuery,
   Avatar,
   CircularProgress,
-  Tooltip,
   Button,
   Pagination,
 } from "@mui/material";
@@ -20,7 +19,6 @@ import { alpha } from "@mui/material/styles";
 // Icons
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-// more icon removed for estagiario view
 import PersonIcon from "@mui/icons-material/Person";
 
 import { usePushWithProgress } from "@/app/hooks/usePushWithProgress";
@@ -59,18 +57,18 @@ const renderInternCell = (a: UIAppointment, id: InternHeaderId) => {
     case "patient": {
       return (
         <Box sx={{ display: "flex", alignItems: "center", gap: { xs: 1, sm: 2 } }}>
-          <Avatar 
+          <Avatar
             src={((): string | undefined => {
               const raw = a.patientAvatar;
               if (!raw) return undefined;
               return /^https?:\/\//.test(raw) ? raw : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
-            })()} 
+            })()}
             sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}
           >
             {a.patientName ? a.patientName.split(" ").map((n) => n[0]).join("") : <PersonIcon fontSize="small" />}
           </Avatar>
-          <Typography 
-            variant="body2" 
+          <Typography
+            variant="body2"
             fontWeight={500}
             sx={{
               fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -97,8 +95,8 @@ const renderInternCell = (a: UIAppointment, id: InternHeaderId) => {
     }
     case "location":
       return (
-        <Typography 
-          variant="body2" 
+        <Typography
+          variant="body2"
           title={a.location}
           sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -113,7 +111,7 @@ const renderInternCell = (a: UIAppointment, id: InternHeaderId) => {
       );
     case "dateTime":
       return (
-        <Typography sx={{ 
+        <Typography sx={{
           fontSize: { xs: "0.75rem", sm: "0.875rem" },
           whiteSpace: { xs: "normal", sm: "nowrap" }
         }}>
@@ -239,10 +237,10 @@ export default function AppointmentPatientScreen() {
   return (
     <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 }, pb: { xs: 6, sm: 8 } }}>
       {/* Cabeçalho */}
-      <Box sx={{ 
-        display: "flex", 
+      <Box sx={{
+        display: "flex",
         flexDirection: { xs: "column", sm: "row" },
-        justifyContent: "space-between", 
+        justifyContent: "space-between",
         alignItems: { xs: "stretch", sm: "center" },
         gap: { xs: 1.5, sm: 2 },
         mb: { xs: 2, sm: 3 }
@@ -378,12 +376,12 @@ export default function AppointmentPatientScreen() {
                     }}
                   >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <Avatar 
+                      <Avatar
                         src={(() => {
                           const raw = a.patientAvatar;
                           if (!raw) return undefined;
-                          return /^https?:\/\//.test(raw) 
-                            ? raw 
+                          return /^https?:\/\//.test(raw)
+                            ? raw
                             : `${process.env.NEXT_PUBLIC_API_HOST}${raw}`;
                         })()}
                         sx={{ width: 28, height: 28 }}
@@ -403,10 +401,10 @@ export default function AppointmentPatientScreen() {
                     <Typography variant="body2" color="text.secondary">
                       {a.location}
                     </Typography>
-                    <StyledBadge 
-                      label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status} 
-                      badgeType={a.status} 
-                      sx={{ mt: 1 }} 
+                    <StyledBadge
+                      label={a.status === "Aguardando confirmação do Paciente" ? "Aguard. Confirmação" : a.status}
+                      badgeType={a.status}
+                      sx={{ mt: 1 }}
                     />
                   </Box>
                 ))}

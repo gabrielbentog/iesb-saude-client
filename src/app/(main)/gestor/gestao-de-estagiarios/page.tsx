@@ -52,8 +52,6 @@ const internHeaders = [
   { id: "status",                label: "Status"              },
 ]
 
-// specialty column removed - no icon helper
-
 const renderInternCell = (intern: Intern, headerId: string) => {
   switch (headerId) {
     case "name":
@@ -68,7 +66,7 @@ const renderInternCell = (intern: Intern, headerId: string) => {
           sx={{ width: { xs: 28, sm: 32 }, height: { xs: 28, sm: 32 } }}>
             {intern.name[0]}
           </Avatar>
-          <Typography 
+          <Typography
             fontWeight={500}
             sx={{
               fontSize: { xs: "0.875rem", sm: "1rem" },
@@ -376,8 +374,8 @@ export default function InternManagementScreen() {
                   </Box>
                 </Box>
 
-                <IconButton 
-                  size="small" 
+                <IconButton
+                  size="small"
                   onClick={(e) => {
                     e.stopPropagation()
                     handleMenuClick(e, intern)
@@ -461,9 +459,9 @@ export default function InternManagementScreen() {
           },
         }}
       >
-        <MenuItem 
+        <MenuItem
           onClick={handleViewDetails}
-          sx={{ 
+          sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
             py: { xs: 1, sm: 1.5 }
           }}
@@ -471,9 +469,9 @@ export default function InternManagementScreen() {
           <VisibilityIcon fontSize="small" sx={{ mr: 1 }} />
           Ver detalhes
         </MenuItem>
-        <MenuItem 
+        <MenuItem
           onClick={handleEditIntern}
-          sx={{ 
+          sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
             py: { xs: 1, sm: 1.5 }
           }}
@@ -481,9 +479,9 @@ export default function InternManagementScreen() {
           <EditIcon fontSize="small" sx={{ mr: 1 }} />
           Editar
         </MenuItem>
-        <MenuItem 
+        <MenuItem
           onClick={() => setConfirmOpen(true)}
-          sx={{ 
+          sx={{
             fontSize: { xs: "0.875rem", sm: "1rem" },
             py: { xs: 1, sm: 1.5 }
           }}

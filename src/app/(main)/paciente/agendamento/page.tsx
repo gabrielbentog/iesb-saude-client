@@ -1,4 +1,3 @@
-// src/app/(main)/paciente/agendamento/page.tsx
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -42,7 +41,7 @@ const isApiResponseError = (e: unknown): e is ApiResponseError =>
   e !== null &&
   "response" in e &&
   (e as ApiResponseError).response instanceof Response;
-  
+
 export default function AgendarConsultaPage() {
   const { showToast } = useToast();
   const pushWithProgress = usePushWithProgress();

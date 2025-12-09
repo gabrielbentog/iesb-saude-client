@@ -1,4 +1,3 @@
-// src/app/(main)/gestor/dashboard/page.tsx
 "use client";
 
 import type React from "react";
@@ -73,7 +72,6 @@ const internHeaders = [
   { id: "name", label: "Estagiário" },
   { id: "appointmentsCompleted", label: "Consultas Realizadas" },
   { id: "appointmentsScheduled", label: "Consultas Agendadas" },
-  // { id: "performance", label: "Performance" },
   { id: "status", label: "Status" },
 ] as const;
 
@@ -127,7 +125,6 @@ const renderAppointmentCell = (a: UIAppointment, id: AppointmentHeaderId) => {
         return first
       }
       return '—'
-  // 'specialty' column removed
     case "location":
       return a.location;
     case "room":
@@ -157,7 +154,6 @@ const renderInternCell = (intern: Intern, id: InternHeaderId) => {
         </Box>
       );
     }
-  // 'specialty' column removed
     case "appointmentsCompleted":
       return intern.appointmentsCompleted;
     case "appointmentsScheduled":

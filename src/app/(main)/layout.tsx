@@ -16,11 +16,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   // Verifica se é mobile
   const isMobile = useMediaQuery(defaultTheme.breakpoints.down("md"));
 
-  // Se for mobile, começamos com a sidebar fechada
+  // Se for mobile, a sidebar começa fechada
   const [open, setOpen] = useState(!isMobile);
   useCurrentUser()
 
-  // Toda vez que "isMobile" mudar (ex: resize), podemos ajustar open
+  // Toda vez que "isMobile" mudar (ex: resize), ajustar open
   useEffect(() => {
     if (isMobile) setOpen(false);   // fecha ao entrar no mobile
   }, [isMobile]);
